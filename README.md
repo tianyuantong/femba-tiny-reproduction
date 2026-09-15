@@ -290,3 +290,12 @@ This project is licensed under the Apache License 2.0. See the [LICENSE](./LICEN
 
 **Note on model weights:** Pretrained weights are hosted at https://huggingface.co/thorir/FEMBA and https://huggingface.co/thorir/LUNA and licensed under **CC BY-ND 4.0**. You may use and redistribute the **unmodified** weights with attribution. Redistribution of **modified** weights is not permitted. To upstream improvements, please open a PR; accepted changes will be released as **official** checkpoints.
 
+
+## 2025 TUAR reproduction results
+
+| Checkpoint | AUROC | AP | Accuracy |
+| --- | ---: | ---: | ---: |
+| Final model | 0.8822 | 0.8965 | 82.99% |
+| Best validation loss (epoch 3) | 0.8992 | 0.9164 | 85.30% |
+
+Seed 42, 7,090 test windows; full-test checkpoint reload verified. Paper AUROC 0.937 was not reached. [Results](reproduction/upstream2025_results.json) · [Run configuration](reproduction/upstream2025_run.json).

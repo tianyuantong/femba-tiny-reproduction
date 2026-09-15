@@ -1,0 +1,126 @@
+{
+  "training-results": {
+    "final_checkpoint": "/root/work/femba-artifacts/tuar-2025-seed42/training/checkpoints/upstream2025-final.ckpt",
+    "best_checkpoint": "/root/work/femba-artifacts/tuar-2025-seed42/training/checkpoints/upstream2025-best-epoch=2-step=165.ckpt",
+    "best_val_loss": 0.43459486961364746,
+    "epochs_completed": 30,
+    "global_step": 1650,
+    "upstream_final_test": [
+      {
+        "test_BinaryAccuracy": 0.8299012780189514,
+        "test_MulticlassRecall": 0.8285460472106934,
+        "test_BinaryPrecision": 0.8775781989097595,
+        "test_BinaryF1Score": 0.8139463067054749,
+        "test_BinaryCohenKappa": 0.6587927341461182,
+        "test_BinaryAUROC": 0.8822048306465149,
+        "test_BinaryAveragePrecision": 0.8965035676956177,
+        "test_loss": 3.4565258026123047
+      }
+    ],
+    "best_validation": [
+      {
+        "val_BinaryAccuracy": 0.8218342065811157,
+        "val_MulticlassRecall": 0.8179095983505249,
+        "val_BinaryPrecision": 0.8587943911552429,
+        "val_BinaryF1Score": 0.7983112931251526,
+        "val_BinaryCohenKappa": 0.6401665210723877,
+        "val_BinaryAUROC": 0.8861607313156128,
+        "val_BinaryAveragePrecision": 0.8588278889656067,
+        "val_loss": 0.43459486961364746
+      }
+    ],
+    "best_test": [
+      {
+        "test_BinaryAccuracy": 0.8530324697494507,
+        "test_MulticlassRecall": 0.8519880771636963,
+        "test_BinaryPrecision": 0.8905647993087769,
+        "test_BinaryF1Score": 0.8419296145439148,
+        "test_BinaryCohenKappa": 0.7053709030151367,
+        "test_BinaryAUROC": 0.8991513848304749,
+        "test_BinaryAveragePrecision": 0.9163540601730347,
+        "test_loss": 0.3879184424877167
+      }
+    ]
+  },
+  "audit": {
+    "upstream_commit": "d88596590f3bd3fce573be07646b7d3977ce7bcc",
+    "test_windows": 7090,
+    "test_sha256": "6c4cdb7b2d14fcc0096e9a416fe8eb188ac687b3130fb6b1d7be0f5c19ec0b5f",
+    "checkpoints": {
+      "final": {
+        "checkpoint_sha256": "4590a3e7e0f599110f786d8dabc615091bf79723e9b05c64ab5673e469a82e54",
+        "checkpoint_epoch": 30,
+        "checkpoint_step": 1650,
+        "native_metrics": {
+          "test_BinaryAccuracy": 0.8299012780189514,
+          "test_MulticlassRecall": 0.8285460472106934,
+          "test_BinaryPrecision": 0.8775781989097595,
+          "test_BinaryF1Score": 0.8139463067054749,
+          "test_BinaryCohenKappa": 0.6587927341461182,
+          "test_BinaryAUROC": 0.8822048306465149,
+          "test_BinaryAveragePrecision": 0.8965035676956177
+        },
+        "native_reload_max_abs_error": 0.0,
+        "diagnostic_metrics": {
+          "accuracy": 0.8299012693935119,
+          "balanced_accuracy": 0.828546032785173,
+          "global_raw_logit_auroc": 0.8841635552317639,
+          "global_raw_logit_ap": 0.9065952017687121,
+          "softmax_auroc": 0.8780636993459141,
+          "softmax_ap": 0.8828815293760367
+        },
+        "labels": [
+          3614,
+          3476
+        ],
+        "predictions": [
+          4084,
+          3006
+        ],
+        "predictions_sha256": "2075b82bdf8170b7e63ec9e9c69d828589e97371231edcf917205f52b027bc25"
+      },
+      "best": {
+        "checkpoint_sha256": "156114d716ffad35e9b0ed67fa68c2c7d83bfa06de8e3719fa4192334cac022b",
+        "checkpoint_epoch": 2,
+        "checkpoint_step": 165,
+        "native_metrics": {
+          "test_BinaryAccuracy": 0.8530324697494507,
+          "test_MulticlassRecall": 0.8519880771636963,
+          "test_BinaryPrecision": 0.8905647993087769,
+          "test_BinaryF1Score": 0.8419296145439148,
+          "test_BinaryCohenKappa": 0.7053709030151367,
+          "test_BinaryAUROC": 0.8991513848304749,
+          "test_BinaryAveragePrecision": 0.9163540601730347
+        },
+        "native_reload_max_abs_error": 0.0,
+        "diagnostic_metrics": {
+          "accuracy": 0.8530324400564175,
+          "balanced_accuracy": 0.851988065208628,
+          "global_raw_logit_auroc": 0.899151379082624,
+          "global_raw_logit_ap": 0.9163540873934757,
+          "softmax_auroc": 0.8991487521676029,
+          "softmax_ap": 0.9163171545338782
+        },
+        "labels": [
+          3614,
+          3476
+        ],
+        "predictions": [
+          3974,
+          3116
+        ],
+        "predictions_sha256": "edd70f09b2ef7aac8f5219b16dc8c93e8e36684df651fbb57cccd6983f96b892"
+      }
+    },
+    "subject_counts": {
+      "train": 174,
+      "val": 26,
+      "test": 31
+    },
+    "subject_overlap": {
+      "train_val": 10,
+      "train_test": 11,
+      "val_test": 3
+    }
+  }
+}

@@ -1,0 +1,168 @@
+{
+  "upstream_commit": "d88596590f3bd3fce573be07646b7d3977ce7bcc",
+  "source_hashes": {
+    "models/FEMBA.py": "384ed796e0cdfc75db63eef5a05cd9219f258be5e112c595f4abc0a048d8827e",
+    "util/train_utils.py": "ae6d31dcf50fd8362b161f08ce707be1b2ab5ec0b91afc3af020fdeab779da22",
+    "datasets/hdf5_dataset.py": "f0461d1d4a20fe9930d3fc5d35df791899ec33d2b401ab547d01c2cd8cf92c98",
+    "data_module/finetune_data_module.py": "2a0133cd67c0a405fd26e2d062d0a7ffce7548df403ad5fa9922591e94f305c4",
+    "schedulers/cosine.py": "73e90615da0d717f1515d1edbb516b289ba2ab242095e218f1a5ed6709ba78ab",
+    "tasks/finetune_task.py": "3ac0ad04c1e5af663a31a41bf9c2ab0b03fb3e752037edde1e4c7d8a776b3766",
+    "config/defaults.yaml": "45e7cd2db4d6d0ac4a77fe00e49c11253129fb4282981ad8399d0ba3775e861a",
+    "config/data_module/finetune_data_module.yaml": "255da340f5ce5c46a146867a2d0cdf8c5420409dbbca66f72553c0658e7e9dbb",
+    "config/task/finetune_task.yaml": "8ce613c4c8f38b24e9c6f6b0ec10c7d6cce0986b44e8f89bb48913d1a9bb796a",
+    "config/scheduler/cosine.yaml": "78db171e123ce3e3cca647c6957fa010d050f603a9dd287db0021962a2d891b2",
+    "config/model/FEMBA_finetune.yaml": "ae8367edfc96584cc5a4d3a75cc9164f88b3fb274f23075be9255709bed1deb2",
+    "config/criterion/finetune_criterion.yaml": "e85602bba92785a0e1f8fb31a6ee730b7feafdf303d58889fe00dcae52c6475e",
+    "config/experiment/FEMBA_finetune.yaml": "4957ee39cc299dbf9fd86d9e9bf6edc69f0a867073d58a60fc4ab7bef31425a4"
+  },
+  "released_sha256": "a2f6151a74d7798d80094699f8eb005d7af510471414e274cf99b64e20a66010",
+  "encoder_tensors_loaded": 43,
+  "encoder_values_loaded": 7795095,
+  "config": {
+    "tag": "FEMBA_finetune",
+    "gpus": 1,
+    "num_nodes": 1,
+    "num_workers": 2,
+    "batch_size": 256,
+    "seed": 42,
+    "resume": false,
+    "pretrained_checkpoint": null,
+    "load_state_dict": false,
+    "training": true,
+    "print_model": true,
+    "find_unused_parameters": false,
+    "model_checkpoint": {
+      "save_last": true,
+      "save_top_k": 1,
+      "monitor": "val_loss",
+      "mode": "min"
+    },
+    "callbacks": {
+      "lr_monitor": {
+        "_target_": "pytorch_lightning.callbacks.LearningRateMonitor",
+        "logging_interval": "step"
+      },
+      "progress_bar": {
+        "_target_": "pytorch_lightning.callbacks.TQDMProgressBar",
+        "refresh_rate": 10
+      }
+    },
+    "io": {
+      "version": 0,
+      "base_output_path": "/root/work/femba-artifacts/tuar-2025-seed42/training/logs",
+      "checkpoint_dirpath": "/root/work/femba-artifacts/tuar-2025-seed42/training/checkpoints"
+    },
+    "trainer": {
+      "num_nodes": 1,
+      "devices": 1,
+      "strategy": "auto",
+      "max_epochs": 30,
+      "max_steps": 500000,
+      "benchmark": true,
+      "log_every_n_steps": 50,
+      "check_val_every_n_epoch": 1,
+      "val_check_interval": null,
+      "num_sanity_val_steps": 0,
+      "accelerator": "gpu",
+      "accumulate_grad_batches": 4,
+      "precision": "32-true"
+    },
+    "optimizer": {
+      "optim": "AdamW",
+      "lr": 0.0005,
+      "betas": [
+        0.9,
+        0.999
+      ],
+      "weight_decay": 0.5
+    },
+    "masking": {
+      "patch_size": [
+        2,
+        16
+      ],
+      "masking_ratio": 0.6
+    },
+    "input_normalization": {
+      "normalize": true,
+      "quartile_normalization_lower_val": -20,
+      "quartile_normalization_upper_val": 20
+    },
+    "data_module": {
+      "_target_": "data_module.finetune_data_module.FinetuneDataModule",
+      "name": "eeg",
+      "cfg": {
+        "num_workers": 2,
+        "batch_size": 256
+      },
+      "train": {
+        "_target_": "datasets.hdf5_dataset.HDF5Loader",
+        "hdf5_file": "/root/work/femba-artifacts/tuar-2025-seed42/data/TUAR_data/upstream2025_train.h5"
+      },
+      "val": {
+        "_target_": "datasets.hdf5_dataset.HDF5Loader",
+        "hdf5_file": "/root/work/femba-artifacts/tuar-2025-seed42/data/TUAR_data/upstream2025_val.h5"
+      },
+      "test": {
+        "_target_": "datasets.hdf5_dataset.HDF5Loader",
+        "hdf5_file": "/root/work/femba-artifacts/tuar-2025-seed42/data/TUAR_data/upstream2025_test.h5"
+      }
+    },
+    "task": {
+      "_target_": "tasks.finetune_task.FinetuneTask"
+    },
+    "scheduler": {
+      "_target_": "schedulers.cosine.CosineLRSchedulerWrapper",
+      "trainer": {
+        "num_nodes": 1,
+        "devices": 1,
+        "strategy": "auto",
+        "max_epochs": 30,
+        "max_steps": 500000,
+        "benchmark": true,
+        "log_every_n_steps": 50,
+        "check_val_every_n_epoch": 1,
+        "val_check_interval": null,
+        "num_sanity_val_steps": 0,
+        "accelerator": "gpu",
+        "accumulate_grad_batches": 4,
+        "precision": "32-true"
+      },
+      "warmup_epochs": 10,
+      "min_lr": 2.5e-06,
+      "warmup_lr_init": 2.5e-07,
+      "t_in_epochs": false
+    },
+    "model": {
+      "_target_": "models.FEMBA.FEMBA",
+      "seq_length": 1280,
+      "num_channels": 22,
+      "exp": 4,
+      "num_classes": 2,
+      "num_blocks": 2,
+      "embed_dim": 35,
+      "classification_type": "bc"
+    },
+    "criterion": {
+      "_target_": "torch.nn.CrossEntropyLoss"
+    },
+    "final_validate": true,
+    "final_test": true,
+    "finetune_pretrained": true,
+    "layerwise_lr_decay": 0.75,
+    "scheduler_type": "cosine",
+    "pretrained_checkpoint_path": null,
+    "finetuning": {
+      "freeze_layers": true
+    }
+  },
+  "adaptations": [
+    "Tiny/TUAR identity and existing file paths",
+    "single GPU; accumulation preserves nominal upstream global batch 1024",
+    "workers=2; FP32 explicit; no tensorboard directories",
+    "bare checkpoint keys prefixed model.; tensor values unchanged",
+    "save final and validation-best models separately in existing directory"
+  ],
+  "torch": "2.7.1+cu128",
+  "gpu": "NVIDIA GeForce RTX 5060 Ti"
+}

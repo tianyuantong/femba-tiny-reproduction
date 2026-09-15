@@ -1,0 +1,32 @@
+__pycache__/
+*.py[cod]
+.venv/
+venv/
+.pytest_cache/
+.DS_Store
+
+# Local datasets, weights and per-sample outputs
+data/
+raw/
+logs/
+outputs/
+checkpoints/
+*.edf
+*.EDF
+*.h5
+*.H5
+*.hdf5
+*.HDF5
+*.pkl
+*.pt
+*.pth
+*.ckpt
+*.safetensors
+predictions*
+calibration*.csv
+upstream2025-data.json
+
+# Local credentials
+.env
+.env.*
+!.env.example
