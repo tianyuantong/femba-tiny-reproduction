@@ -9,7 +9,7 @@ from omegaconf import OmegaConf
 import torch
 from sklearn.metrics import accuracy_score, average_precision_score, balanced_accuracy_score, roc_auc_score
 
-from femba_upstream_2025_train import ROOT, DATA, REF, upstream_module
+from femba_upstream_2025_train import ROOT, REF, upstream_module
 
 
 def digest(path):
@@ -24,9 +24,15 @@ def main():
     results = ROOT / "results"
     final = json.loads((results / "upstream2025-training-results.json").read_text())
     run = json.loads((results / "upstream2025-run.json").read_text())
-    data = json.loads((results / "upstream2025-data.json").read_text())
+    data_manifest = Path(run.get("data_manifest_path", results / "upstream2025-data.json"))
+    data = json.loads(data_manifest.read_text())
+    if "data_manifest_sha256" in run:
+        assert digest(data_manifest) == run["data_manifest_sha256"], "Data manifest changed"
     assert data["status"] == "complete" and run["upstream_commit"] == REF
     torch.set_num_threads(2)
+    precision = run.get("precision", {})
+    torch.backends.cuda.matmul.allow_tf32 = precision.get("cuda_matmul_allow_tf32", False)
+    torch.backends.cudnn.allow_tf32 = precision.get("cudnn_allow_tf32", True)
     upstream_module("models.FEMBA", "models/FEMBA.py")
     upstream_module("util.train_utils", "util/train_utils.py")
     upstream_module("datasets.hdf5_dataset", "datasets/hdf5_dataset.py")
@@ -38,7 +44,7 @@ def main():
     dm.setup("test")
     expected = data["outputs"]["test"]["windows"]
     audit = {"upstream_commit": REF, "test_windows": expected,
-             "test_sha256": digest(DATA / "upstream2025_test.h5"), "checkpoints": {}}
+             "test_sha256": digest(cfg.data_module.test.hdf5_file), "checkpoints": {}}
     subjects = {split: {Path(row["source"]).name.split("_")[0]
                        for row in data["records"] if row["split"] == split}
                 for split in ("train", "val", "test")}
