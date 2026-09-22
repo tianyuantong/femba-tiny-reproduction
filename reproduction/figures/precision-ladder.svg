@@ -1,0 +1,91 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 760 330" width="760" height="330" role="img" aria-label="AUROC by precision variant: weight-only quantization holds, any 8-bit activation quantization collapses to chance">
+<style>
+  .bg{fill:#fbfcfc}
+  .card{fill:none;stroke:#d5dcdb}
+  .ttl{font:600 15px system-ui,-apple-system,"Segoe UI",sans-serif;fill:#16211f}
+  .sub{font:12px system-ui,-apple-system,"Segoe UI",sans-serif;fill:#62716f}
+  .tick{font:11px ui-monospace,"SF Mono",Menlo,monospace;fill:#8a9795}
+  .blab{font:11px system-ui,-apple-system,sans-serif;fill:#26332f}
+  .bval{font:600 11px ui-monospace,"SF Mono",Menlo,monospace;fill:#16211f}
+  .grp{font:600 11.5px system-ui,-apple-system,sans-serif;fill:#62716f}
+  .grid{stroke:#e5eae9;stroke-width:1}
+  .axis{stroke:#c3cccb;stroke-width:1}
+  .ok{fill:#2e7d5b}.warn{fill:#a8730a}.bad{fill:#a8321c}
+  .base{stroke:#16211f;stroke-width:1.2;stroke-dasharray:5 4;opacity:.55}
+  .chance{stroke:#a8321c;stroke-width:1.2;stroke-dasharray:5 4;opacity:.75}
+  .anno{font:11px system-ui,-apple-system,sans-serif;fill:#8a9795}
+  .annor{font:600 11px system-ui,-apple-system,sans-serif;fill:#a8321c}
+  @media (prefers-color-scheme:dark){
+    .bg{fill:#111a19}.card{stroke:#2a3635}
+    .ttl{fill:#e6ecea}.sub{fill:#93a2a0}.tick{fill:#7d8b89}
+    .blab{fill:#d3dcda}.bval{fill:#e6ecea}.grp{fill:#93a2a0}
+    .grid{stroke:#212c2b}.axis{stroke:#394746}
+    .ok{fill:#5aa37c}.warn{fill:#cf9a2e}.bad{fill:#d4604a}
+    .base{stroke:#e6ecea}.chance{stroke:#d4604a}
+    .anno{fill:#7d8b89}.annor{fill:#d4604a}
+  }
+</style>
+<rect class="bg" x="0" y="0" width="760" height="330" rx="6"/>
+<rect class="card" x="0.5" y="0.5" width="759" height="329" rx="6"/>
+
+<text class="ttl" x="24" y="30">精度阶梯：权重量化无损，激活量化一步到底</text>
+<text class="sub" x="24" y="49">全部从同一个 FP32 母模型加载 · AUROC · FP32 QDQ 模拟 · † = 仅量化 22 个 Linear 输入边界</text>
+
+<!-- grid -->
+<line class="grid" x1="100" y1="67.6" x2="716" y2="67.6"/>
+<line class="grid" x1="100" y1="110.8" x2="716" y2="110.8"/>
+<line class="grid" x1="100" y1="154.0" x2="716" y2="154.0"/>
+<line class="grid" x1="100" y1="197.2" x2="716" y2="197.2"/>
+<text class="tick" x="92" y="71.6" text-anchor="end">0.90</text>
+<text class="tick" x="92" y="114.8" text-anchor="end">0.80</text>
+<text class="tick" x="92" y="158.0" text-anchor="end">0.70</text>
+<text class="tick" x="92" y="201.2" text-anchor="end">0.60</text>
+<text class="annor" x="92" y="244.4" text-anchor="end">0.50 随机</text>
+
+<!-- reference lines -->
+<line class="base" x1="100" y1="68.1" x2="716" y2="68.1"/>
+<text class="anno" x="716" y="64" text-anchor="end">FP32 母模型 0.8988</text>
+<line class="chance" x1="100" y1="240.4" x2="716" y2="240.4"/>
+
+<!-- group A: weight-only -->
+<rect class="ok"   x="120" y="68.1" width="48" height="193.9"/>
+<rect class="ok"   x="180" y="67.6" width="48" height="194.4"/>
+<rect class="ok"   x="240" y="67.5" width="48" height="194.5"/>
+<rect class="warn" x="300" y="91.4" width="48" height="170.6"/>
+<rect class="warn" x="360" y="101.3" width="48" height="160.7"/>
+<!-- group B: 8-bit activations -->
+<rect class="bad"  x="464" y="240.4" width="48" height="21.6"/>
+<rect class="bad"  x="524" y="240.4" width="48" height="21.6"/>
+<rect class="bad"  x="584" y="228.8" width="48" height="33.2"/>
+<rect class="bad"  x="644" y="220.2" width="48" height="41.8"/>
+
+<!-- values -->
+<text class="bval" x="144" y="62"  text-anchor="middle">.8988</text>
+<text class="bval" x="204" y="62"  text-anchor="middle">.8999</text>
+<text class="bval" x="264" y="62"  text-anchor="middle">.9001</text>
+<text class="bval" x="324" y="85"  text-anchor="middle">.8449</text>
+<text class="bval" x="384" y="95"  text-anchor="middle">.8219</text>
+<text class="bval" x="488" y="234" text-anchor="middle">.5000</text>
+<text class="bval" x="548" y="234" text-anchor="middle">.5000</text>
+<text class="bval" x="608" y="222" text-anchor="middle">.5268</text>
+<text class="bval" x="668" y="214" text-anchor="middle">.5468</text>
+
+<line class="axis" x1="100" y1="262" x2="716" y2="262"/>
+
+<!-- bar labels -->
+<text class="blab" x="144" y="278" text-anchor="middle">FP32</text>
+<text class="blab" x="204" y="278" text-anchor="middle">W8A32</text>
+<text class="blab" x="264" y="278" text-anchor="middle">Rot-W8A32</text>
+<text class="blab" x="324" y="278" text-anchor="middle">W4A32</text>
+<text class="blab" x="384" y="278" text-anchor="middle">Rot-W4A32</text>
+<text class="blab" x="488" y="278" text-anchor="middle">W8A8</text>
+<text class="blab" x="548" y="278" text-anchor="middle">W4A8</text>
+<text class="blab" x="608" y="278" text-anchor="middle">W8A8†</text>
+<text class="blab" x="668" y="278" text-anchor="middle">W4A8†</text>
+
+<!-- group captions -->
+<text class="grp" x="264" y="297" text-anchor="middle">激活保持 FP32 — 8 位权重无损，4 位掉一档</text>
+<text class="grp" x="578" y="297" text-anchor="middle">激活 8 位 — 四种配置全部预测同一类</text>
+
+<text class="sub" x="24" y="318">旋转把五处输出投影的输入峰值压小 4.3–11.1 倍，A8 仍未恢复；它给出的是 QAT 阶段的输入，不是本阶段要修的东西。</text>
+</svg>

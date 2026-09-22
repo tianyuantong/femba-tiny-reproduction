@@ -1,0 +1,72 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 760 268" width="760" height="268" role="img" aria-label="FP32 AUROC of three reproduction trajectories against the paper's 0.937 plus or minus 0.008 band">
+<style>
+  .bg{fill:#fbfcfc}
+  .card{fill:none;stroke:#d5dcdb}
+  .ttl{font:600 15px system-ui,-apple-system,"Segoe UI",sans-serif;fill:#16211f}
+  .sub{font:12px system-ui,-apple-system,"Segoe UI",sans-serif;fill:#62716f}
+  .lab{font:12.5px system-ui,-apple-system,"Segoe UI",sans-serif;fill:#26332f}
+  .rol{font:11px system-ui,-apple-system,"Segoe UI",sans-serif;fill:#7d8b89}
+  .val{font:600 12.5px ui-monospace,"SF Mono",Menlo,monospace;fill:#16211f}
+  .tick{font:11px ui-monospace,"SF Mono",Menlo,monospace;fill:#8a9795}
+  .grid{stroke:#e5eae9;stroke-width:1}
+  .axis{stroke:#c3cccb;stroke-width:1}
+  .band{fill:#0d6e6b;opacity:.11}
+  .bandln{stroke:#0d6e6b;stroke-width:1.5}
+  .bandtx{font:600 11.5px system-ui,-apple-system,sans-serif;fill:#0b5f5c}
+  .dot{fill:#16211f}
+  .dot2{fill:#8a9795}
+  .conn{stroke:#c3cccb;stroke-width:1;stroke-dasharray:2 3}
+  @media (prefers-color-scheme:dark){
+    .bg{fill:#111a19}.card{stroke:#2a3635}
+    .ttl{fill:#e6ecea}.sub{fill:#93a2a0}.lab{fill:#d3dcda}.rol{fill:#7d8b89}
+    .val{fill:#e6ecea}.tick{fill:#7d8b89}
+    .grid{stroke:#212c2b}.axis{stroke:#394746}
+    .band{fill:#4fbab4;opacity:.17}.bandln{stroke:#4fbab4}.bandtx{fill:#63c8c2}
+    .dot{fill:#e6ecea}.dot2{fill:#7d8b89}.conn{stroke:#394746}
+  }
+</style>
+<rect class="bg" x="0" y="0" width="760" height="268" rx="6"/>
+<rect class="card" x="0.5" y="0.5" width="759" height="267" rx="6"/>
+
+<text class="ttl" x="24" y="30">FP32 复现 vs 2025 论文 Table IV</text>
+<text class="sub" x="24" y="49">TUAR 二分类 · AUROC · seed 42 · 7,090 个测试窗口</text>
+
+<!-- paper band -->
+<rect class="band" x="535" y="66" width="125.7" height="118"/>
+<line class="bandln" x1="597.9" y1="66" x2="597.9" y2="184"/>
+<text class="bandtx" x="535" y="60">论文 0.937 ± 0.008</text>
+
+<!-- grid + ticks -->
+<line class="grid" x1="307.1" y1="66" x2="307.1" y2="184"/>
+<line class="grid" x1="464.3" y1="66" x2="464.3" y2="184"/>
+<line class="grid" x1="621.4" y1="66" x2="621.4" y2="184"/>
+<line class="axis" x1="150" y1="184" x2="700" y2="184"/>
+<text class="tick" x="150" y="201" text-anchor="middle">0.880</text>
+<text class="tick" x="307.1" y="201" text-anchor="middle">0.900</text>
+<text class="tick" x="464.3" y="201" text-anchor="middle">0.920</text>
+<text class="tick" x="621.4" y="201" text-anchor="middle">0.940</text>
+
+<!-- row 1 -->
+<line class="conn" x1="150" y1="84" x2="494.8" y2="84"/>
+<circle class="dot" cx="494.8" cy="84" r="5.5"/>
+<text class="lab" x="24" y="81">公开代码配方</text>
+<text class="rol" x="24" y="95">18 类 ≥30% · lr 5e-4 · 复现轨迹</text>
+<text class="val" x="508" y="88">0.923889</text>
+
+<!-- row 2 -->
+<line class="conn" x1="150" y1="125" x2="409.6" y2="125"/>
+<circle class="dot2" cx="409.6" cy="125" r="5"/>
+<text class="lab" x="24" y="122">论文标签对照</text>
+<text class="rol" x="24" y="136">13 类任一 · lr 5e-4 · 标签变更</text>
+<text class="val" x="423" y="129">0.913040</text>
+
+<!-- row 3 -->
+<line class="conn" x1="150" y1="166" x2="297.9" y2="166"/>
+<circle class="dot2" cx="297.9" cy="166" r="5"/>
+<text class="lab" x="24" y="163">精度母模型</text>
+<text class="rol" x="24" y="177">13 类任一 · lr 1e-4 · 量化起点</text>
+<text class="val" x="311" y="170">0.898821</text>
+
+<text class="sub" x="24" y="228">最忠实的一条（公开代码配方）距论文中心 0.013，约 1.6 个标准差。</text>
+<text class="sub" x="24" y="247">下面两条各自改了一项设置，是有意为之的对照，不是复现退步。</text>
+</svg>
