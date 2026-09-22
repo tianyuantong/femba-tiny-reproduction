@@ -38,6 +38,7 @@ LINEAR_INPUT_SITES = sorted([f"{name}.{site}" for name in MAMBA_NAMES
                              for site in ("in_proj_input", "x_proj_input", "dt_proj_input", "out_proj_input")]
                             + ["classifier_fc1_input", "classifier_fc3_input"])
 ACTIVATION_SCOPES = {"all57": tuple(ACTIVATION_SITES), "linear_inputs": tuple(LINEAR_INPUT_SITES)}
+ROTATION_PROTOCOLS = ("elementwise-v1", "vector-rms-2026-09-22")
 UPSTREAM_MODULES = (("models.FEMBA", "models/FEMBA.py"), ("util.train_utils", "util/train_utils.py"),
                     ("datasets.hdf5_dataset", "datasets/hdf5_dataset.py"),
                     ("data_module.finetune_data_module", "data_module/finetune_data_module.py"),
@@ -520,11 +521,23 @@ def _gate_rotations(context: SimpleNamespace, signals: Any) -> dict:
     for mode in ("identity", "outproj_h128"):
         candidate = _build_variant(context, Variant("gate-rotation"), rotation_mode=mode)
         try:
-            reports[mode] = compare_parity(reference, _capture(candidate, signals))
+            protocol = context.rotation_protocol if mode == "outproj_h128" else "elementwise-v1"
+            reports[mode] = compare_parity(reference, _capture(candidate, signals), protocol=protocol)
             reports[mode]["rotation_spec"] = candidate.plan.to_dict()
         finally:
             _close(candidate)
     return reports
+
+
+def _rotation_structure(context: SimpleNamespace) -> dict:
+    from biofoundation.femba_rotation import audit_rotation_negative_controls, verify_fixed_basis
+
+    built = _build_variant(context, Variant("rotation-structure"), rotation_mode="outproj_h128")
+    try:
+        return {"basis": verify_fixed_basis(built.plan),
+                "negative_controls": audit_rotation_negative_controls(built.plan)}
+    finally:
+        _close(built)
 
 
 def _report_passed(report: dict) -> bool:
@@ -540,7 +553,16 @@ def _run_gates(context: SimpleNamespace, cohort: list[int], directory: Path) -> 
     scopes = sorted({variant.activation_scope for variant in context.variants})
     evidence = {"sample_indices": gate_indices, "splits": {}, "base_passed": True,
                 "scope_weight_gate_passed": {scope: {"None": True, "8": True, "4": True} for scope in scopes},
-                "rotation_passed": True}
+                "rotation_parity_protocol": context.rotation_protocol, "rotation_passed": True}
+    if context.rotation_protocol != "elementwise-v1":
+        try:
+            structure = _rotation_structure(context)
+            passed = structure["basis"]["allclose"] and structure["negative_controls"]["passed"]
+        except (RuntimeError, ValueError, FloatingPointError, TypeError, KeyError) as error:
+            structure, passed = {"passed": False, "failure": str(error)}, False
+        evidence["rotation_structure"] = structure
+        evidence["rotation_structure_passed"] = passed is True
+        evidence["rotation_passed"] = passed is True
     for split, indices in gate_indices.items():
         signals, _ = next(iter(_loader(context, split, indices)))
         scoped_rows = {}
@@ -614,12 +636,17 @@ def _calibrate(context: SimpleNamespace, variant: Variant, cohort: list[int], ou
 
 
 def gate_failure_reason(variant: Variant, parity: dict) -> str | None:
+    if variant.rotation and parity.get("rotation_parity_protocol", "elementwise-v1") not in ROTATION_PROTOCOLS:
+        return "unsupported_rotation_parity_protocol"
     if variant.activation_scale or variant.rotation:
         gates = parity.get("scope_weight_gate_passed", {}).get(variant.activation_scope, {})
         if variant.activation_scope == "all57" and not gates:
             gates = parity.get("weight_gate_passed", {})
         if gates.get("None") is not True or gates.get(str(variant.weight_bits)) is not True:
             return "explicit_qdq_off_gate_failed"
+    if (variant.rotation and parity.get("rotation_parity_protocol", "elementwise-v1") != "elementwise-v1"
+            and parity.get("rotation_structure_passed") is not True):
+        return "rotation_structure_gate_failed"
     if variant.rotation and parity.get("rotation_passed") is not True:
         return "rotation_qdq_off_gate_failed"
     return None
@@ -902,6 +929,7 @@ def _manifest(context: SimpleNamespace, output: Path, cohort: list[int]) -> dict
                 "scope": scopes["all57"], "scope_sha256": context.scope_hash,
                 "scopes": scopes, "scope_sha256_by_name": context.scope_hashes,
                 "requested_variants": [asdict(variant) for variant in context.variants],
+                "rotation_parity_protocol": context.rotation_protocol,
                 "cohort_sha256": context.cohort_hash, "batch_size": int(context.cfg.batch_size),
                 "torch": torch.__version__, "gpu": torch.cuda.get_device_name(),
                 "tf32_matmul": torch.backends.cuda.matmul.allow_tf32, "tf32_cudnn": torch.backends.cudnn.allow_tf32,
@@ -936,8 +964,12 @@ def run(args: argparse.Namespace) -> None:
     if args.output_root.exists():
         raise FileExistsError("Output root already exists; use a new directory")
     variants = selected_variants(getattr(args, "variants", None))
+    rotation_protocol = getattr(args, "rotation_parity", "elementwise-v1")
+    if rotation_protocol not in ROTATION_PROTOCOLS:
+        raise ValueError("Unknown rotation parity protocol")
     context = _initialize_runtime(args)
     context.variants = variants
+    context.rotation_protocol = rotation_protocol
     _load_data(context)
     args.output_root.mkdir(parents=True, exist_ok=False)
     cohort = balanced_indices(context.labels["train"].tolist())
@@ -968,6 +1000,8 @@ def main() -> None:
     parser.add_argument("--parent-root", type=Path, required=True)
     parser.add_argument("--output-root", type=Path, required=True)
     parser.add_argument("--checkpoint-sha256")
+    parser.add_argument("--rotation-parity", choices=ROTATION_PROTOCOLS, default="elementwise-v1",
+                        help="Explicit opt-in to the dated rotation acceptance amendment")
     parser.add_argument("--variants", nargs="+", choices=[variant.name for variant in VARIANTS],
                         help="Explicit subset in evaluation order; fp32 must be first")
     args = parser.parse_args()

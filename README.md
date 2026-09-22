@@ -27,14 +27,18 @@
 | W4A8，57 处／浮点尺度 | 0.500000 | 0.577433 | 全部预测为正类 |
 | W8A8，57 处／二次幂尺度 | 0.500000 | 0.577433 | 全部预测为正类 |
 | FP16：直接转换／状态保留／AMP | — | — | 首批验证出现 NaN |
-| Rot-W8A32／W4A32／W8A8／W4A8 | — | — | 交付阻断：H128 逐层检查未通过 |
+| Rot-W8A32 | 0.900130 | 0.939189 | 在预设精度容差内 |
+| Rot-W4A32 | 0.821896 | 0.890039 | 低于未旋转 W4A32 |
+| Rot-W8A8，57 处 | 0.500000 | 0.577433 | 全部预测为正类 |
+| Rot-W4A8，57 处 | 0.500000 | 0.577433 | 全部预测为正类 |
 | W8A8，22 个 Linear 输入 | 0.526839 | 0.604017 | 全部预测为正类 |
 | W4A8，22 个 Linear 输入 | 0.546794 | 0.619750 | 全部预测为正类 |
 
-旋转的 FP64 隔离诊断 10/10 组通过；正式 FP32 逐层门槛仍未通过，见[数值诊断](reproduction/rotation_numeric_results.json)。
+校准极值抬高静态 max 量化步长，激活大面积归零。Hadamard 通过 [2026-09-22 修订协议](reproduction/PROTOCOL.md#2026-09-22旋转数值检查修订)检查，将五处输出投影输入峰值缩小 4.3–11.1 倍，但 A8 分类仍未恢复。这组 PTQ 结果用于后续 QAT 设计。
 
 [完整结果与关键对照](reproduction/RESULTS.md) · [复现步骤与实验口径](reproduction/PROTOCOL.md) ·
-[精度结果 JSON](reproduction/precision_results.json) · [Linear 边界对照](reproduction/linear_scope_results.json)
+[精度结果 JSON](reproduction/precision_results.json) · [Linear 边界对照](reproduction/linear_scope_results.json) ·
+[旋转结果](reproduction/rotation_results.json)
 
 ## 来源
 

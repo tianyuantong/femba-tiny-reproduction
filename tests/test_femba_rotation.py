@@ -9,12 +9,18 @@ from torch import nn
 from torch.nn import functional as F
 
 from biofoundation.femba_rotation import (
+    ELEMENTWISE_PROTOCOL,
     EXPECTED_DIMENSIONS,
     TARGETS,
+    VECTOR_RMS_PROTOCOL,
+    audit_rotation_negative_controls,
     compare_parity,
     prepare_rotations,
+    require_fixed_basis,
     require_parity,
     tensor_parity,
+    vector_rms_parity,
+    verify_fixed_basis,
 )
 
 
@@ -225,6 +231,130 @@ class ParityGateContracts(unittest.TestCase):
         json.dumps(report, allow_nan=False)
         with self.assertRaises(RuntimeError):
             require_parity(report)
+
+
+class VectorRmsContracts(unittest.TestCase):
+    def setUp(self):
+        self.reference = {name: torch.zeros((2, 3, 2), dtype=torch.float32) for name in TARGETS}
+        self.reference["logits"] = torch.zeros((2, 2), dtype=torch.float32)
+
+    def test_explicit_norm_protocol_retains_legacy_failure(self):
+        self.reference[TARGETS[0]][0, 0, 0] = 100
+        candidate = {name: value.clone() for name, value in self.reference.items()}
+        candidate[TARGETS[0]][0, 0, 1] = 5e-5
+        legacy = compare_parity(self.reference, candidate)
+        self.assertEqual(legacy, compare_parity(self.reference, candidate, protocol=ELEMENTWISE_PROTOCOL))
+        self.assertFalse(legacy["allclose"])
+        report = compare_parity(self.reference, candidate, protocol=VECTOR_RMS_PROTOCOL)
+        self.assertTrue(report["allclose"])
+        self.assertFalse(report["legacy_allclose"])
+        self.assertEqual(report["outputs"], legacy["outputs"])
+        require_parity(report)
+
+    def test_one_bad_vector_cannot_hide_in_a_whole_layer_average(self):
+        reference = self.reference[TARGETS[0]]
+        candidate = reference.clone()
+        candidate[0, 0, 0] = 2.1e-5
+        self.assertLess(float(candidate.square().mean().sqrt()), 1e-5)
+        report = vector_rms_parity(reference, candidate)
+        self.assertEqual(report["vectors"], 6)
+        self.assertEqual(report["failure_count"], 1)
+        self.assertFalse(report["allclose"])
+
+    def test_logits_still_use_the_original_elementwise_gate(self):
+        candidate = {name: value.clone() for name, value in self.reference.items()}
+        candidate["logits"][0, 0] = 2e-5
+        report = compare_parity(self.reference, candidate, protocol=VECTOR_RMS_PROTOCOL)
+        self.assertTrue(all(row["allclose"] for row in report["vector_rms"].values()))
+        with self.assertRaisesRegex(RuntimeError, "logits"):
+            require_parity(report)
+
+    def test_nonfinite_vector_is_rejected_without_nonfinite_json(self):
+        reference = self.reference[TARGETS[0]]
+        candidate = reference.clone()
+        candidate[0, 1, 0] = float("inf")
+        report = vector_rms_parity(reference, candidate)
+        self.assertEqual(report["nonfinite_count"], 1)
+        self.assertEqual(report["failure_count"], 1)
+        json.dumps(report, allow_nan=False)
+
+    def test_unknown_protocol_and_incomplete_norm_reports_are_rejected(self):
+        with self.assertRaisesRegex(ValueError, "protocol"):
+            compare_parity(self.reference, self.reference, protocol="automatic")
+        report = compare_parity(self.reference, self.reference, protocol=VECTOR_RMS_PROTOCOL)
+        del report["vector_rms"][TARGETS[0]]
+        with self.assertRaisesRegex(ValueError, "Incomplete vector"):
+            require_parity(report)
+
+    def test_rms_reduction_does_not_overflow_on_finite_fp32_values(self):
+        reference = torch.full((1, 1, 2), 1e30, dtype=torch.float32)
+        self.assertTrue(vector_rms_parity(reference, reference)["allclose"])
+        report = vector_rms_parity(reference, reference * 2)
+        self.assertEqual(report["nonfinite_count"], 0)
+        self.assertEqual(report["failure_count"], 1)
+
+
+class FixedBasisContracts(unittest.TestCase):
+    @classmethod
+    def setUpClass(cls):
+        cls.model = toy_model()
+        cls.plan = prepare_rotations(cls.model)
+        cls.positive = verify_fixed_basis(cls.plan)
+        cls.negative = audit_rotation_negative_controls(cls.plan)
+
+    def test_complete_basis_covers_real_weight_and_activation_paths(self):
+        require_fixed_basis(self.positive)
+        for name, dimension in zip(TARGETS, EXPECTED_DIMENSIONS):
+            row = self.positive["layers"][name]
+            self.assertTrue(row["metadata_matches"])
+            for path in ("activation", "weight"):
+                self.assertEqual(row[path]["elements"], dimension ** 2)
+                self.assertEqual(row[path]["failure_count"], 0)
+
+    def test_h4_only_controls_fail_exactly_the_changed_tail(self):
+        self.assertTrue(self.negative["all_rejected"])
+        self.assertEqual(len(self.negative["controls"]), 6)
+        for target in TARGETS[:-1]:
+            control = self.negative["controls"]["h4_identity:" + target]
+            self.assertEqual(control["targets"], [target])
+            self.assertTrue(control["rejected"])
+            self.assertEqual(control["failure_count"], 32)
+            with self.assertRaises(RuntimeError):
+                require_fixed_basis(control["gate_report"])
+            for name, row in control["gate_report"]["layers"].items():
+                for path in ("activation", "weight"):
+                    self.assertEqual(row[path]["failure_count"], 16 if name == target else 0)
+
+    def test_transpose_and_both_sides_wrong_order_are_actually_rejected(self):
+        transpose = self.negative["controls"]["activation_transpose"]
+        swapped = self.negative["controls"]["swapped_pd_both"]
+        for name in TARGETS:
+            self.assertGreater(transpose["gate_report"]["layers"][name]["activation"]["failure_count"], 0)
+            self.assertEqual(transpose["gate_report"]["layers"][name]["weight"]["failure_count"], 0)
+            for path in ("activation", "weight"):
+                self.assertGreater(swapped["gate_report"]["layers"][name][path]["failure_count"], 0)
+
+    def test_basis_verifier_detects_a_bypassed_weight_mutation_loop(self):
+        plan = prepare_rotations(self.model)
+        plan.transform_out_proj_weights_ = lambda model: None
+        report = verify_fixed_basis(plan)
+        self.assertFalse(report["allclose"])
+        for row in report["layers"].values():
+            self.assertEqual(row["activation"]["failure_count"], 0)
+            self.assertGreater(row["weight"]["failure_count"], 0)
+
+    def test_controls_leave_the_real_model_and_plan_unchanged(self):
+        again = prepare_rotations(self.model)
+        self.assertEqual(self.plan.to_dict(), again.to_dict())
+        for name in TARGETS[:-1]:
+            self.assertTrue(torch.equal(self.plan.transforms[name].tail_block,
+                                        again.transforms[name].tail_block))
+        state = torch.get_rng_state().clone()
+        before = {name: value.clone() for name, value in self.model.state_dict().items()}
+        require_fixed_basis(verify_fixed_basis(self.plan))
+        self.assertTrue(torch.equal(state, torch.get_rng_state()))
+        for name, value in self.model.state_dict().items():
+            self.assertTrue(torch.equal(before[name], value))
 
 
 if __name__ == "__main__":

@@ -92,7 +92,8 @@ export SELECTED_PARENT_ROOT=/path/to/selected-audited-run
 export SELECTED_CHECKPOINT_SHA256=233b15df818d93b964a3d5c305a184de2ef1e62c2d50119a4349fb13b30c8890
 python scripts/femba_precision_suite.py \
   --parent-root "$SELECTED_PARENT_ROOT" --output-root "$PRECISION_ROOT" \
-  --checkpoint-sha256 "$SELECTED_CHECKPOINT_SHA256"
+  --checkpoint-sha256 "$SELECTED_CHECKPOINT_SHA256" \
+  --rotation-parity vector-rms-2026-09-22
 ```
 
 以上哈希对应已报告的母模型；重新训练时使用新审计输出的实际哈希。
@@ -111,6 +112,20 @@ python scripts/femba_precision_suite.py \
 首行重复 FP32，核对其完整 logits 和指标与冻结母模型一致，再比较两行 A8。
 两种激活边界分别采集未量化 FP32 统计，均使用同一校准集合；各组内部 W8／W4 共用统计。
 
+单独运行修订协议下的四个旋转版本，使用新的 `ROTATION_ROOT`：
+
+```bash
+export ROTATION_ROOT=/path/to/new-rotation-rms-run
+python scripts/femba_precision_suite.py \
+  --parent-root "$SELECTED_PARENT_ROOT" --output-root "$ROTATION_ROOT" \
+  --checkpoint-sha256 "$SELECTED_CHECKPOINT_SHA256" \
+  --rotation-parity vector-rms-2026-09-22 \
+  --variants fp32 rot-w8a32 rot-w4a32 rot-w8a8-float rot-w4a8-float
+```
+
+FP32 同样作为重复锚点。Rot-A8 沿用原 57 处量化位置，与现有 57 处未旋转组比较；
+校准集合和尺度规则保持不变。省略 `--rotation-parity` 时保留原逐元素协议。
+
 - **权重：** 28 个 Linear／Conv 张量，逐输出通道对称量化。W8 范围 [-127,127]，
   W4 范围 [-7,7]，round→clamp→dequantize，偏置保留浮点。
 - **57 处激活组：** 57 个固定位置，A8 逐张量对称量化。校准取 seed 42 固定的 2,048 个训练窗口，
@@ -123,18 +138,39 @@ python scripts/femba_precision_suite.py \
 - **FP16：** direct 直接转换；state-safe 将 `A_log`、`D`、`dt_proj.bias` 保留 FP32；
   AMP 使用 FP16 autocast。检测到非有限输出时保存失败位置并停止该版本。
 - **旋转：** 五个 Mamba 输出投影采用 seed 42 固定的置换／符号／H128 变换，先变换再量化。
-  校准应使用单独的旋转 FP32 统计；本次 H128 检查失败，旋转仍为交付阻断项。
-  固定 h/W 的 FP64 隔离对照用于检查变换公式，原生与旋转的 FP32 输出另按原容差比较；
-  FP64 诊断不参与正式推理、校准或评分，详见[数值诊断](rotation_numeric_results.json)。
+  使用单独的旋转 FP32 校准统计，Rot-A8 保留 57 处激活边界。数值门槛按下述修订协议验收。
+  固定 h/W 的 FP64 隔离对照仅用于检查变换公式；正式推理、校准和评分保持 FP32，
+  详见[数值诊断](rotation_numeric_results.json)。
 
 QDQ 运算在 FP32 中模拟，selective scan、状态参数、归一化和非线性保留浮点。
 W4A8 表示 4 位权重、8 位激活；本轮测量精度变化。
 
 ## 核验
 
-32 个训练和 32 个验证探针用于检查原生／显式图及旋转一致性：
-五个 Mamba 输出投影和 logits 逐元素满足 `rtol=1e-4, atol=1e-5`。
-A8 同时依赖未量化权重和对应 W8／W4 路径的检查；identity 通过后仍须 H128 通过。
+32 个训练和 32 个验证探针用于检查原生／显式图：五个 Mamba 输出投影和 logits
+逐元素满足 `rtol=1e-4, atol=1e-5`。A8 同时依赖未量化权重和对应 W8／W4 路径的检查。
+
+### 2026-09-22：旋转数值检查修订
+
+固定 h/W 的诊断中，10 组 FP64 旋转结果均与参考吻合，而原生 FP32 自身相对
+FP64 参考也有逐元素超限。大数抵消使接近零的单个分量对运算顺序敏感，故将旋转
+中间张量的检查改为逐特征向量的误差范数：对五个输出投影的每个 `[B,T]` 位置，要求
+
+```text
+RMS(rotated - reference) <= 1e-5 + 1e-4 * RMS(reference)
+RMS(v) = sqrt(mean(v ** 2))  # mean over the feature dimension only
+```
+
+每个特征向量都须满足门槛；最终 logits 仍使用原 `rtol=1e-4, atol=1e-5` 逐元素检查。
+旋转基、seed 和探针样本固定，identity、H128 正对照必须通过；完整单位基结构检查
+须与固定的置换／符号／分块 Hadamard 一致。H4-only 负对照分别覆盖四个 1540 维目标：
+每次只把一个目标末尾的 H4 在激活和权重两侧同时换成 I4，保持置换、符号和 12 个 H128 块。
+即使输出仍线性等价，也必须被结构检查拒绝。激活单侧转置、双侧交换置换／符号顺序
+负对照同样必须失败。旧逐元素检查和 FP64 诊断保留在结果中。
+
+通过数值检查后，四个 Rot 版本须完成全部验证／测试窗口、有限性检查、保存重载和
+指标重放，精度提高或退化都如实记录。旋转用于检验激活幅值重分布对静态 PTQ 的影响，
+为后续 QAT 提供输入；本轮不进行 QAT 训练。
 
 完成评估的版本验证模型与尺度保存／重载后探针 logits 逐位一致，独立按原 batch
 重放指标，并核对完整预测顺序、标签、输入、母模型和校准集合哈希。

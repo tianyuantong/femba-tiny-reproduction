@@ -127,6 +127,34 @@ class PrecisionSuiteTests(unittest.TestCase):
         parity['scope_weight_gate_passed']['linear_inputs']['None'] = False
         self.assertIsNotNone(suite.gate_failure_reason(variant, parity))
 
+    def test_norm_rotation_requires_structure_and_known_protocol(self):
+        variant = suite.Variant('rot-w8a32', 8, rotation=True)
+        parity = {'weight_gate_passed': {'None': True, '8': True}, 'rotation_passed': True}
+        self.assertIsNone(suite.gate_failure_reason(variant, parity))
+        parity['rotation_parity_protocol'] = 'vector-rms-2026-09-22'
+        self.assertEqual(suite.gate_failure_reason(variant, parity), 'rotation_structure_gate_failed')
+        parity['rotation_structure_passed'] = True
+        self.assertIsNone(suite.gate_failure_reason(variant, parity))
+        parity['rotation_parity_protocol'] = 'unknown'
+        self.assertEqual(suite.gate_failure_reason(variant, parity), 'unsupported_rotation_parity_protocol')
+
+    def test_failed_basis_or_negative_control_blocks_otherwise_passing_rotation(self):
+        context = SimpleNamespace(variants=(suite.Variant('fp32'),),
+            rotation_protocol='vector-rms-2026-09-22',
+            labels={'val': SimpleNamespace(tolist=lambda: [0, 1] * 16)})
+        for basis, negative in ((False, True), (True, False)):
+            with TemporaryDirectory() as directory, \
+                 patch.object(suite, '_loader', return_value=[(None, None)]), \
+                 patch.object(suite, '_gate_pair', return_value={'native': {'allclose': True}}), \
+                 patch.object(suite, '_gate_rotations', return_value={'identity': {'allclose': True},
+                                                                   'outproj_h128': {'allclose': True}}), \
+                 patch.object(suite, '_rotation_structure', return_value={
+                     'basis': {'allclose': basis}, 'negative_controls': {'passed': negative}}):
+                report = suite._run_gates(context, list(range(32)), Path(directory))
+            self.assertFalse(report['rotation_structure_passed'])
+            self.assertFalse(report['rotation_passed'])
+            self.assertTrue(report['base_passed'])
+
     def test_calibration_observes_once_per_rotation_group_and_shares_statistics(self):
         statistics = {'scale_float': {'node': 0.03}, 'scale_pot': {'node': 0.03125},
                       'max_abs': {'node': 3.81}, 'elements': {'node': 2048}}
