@@ -1,4 +1,4 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 760 330" width="760" height="330" role="img" aria-label="AUROC by precision variant: weight-only quantization holds, any 8-bit activation quantization collapses to chance">
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 760 330" width="760" height="330" role="img" aria-label="Test AUROC for FP32, weight-only PTQ and weight-and-activation PTQ configurations">
 <style>
   .bg{fill:#fbfcfc}
   .card{fill:none;stroke:#d5dcdb}
@@ -28,7 +28,7 @@
 <rect class="bg" x="0" y="0" width="760" height="330" rx="6"/>
 <rect class="card" x="0.5" y="0.5" width="759" height="329" rx="6"/>
 
-<text class="ttl" x="24" y="30">精度阶梯：权重量化无损，激活量化一步到底</text>
+<text class="ttl" x="24" y="30">不同量化配置的测试 AUROC</text>
 <text class="sub" x="24" y="49">全部从同一个 FP32 母模型加载 · AUROC · FP32 QDQ 模拟 · † = 仅量化 22 个 Linear 输入边界</text>
 
 <!-- grid -->
@@ -84,8 +84,8 @@
 <text class="blab" x="668" y="278" text-anchor="middle">W4A8†</text>
 
 <!-- group captions -->
-<text class="grp" x="264" y="297" text-anchor="middle">激活保持 FP32 — 8 位权重无损，4 位掉一档</text>
-<text class="grp" x="578" y="297" text-anchor="middle">激活 8 位 — 四种配置全部预测同一类</text>
+<text class="grp" x="264" y="297" text-anchor="middle">仅量化权重（激活保持 FP32）</text>
+<text class="grp" x="578" y="297" text-anchor="middle">权重与激活量化（A8）</text>
 
-<text class="sub" x="24" y="318">旋转把五处输出投影的输入峰值压小 4.3–11.1 倍，A8 仍未恢复；它给出的是 QAT 阶段的输入，不是本阶段要修的东西。</text>
+<text class="sub" x="24" y="318">Rot 表示 H128 旋转。A8 使用静态 max 校准；完整配置与 AP 见结果表。</text>
 </svg>

@@ -67,6 +67,6 @@
 <text class="rol" x="24" y="177">13 类任一 · lr 1e-4 · 量化起点</text>
 <text class="val" x="311" y="170">0.898821</text>
 
-<text class="sub" x="24" y="228">最忠实的一条（公开代码配方）距论文中心 0.013，约 1.6 个标准差。</text>
-<text class="sub" x="24" y="247">下面两条各自改了一项设置，是有意为之的对照，不是复现退步。</text>
+<text class="sub" x="24" y="228">公开代码配方 AUROC 0.923889；论文 Table IV 报告 0.937 ± 0.008。</text>
+<text class="sub" x="24" y="247">量化实验使用按最低验证 loss 选定的 1e-4 检查点。</text>
 </svg>
