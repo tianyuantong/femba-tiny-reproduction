@@ -1,0 +1,98 @@
+{
+  "upstream_commit": "d88596590f3bd3fce573be07646b7d3977ce7bcc",
+  "execution_working_tree": {
+    "base_commit": "4a03dcaf473877ccdef5c652acd2c49cf43435c2",
+    "dirty": true
+  },
+  "publication_base_commit": "64d663a3b0736200c5d83863414057ada67ced1c",
+  "evidence": "Result JSON files preserve the original executed-source hashes. Original source snapshots, logs and predictions remain in the local experiment archive. The results were generated before this publication; published_sha256 identifies the submitted files.",
+  "sources": [
+    {
+      "published_path": "scripts/femba_upstream_2025_train.py",
+      "published_sha256": "2c9d424b6d699888c000cbf6bdf1787b8e4f3ebd0bb2ce85385d13ec6d627e2f",
+      "executed_versions": [
+        {
+          "sha256": "6178760283efa09a9335017f1aa2d73b3f4880e1410b4bc55f0a12a07a29fec3",
+          "changes_for_publication": [
+            "Replace machine-specific fallback directories with repository-relative outputs and checkpoints directories. Explicit FEMBA_RUN_ROOT and FEMBA_WEIGHT retain the executed behavior."
+          ]
+        },
+        {
+          "sha256": "d03fc6f035bb5e68232fe38c2bfa68d50fa1360afe70f5af5fb6e5defbe2e63c",
+          "experiments": [
+            "fp32_control_results.json",
+            "paper_label_results.json",
+            "lr_control_results.json:old_lr5e4"
+          ],
+          "changes_for_publication": [
+            "Add optional --learning-rate with positive finite validation; default remains the upstream 5e-4.",
+            "Record requested, upstream and resolved learning rates.",
+            "Replace machine-specific fallback directories with repository-relative defaults."
+          ]
+        }
+      ]
+    },
+    {
+      "published_path": "scripts/femba_upstream_2025_audit.py",
+      "published_sha256": "9a607b9263a17f48f5260ef02c15eb7d7e724de39da7bea641f9089b08ef1b30",
+      "executed_versions": [
+        {
+          "sha256": "9a607b9263a17f48f5260ef02c15eb7d7e724de39da7bea641f9089b08ef1b30",
+          "changes_for_publication": []
+        }
+      ]
+    },
+    {
+      "published_path": "scripts/femba_paper_labels_prepare.py",
+      "published_sha256": "ad78dd6edffe1b68c1bfe1d3bafdac9dcba1039f856ef7eb8613291c52ffe8dd",
+      "executed_versions": [
+        {
+          "sha256": "ad78dd6edffe1b68c1bfe1d3bafdac9dcba1039f856ef7eb8613291c52ffe8dd",
+          "changes_for_publication": []
+        }
+      ]
+    },
+    {
+      "published_path": "scripts/femba_label_comparison.py",
+      "published_sha256": "dc483a060deb7978051b44372e02aa390a01d0bd77f4173fd1279803035bc279",
+      "executed_versions": [
+        {
+          "sha256": "dc483a060deb7978051b44372e02aa390a01d0bd77f4173fd1279803035bc279",
+          "changes_for_publication": []
+        }
+      ]
+    },
+    {
+      "published_path": "scripts/femba_precision_suite.py",
+      "published_sha256": "92e577434f2ba3611ecff71ab5cd6e69cbad389b20ae97d2485dd4b20bddfef0",
+      "executed_versions": [
+        {
+          "sha256": "92e577434f2ba3611ecff71ab5cd6e69cbad389b20ae97d2485dd4b20bddfef0",
+          "changes_for_publication": []
+        }
+      ]
+    },
+    {
+      "published_path": "biofoundation/femba_rotation.py",
+      "published_sha256": "77f27983c504b29dd74d37e4be19b301f71478419309f2b44d4de3ba0a1523fe",
+      "executed_versions": [
+        {
+          "sha256": "77f27983c504b29dd74d37e4be19b301f71478419309f2b44d4de3ba0a1523fe",
+          "changes_for_publication": [],
+          "experiments": [
+            "rotation_layout_results.json"
+          ]
+        },
+        {
+          "sha256": "2d021bffbead635b9afb858027ab273683a641d261e3459a5b7342914f98c35f",
+          "experiments": [
+            "precision_results.json"
+          ],
+          "changes_for_publication": [
+            "Identity rotation returns the original activation tensor to preserve storage and strides. H128 arithmetic and all nonrotated evaluations are unchanged."
+          ]
+        }
+      ]
+    }
+  ]
+}
