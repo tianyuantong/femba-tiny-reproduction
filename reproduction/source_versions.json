@@ -1,0 +1,168 @@
+{
+  "upstream_commit": "d88596590f3bd3fce573be07646b7d3977ce7bcc",
+  "publication_base_commit": "64d663a3b0736200c5d83863414057ada67ced1c",
+  "evidence": "Result JSON files preserve the original executed-source hashes. Original source snapshots, logs and predictions remain in the local experiment archive. The results were generated before this publication; published_sha256 identifies the submitted files.",
+  "sources": [
+    {
+      "published_path": "scripts/femba_upstream_2025_train.py",
+      "published_sha256": "2c9d424b6d699888c000cbf6bdf1787b8e4f3ebd0bb2ce85385d13ec6d627e2f",
+      "executed_versions": [
+        {
+          "sha256": "6178760283efa09a9335017f1aa2d73b3f4880e1410b4bc55f0a12a07a29fec3",
+          "changes_for_publication": [
+            "Replace machine-specific fallback directories with repository-relative outputs and checkpoints directories. Explicit FEMBA_RUN_ROOT and FEMBA_WEIGHT retain the executed behavior."
+          ]
+        },
+        {
+          "sha256": "d03fc6f035bb5e68232fe38c2bfa68d50fa1360afe70f5af5fb6e5defbe2e63c",
+          "experiments": [
+            "fp32_control_results.json",
+            "paper_label_results.json",
+            "lr_control_results.json:old_lr5e4"
+          ],
+          "changes_for_publication": [
+            "Add optional --learning-rate with positive finite validation; default remains the upstream 5e-4.",
+            "Record requested, upstream and resolved learning rates.",
+            "Replace machine-specific fallback directories with repository-relative defaults."
+          ]
+        }
+      ]
+    },
+    {
+      "published_path": "scripts/femba_upstream_2025_audit.py",
+      "published_sha256": "9a607b9263a17f48f5260ef02c15eb7d7e724de39da7bea641f9089b08ef1b30",
+      "executed_versions": [
+        {
+          "sha256": "9a607b9263a17f48f5260ef02c15eb7d7e724de39da7bea641f9089b08ef1b30",
+          "changes_for_publication": []
+        }
+      ]
+    },
+    {
+      "published_path": "scripts/femba_paper_labels_prepare.py",
+      "published_sha256": "ad78dd6edffe1b68c1bfe1d3bafdac9dcba1039f856ef7eb8613291c52ffe8dd",
+      "executed_versions": [
+        {
+          "sha256": "ad78dd6edffe1b68c1bfe1d3bafdac9dcba1039f856ef7eb8613291c52ffe8dd",
+          "changes_for_publication": []
+        }
+      ]
+    },
+    {
+      "published_path": "scripts/femba_label_comparison.py",
+      "published_sha256": "dc483a060deb7978051b44372e02aa390a01d0bd77f4173fd1279803035bc279",
+      "executed_versions": [
+        {
+          "sha256": "dc483a060deb7978051b44372e02aa390a01d0bd77f4173fd1279803035bc279",
+          "changes_for_publication": []
+        }
+      ]
+    },
+    {
+      "published_path": "scripts/femba_precision_suite.py",
+      "published_sha256": "c0f6789c9b62565931781fbc712247a2faaccfcba30f8112cb2ea6cdec04657d",
+      "executed_versions": [
+        {
+          "sha256": "92e577434f2ba3611ecff71ab5cd6e69cbad389b20ae97d2485dd4b20bddfef0",
+          "changes_for_publication": [
+            "Add the 22 Linear-input activation scope alongside the unchanged 57-boundary numerical path, with separate calibration, parity gates and saved-state scope metadata.",
+            "Add optional --variants; an explicit subset must begin with FP32.",
+            "Add explicit vector-rms-2026-09-22 rotation acceptance, requiring fixed-basis and executed negative controls. Default elementwise acceptance and evaluation arithmetic remain unchanged."
+          ],
+          "experiments": [
+            "precision_results.json"
+          ]
+        },
+        {
+          "sha256": "5221cc8511b963e26090ebd4e815303e56dbf0472097540999d8549557f2383e",
+          "experiments": [
+            "linear_scope_results.json"
+          ],
+          "changes_for_publication": [
+            "Add explicit vector-rms-2026-09-22 rotation acceptance, requiring fixed-basis and executed negative controls. Default elementwise acceptance and evaluation arithmetic remain unchanged."
+          ]
+        },
+        {
+          "sha256": "c0f6789c9b62565931781fbc712247a2faaccfcba30f8112cb2ea6cdec04657d",
+          "experiments": [
+            "rotation_results.json"
+          ],
+          "changes_for_publication": []
+        }
+      ]
+    },
+    {
+      "published_path": "biofoundation/femba_rotation.py",
+      "published_sha256": "529b2fc53820d1578039e4d787972dd87206bfc625c544167cdd617766e28f6b",
+      "executed_versions": [
+        {
+          "sha256": "77f27983c504b29dd74d37e4be19b301f71478419309f2b44d4de3ba0a1523fe",
+          "changes_for_publication": [
+            "Add the dated vector RMS diagnostic and independent fixed-basis verification with executed H4-only, transposed-activation and swapped-order controls. Existing rotation arithmetic and the default elementwise report remain unchanged."
+          ],
+          "experiments": [
+            "rotation_layout_results.json",
+            "linear_scope_results.json",
+            "rotation_numeric_results.json"
+          ]
+        },
+        {
+          "sha256": "2d021bffbead635b9afb858027ab273683a641d261e3459a5b7342914f98c35f",
+          "experiments": [
+            "precision_results.json"
+          ],
+          "changes_for_publication": [
+            "Identity rotation returns the original activation tensor to preserve storage and strides. H128 arithmetic and all nonrotated evaluations are unchanged.",
+            "Add the dated vector RMS diagnostic and independent fixed-basis verification with executed H4-only, transposed-activation and swapped-order controls. Existing rotation arithmetic and the default elementwise report remain unchanged."
+          ]
+        },
+        {
+          "sha256": "529b2fc53820d1578039e4d787972dd87206bfc625c544167cdd617766e28f6b",
+          "experiments": [
+            "rotation_results.json"
+          ],
+          "changes_for_publication": []
+        }
+      ]
+    }
+  ],
+  "execution_working_trees": [
+    {
+      "base_commit": "4a03dcaf473877ccdef5c652acd2c49cf43435c2",
+      "dirty": true,
+      "experiments": [
+        "fp32_control_results.json",
+        "paper_label_results.json",
+        "lr_control_results.json",
+        "precision_results.json",
+        "rotation_layout_results.json"
+      ]
+    },
+    {
+      "base_commit": "67a82177f287c3593ea928e3a4300749fa2049fb",
+      "dirty": true,
+      "experiments": [
+        "linear_scope_results.json"
+      ],
+      "source_evidence": "Executed production snapshots and their hashes are retained with the raw suite artifacts; the portable summary records source_sha256."
+    },
+    {
+      "base_commit": "67a82177f287c3593ea928e3a4300749fa2049fb",
+      "dirty": false,
+      "experiments": [
+        "rotation_numeric_results.json"
+      ],
+      "external_probe_sha256": "586e0e704d57f17fc82362b7bc46f69016c102990b1f4d4fecdd86c38494d6f4",
+      "source_evidence": "The tracked checkout was clean; this separate numerical diagnostic ran an external probe, identified by its own source hash."
+    },
+    {
+      "base_commit": "89725ecf867bab9d5be97e84e33b1d6f5c7f263c",
+      "dirty": true,
+      "experiments": [
+        "rotation_results.json"
+      ],
+      "external_audit_sha256": "6e8b32b092d85b1de71f39ce2031261f88b83852da7d1b198b1c5473ffd27e47",
+      "source_evidence": "Actual production source snapshots and the four-file patch from the base commit are retained in the local experiment archive. The portable summary records source_sha256 and hashes of raw artifacts."
+    }
+  ]
+}

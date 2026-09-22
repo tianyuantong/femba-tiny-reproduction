@@ -1,301 +1,48 @@
-# BioFoundation
+# FEMBA-Tiny 2025 复现与精度实验
 
-<p align="center">
-  <a href="https://arxiv.org/abs/2502.06438">
-    <img src="https://img.shields.io/badge/arXiv-2502.06438-b31b1b.svg" alt="FEMBA Paper">
-  </a>
-  <a href="https://arxiv.org/abs/2510.22257">
-    <img src="https://img.shields.io/badge/arXiv-2510.22257-b31b1b.svg" alt="LUNA Paper">
-  </a>
-  <a href="https://huggingface.co/thorir/FEMBA">
-    <img src="https://img.shields.io/badge/HuggingFace-FEMBA-%23ffcc4d?logo=huggingface&logoColor=black" alt="Hugging Face: FEMBA">
-  </a>
-  <a href="https://huggingface.co/thorir/LUNA">
-    <img src="https://img.shields.io/badge/HuggingFace-LUNA-%23ffcc4d?logo=huggingface&logoColor=black" alt="Hugging Face: LUNA">
-  </a>
-  <a href="https://github.com/pulp-bio/BioFoundation">
-    <img src="https://img.shields.io/github/stars/pulp-bio/BioFoundation?style=social" alt="GitHub Stars">
-  </a>
-</p>
+基于 FEMBA 2025 年公开代码和预训练权重，在 TUAR 上复现二分类基线，并比较低精度推理的质量变化。
 
-Copyright (C) 2025 ETH Zurich, Switzerland. SPDX-License-Identifier: Apache-2.0. See LICENSE file for details.
+**公开代码标签下 FP32 AUROC 为 0.923889；论文标签下的精度母模型为 0.898821。**
 
-Authors: Thorir Mar Ingolfsson, Anna Tegon, Berkay Döner, Xiaying Wang, Yawei Li & Luca Benini.
+单种子 seed 42 · 7,090 个测试窗口 · RTX 5060 Ti · 量化采用 FP32 QDQ 模拟。
 
-## About
+| FP32 轨迹 | 标签／AdamW 学习率 | AUROC | AP | 角色 |
+| --- | --- | ---: | ---: | --- |
+| 公开代码配方 | 18 类、占比 ≥30%／5e-4 | 0.923889 | 0.933093 | 执行修正后的复现结果 |
+| 论文标签对照 | 13 类、任一出现／5e-4 | 0.913040 | 0.944898 | 保留代码训练配方，检验标签变更 |
+| 学习率对照 | 13 类、任一出现／1e-4 | 0.898821 | 0.938437 | 按验证 loss 选定的精度母模型 |
+| 2025 论文 Table IV | TUAR 二分类 | 0.937 ± 0.008 | 0.912 ± 0.010 | 参考值 |
 
-**BioFoundation** is a flexible and extensible codebase for deep learning with biological signals. This repository is designed to support a variety of research projects, and currently hosts the work of multiple papers on EEG analysis.
+论文标签组保留代码的归一化、AdamW 和模型实现。两组学习率的最低验证 loss
+分别为 0.426979、0.393690；已结束学习率对照，后续精度实验固定 1e-4 组母模型。
 
-This repository is built on PyTorch Lightning and Hydra to enable reproducible and scalable research.
+下表均使用 AUROC 0.898821 的母模型；A8 对比 57 处位置与 22 个 Linear 输入边界。
 
-## 🤗 Pretrained Weights on Hugging Face
+| 版本 | AUROC | AP | 结果 |
+| --- | ---: | ---: | --- |
+| FP32 | 0.898821 | 0.938437 | 当前母模型 |
+| W8A32 | 0.899945 | 0.938976 | 在预设精度容差内 |
+| W4A32 | 0.844892 | 0.903830 | 明显退化 |
+| W8A8，57 处／浮点尺度 | 0.500000 | 0.577433 | 全部预测为正类 |
+| W4A8，57 处／浮点尺度 | 0.500000 | 0.577433 | 全部预测为正类 |
+| W8A8，57 处／二次幂尺度 | 0.500000 | 0.577433 | 全部预测为正类 |
+| FP16：直接转换／状态保留／AMP | — | — | 首批验证出现 NaN |
+| Rot-W8A32 | 0.900130 | 0.939189 | 在预设精度容差内 |
+| Rot-W4A32 | 0.821896 | 0.890039 | 低于未旋转 W4A32 |
+| Rot-W8A8，57 处 | 0.500000 | 0.577433 | 全部预测为正类 |
+| Rot-W4A8，57 处 | 0.500000 | 0.577433 | 全部预测为正类 |
+| W8A8，22 个 Linear 输入 | 0.526839 | 0.604017 | 全部预测为正类 |
+| W4A8，22 个 Linear 输入 | 0.546794 | 0.619750 | 全部预测为正类 |
 
-Looking for ready-to-use weights of models? We host them on Hugging Face:
+校准极值抬高静态 max 量化步长，激活大面积归零。Hadamard 通过 [2026-09-22 修订协议](reproduction/PROTOCOL.md#2026-09-22旋转数值检查修订)检查，将五处输出投影输入峰值缩小 4.3–11.1 倍，但 A8 分类仍未恢复。这组 PTQ 结果用于后续 QAT 设计。
 
-### Currently available:
-- **FEMBA** ([paper](https://arxiv.org/abs/2502.06438)) [![HF Model Card](https://img.shields.io/badge/Model%20Card-FEMBA-ffcc4d?logo=huggingface&logoColor=black)](https://huggingface.co/thorir/FEMBA)
-- **LUNA** ([paper](https://arxiv.org/abs/2510.22257)) [![HF Model Card](https://img.shields.io/badge/Model%20Card-LUNA-ffcc4d?logo=huggingface&logoColor=black)](https://huggingface.co/thorir/LUNA)
+[完整结果与关键对照](reproduction/RESULTS.md) · [复现步骤与实验口径](reproduction/PROTOCOL.md) ·
+[精度结果 JSON](reproduction/precision_results.json) · [Linear 边界对照](reproduction/linear_scope_results.json) ·
+[旋转结果](reproduction/rotation_results.json)
 
+## 来源
 
-#### Why FEMBA?
-- **Scales to long EEG** with linear-time Mamba (no quadratic attention).
-- **Strong results** on TUAB/TUAR/TUSL with ready task-specific checkpoints.
-- **Simple fine-tune path:** set `CHECKPOINT_DIR`, run `+experiment=FEMBA_finetune`.
-
-**➡️ Model hub:** https://huggingface.co/thorir/FEMBA  
-**📄 Model card:** [FEMBA on Hugging Face](https://huggingface.co/thorir/FEMBA) — benchmarks, protocols, and efficiency notes.  
-**📜 Weights license:** CC BY-ND 4.0 (use + redistribute **unmodified** weights with attribution; no redistribution of **modified** weights)  
-**🧑‍🍳 PR-gated improvements:** If you fine-tune internally and want your variant to become an **official** FEMBA release, open a PR with configs, logs, and evals. We’ll review together; if it looks good, we’ll retrain/validate and publish an **official** FEMBA checkpoint.
-**What you’ll find on the hub**
-- `TUAB/` → abnormal EEG (base/large)
-- `TUAR/` → artifact detection (tiny/base/large)
-- `TUSL/` → slowing classification (variants as in the paper)
-
-Quick download with `huggingface_hub`:
-```bash
-pip install huggingface_hub
-```
-```python
-from huggingface_hub import snapshot_download
-
-# downloads all task folders (TUAB/TUAR/TUSL) and safetensors into ./checkpoints/FEMBA
-snapshot_download(repo_id="thorir/FEMBA", repo_type="model", local_dir="checkpoints/FEMBA")
-```
-
-Use the paths directly in your runs, e.g.:
-```bash
-export DATA_PATH=/path/to/data
-export CHECKPOINT_DIR=checkpoints/FEMBA/TUAR/base.safetensors
-python -u run_train.py +experiment=FEMBA_finetune
-```
-
-#### Why LUNA?
-- **Topology-agnostic** EEG via **query-based channel unification** (consistent latent across arbitrary montages).
-- **Linear-in-channels** compute & memory (unifies channels **before** temporal modeling; no quadratic spatio-temporal attention).
-- **Pretrained on >21k hours** (TUEG + Siena) with masked-patch reconstruction; strong transfer across datasets/montages.
-- **Simple fine-tune path:** pick model size with `LUNA_{base,large,huge}.yaml`, set `pretrained_safetensors_path`, run `+experiment=LUNA_finetune`.
-
-**➡️ Model hub:** https://huggingface.co/thorir/LUNA  
-**📄 Model card:** [LUNA on Hugging Face](https://huggingface.co/thorir/LUNA) — variants, configs, and fine-tuning walkthrough.  
-**📜 Weights license:** CC BY-ND 4.0 (use + redistribute **unmodified** weights with attribution; no redistribution of **modified** weights)  
-**🧑‍🍳 PR-gated improvements:** If you fine-tune internally and want your variant to become an **official** LUNA release, open a PR with configs, logs, and evals. We’ll review; if it looks good, we’ll retrain/validate and publish an **official** LUNA checkpoint.
-
-**What you’ll find on the hub**
-- `Base/`, `Large/`, `Huge/` → LUNA size variants (matching `config/model/LUNA_{base,large,huge}.yaml`)
-- Task-specific heads/checkpoints for common TUH downstream tasks (TUAB / TUAR / TUSL)
-
-Quick download with `huggingface_hub`:
-```bash
-pip install huggingface_hub
-```
-```python
-from huggingface_hub import snapshot_download
-
-# downloads LUNA folders and .safetensors into ./checkpoints/LUNA
-snapshot_download(repo_id="thorir/LUNA", repo_type="model", local_dir="checkpoints/LUNA")
-```
-
-Use the paths directly in your runs like here below:
-```bash
-python -u run_train.py +experiment=LUNA_finetune /model=LUNA_base \
-  pretrained_safetensors_path=/absolute/path/to/checkpoints/LUNA/Base/LUNA_base.safetensors
-
-python -u run_train.py +experiment=LUNA_finetune /model=LUNA_large \
-  pretrained_safetensors_path=/absolute/path/to/checkpoints/LUNA/Large/LUNA_large.safetensors
-
-python -u run_train.py +experiment=LUNA_finetune /model=LUNA_huge \
-  pretrained_safetensors_path=/absolute/path/to/checkpoints/LUNA/Huge/LUNA_huge.safetensors
-```
-*If your checkpoint path contains spaces, wrap it in quotes.*
-
-Tips:
-- TUH datasets (TUAB/TUAR/TUSL): keep `- override /data_module: finetune_data_module` and set `data_module.*.hdf5_file` to your `{train,val,test}.h5`.  
-- Non-TUH (e.g., SEED-V): use `- override /data_module: subject_independent_data_module` and remove the TUH-specific `data_module` block.  
-- Match task settings: `classification_type` (`bc`, `mc`, `mmc`, `mcc`) and `model.num_classes` (e.g., TUSL=4, TUAB=2).
-
-
-## Features
-
-* **Modular Design**: The repository is organized into modules for data loading, models, training tasks, and more, making it easy to extend and adapt for new research projects.
-* **Flexible Configuration**: We use [Hydra](https://hydra.cc/docs/intro/) to manage experiment configurations, allowing for easy customization of models, data, and training parameters.
-* **Reproducibility**: Our use of `Hydra` and PyTorch Lightning helps ensure that our experiments are reproducible.
-* **Extensible**: The repository is designed to be easily extended with new datasets, models, and tasks.
-
-## Installation
-To use BioFoundation, clone the repository and install the required dependencies.
-
-```bash
-git clone https://github.com/pulp-bio/BioFoundation.git
-```
-We recommend using a virtual environment to manage dependencies. You can use `conda` or `virtualenv` for this purpose. We have provided a `requirements.txt` file that lists the necessary packages. You can install them using pip, and optionally, you can use `conda` to create a new environment.
-```bash
-conda create -n BioFoundation
-conda activate BioFoundation
-pip install -r requirements.txt
-```
-
-### Path changes
-Throughout the repository, you may find paths that need to be adjusted based on your local setup. For example, the path to the datasets in the configuration files or the scripts that process the datasets. Make sure to update these paths accordingly. They have been named "#CHANGEME" to facilitate finding them.
-
-## Dataset Preparation
-
-The datasets used in this repository should be converted to HDF5 for efficient I/O. Other formats can work, but you’d need to adapt the dataloaders accordingly.
-To prepare the TUH EEG datasets (see the [official source](https://isip.piconepress.com/projects/nedc/html/tuh_eeg/index.shtml)), follow these steps:
-
-1. **Download raw data** from the official sources (e.g., TUH EEG corpus).
-2. **Preprocess to pickles** (windowing/labels):
-   ```bash
-   # examples (adjust paths)
-   python make_datasets/process_raw_eeg.py tuab --root_dir /eeg_data/TUAB/edf --output_dir /processed_eeg
-   python make_datasets/process_raw_eeg.py tusl --root_dir /eeg_data/TUSL/edf --output_dir /processed_eeg
-   python make_datasets/process_raw_eeg.py tuar --root_dir /eeg_data/TUAR/edf --output_dir /processed_eeg
-   ```
-3.  **Bundle into HDF5:**: Use the provided script to process the raw data into HDF5 files.
-    ```bash
-    # all datasets found under /processed_eeg
-    python make_datasets/make_hdf5.py --prepath /processed_eeg --dataset All --remove_pkl
-
-    # or a single dataset
-    python make_datasets/make_hdf5.py --prepath /processed_eeg --dataset TUSL --remove_pkl
-    ```
-    You may need to edit the `prepath` variable in the script to point to the directory where you have downloaded the raw data.
-4.  **Update Configs**: so `data_module.*.hdf5_file` points to your `${DATA_PATH}/<DATASET>_data/{train,val,test}.h5`
-
-## How to Run
-### Pre-training
-To run a pre-training experiment, you can use the `run_train.py` script with the appropriate configuration file. For example in the case of pre-training FEMBA:
-
-```bash
-python -u run_train.py +experiment=FEMBA_pretrain
-
-```
-
-### Fine-tuning
-To run a fine-tuning experiment, you can use the `run_train.py` script with the appropriate configuration file. For example in the case of fine-tuning FEMBA:
-
-```bash
-python -u run_train.py +experiment=FEMBA_finetune
-
-```
-
-> **Tip:** Pretrained FEMBA weights (TUAB/TUAR/TUSL folders) are available on 🤗 Hugging Face:  
-> https://huggingface.co/thorir/FEMBA  
-> Set `CHECKPOINT_DIR` to the desired `.safetensors` (e.g., `.../TUAR/base.safetensors`) before launching.
-
-Note in both cases one needs to make sure that the dataset that specific experiment is using is downloaded and available in the correct path.
-
-## Repository Structure
-```
-BioFoundation/
-├── config                   # Hydra configuration files
-├── criterion                # Loss functions
-├── data_module              # PyTorch Lightning DataModules
-├── datasets                 # PyTorch Datasets
-├── docs                     # Detailed documentation
-├── models                   # Model implementations
-├── schedulers               # Learning rate schedulers
-├── tasks                    # PyTorch Lightning tasks
-└── ...
-```
-## Contributing
-We welcome contributions to BioFoundation! If you have a new model, dataset, or task that you would like to add, please follow the guidelines below.
-### How to add a new dataset?
-1. Add the code of the dataset to [`datasets`](datasets/).
-2. Add the configuration file of the dataset to [`./config/dataset`](./config/dataset/).
-3. If the dataset is large, consider adding a script to download it in the [`./scripts`](./scripts) directory. Make sure to document how to run the script in the README.
-### How to add a new data module?
-1. Add the code of the data module to [`./data_module`](./data_module).
-2. Add the configuration file of the data module to [`./config/data_module`](./config/data_module).
-3. If the data module requires specific datasets, make sure to document how to download and prepare them in the README.
-### How to add a new loss function?
-1. Add the code of the loss function to [`./criterion`](./criterion).
-2. Add the configuration file of the loss function to [`./config/criterion`](./config/criterion).
-### How to add a new task?
-1. Add the code of the task to [`./tasks`](./tasks).
-2. Add the configuration file of the task to [`./config/task`](./config/task).
-3. If the task requires specific datasets or models, make sure to document how to download and prepare them in the README.
-### How to add a new scheduler?
-1. Add the code of the scheduler to [`./schedulers`](./schedulers).
-2. Add the configuration file of the scheduler to [`./config/scheduler`](./config/scheduler).
-3. If the scheduler requires specific models or tasks, make sure to document how to use it in the README.
-### How to add a new model?
-1. Add the code of the model to [`./models`](./models).
-2. Add the configuration file of the model to [`./config/model`](./config/model).
-### How to start a new experiment with the added model?
-1. Add experiment configuration file to [`./config/experiment`](./config/experiment). 
-    If you are interested, you may check the [Hydra document about it](https://hydra.cc/docs/patterns/configuring_experiments/).
-2. Override the default configurations in the added experiment configuration file.
-3. Run the experiment with the command:
-```bash
-python -u run_train.py +experiment=your_experiment_name
-```
-
-### Contributing improvements to FEMBA weights
-We’re excited to see what you build. Because the weights are **CC BY-ND 4.0**, redistribution of **modified** weights (e.g., LoRA/adapters, deltas, pruned or quantized variants) is **not permitted**.  
-If you fine-tune internally and believe your results should become an **official** FEMBA release, please open a PR with:
-- exact **configs**, **seeds**, and **training scripts**,
-- **environment** and **hardware** details,
-- **evaluation protocol** (TUAB/TUAR/TUSL), **splits**, and full **metrics** (AUROC/AUPR/BA, FLOPs, memory),
-- training and validation **logs**.
-
-Maintainers will review; if accepted, we will retrain/validate and publish a new **official** checkpoint on 🤗 under the same license.
-
-## General Tips
-
-### How to use distributed data parallel?
-In your experiment configuration file, add the following arguments
-```yaml
-trainer:
-  accelerator: gpu  # Using GPU
-  num_nodes: ${num_nodes}  # The number of computing nodes
-  devices: -1  # Automatically uses all GPUs available
-  strategy: ddp  # distributed data parallel
-```
-
-### How to save GPU memory?
-1. Try fairscale checkpointing first. Check [here](https://fairscale.readthedocs.io/en/stable/api/nn/checkpoint/checkpoint_activations.html) and [here](https://github.com/ofsoundof/GRL-Image-Restoration/blob/main/models/networks/grl.py#L134)
-2. Use sharded training. Check [here](https://lightning.ai/docs/pytorch/stable/advanced/model_parallel.html).
-
-## Contact
-
-For questions and support, please open an issue on the GitHub repository.
-
-## Citing this Work
-
-If you find this work useful, please cite the respective papers:
-
-
-```bibtex
-@misc{tegon2025fembaefficientscalableeeg,
-      title={FEMBA: Efficient and Scalable EEG Analysis with a Bidirectional Mamba Foundation Model}, 
-      author={Anna Tegon and Thorir Mar Ingolfsson and Xiaying Wang and Luca Benini and Yawei Li},
-      year={2025},
-      eprint={2502.06438},
-      archivePrefix={arXiv},
-      primaryClass={cs.LG},
-      url={https://arxiv.org/abs/2502.06438}, 
-}
-@inproceedings{doner2025luna,
-  title={{LUNA}: Efficient and Topology-Agnostic Foundation Model for {EEG} Signal Analysis},
-  author={Berkay D{\"o}ner and Thorir Mar Ingolfsson and Luca Benini and Yawei Li},
-  booktitle={The Thirty-ninth Annual Conference on Neural Information Processing Systems},
-  year={2025},
-  url={https://openreview.net/forum?id=uazfjnFL0G}
-}
-```
-
-## License
-This project is licensed under the Apache License 2.0. See the [LICENSE](./LICENSE) file for details.
-
-
-**Note on model weights:** Pretrained weights are hosted at https://huggingface.co/thorir/FEMBA and https://huggingface.co/thorir/LUNA and licensed under **CC BY-ND 4.0**. You may use and redistribute the **unmodified** weights with attribution. Redistribution of **modified** weights is not permitted. To upstream improvements, please open a PR; accepted changes will be released as **official** checkpoints.
-
-
-## 2025 TUAR reproduction results
-
-| Checkpoint | AUROC | AP | Accuracy |
-| --- | ---: | ---: | ---: |
-| Final model | 0.8822 | 0.8965 | 82.99% |
-| Best validation loss (epoch 3) | 0.8992 | 0.9164 | 85.30% |
-
-Seed 42, 7,090 test windows; full-test checkpoint reload verified. Paper AUROC 0.937 was not reached. [Results](reproduction/upstream2025_results.json) · [Run configuration](reproduction/upstream2025_run.json).
+基于 [pulp-bio/BioFoundation 的 2025 快照](https://github.com/pulp-bio/BioFoundation/tree/d88596590f3bd3fce573be07646b7d3977ce7bcc)
+和 [PulpBio/FEMBA 预训练权重](https://huggingface.co/PulpBio/FEMBA)，论文见
+[FEMBA（2025）](https://arxiv.org/abs/2502.06438v2)。上游代码采用 [Apache-2.0](LICENSE)。
+仓库提供代码和结果摘要；数据集、权重及逐样本预测保留在本地。

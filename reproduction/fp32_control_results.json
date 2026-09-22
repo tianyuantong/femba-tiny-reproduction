@@ -1,0 +1,374 @@
+{
+  "run_id": "tuar-2025-fp32-control-seed42",
+  "upstream_commit": "d88596590f3bd3fce573be07646b7d3977ce7bcc",
+  "seed": 42,
+  "recipe": "2025 public repository control; existing frozen split and >=30% artifact labels",
+  "executed_adapter": {
+    "sha256": "d03fc6f035bb5e68232fe38c2bfa68d50fa1360afe70f5af5fb6e5defbe2e63c",
+    "snapshot": "results/upstream2025-train-source-d03fc6f035bb.py",
+    "working_tree_base_commit": "4a03dcaf473877ccdef5c652acd2c49cf43435c2",
+    "working_tree_dirty": true
+  },
+  "pinned_source_sha256": {
+    "models/FEMBA.py": "384ed796e0cdfc75db63eef5a05cd9219f258be5e112c595f4abc0a048d8827e",
+    "util/train_utils.py": "ae6d31dcf50fd8362b161f08ce707be1b2ab5ec0b91afc3af020fdeab779da22",
+    "datasets/hdf5_dataset.py": "f0461d1d4a20fe9930d3fc5d35df791899ec33d2b401ab547d01c2cd8cf92c98",
+    "data_module/finetune_data_module.py": "2a0133cd67c0a405fd26e2d062d0a7ffce7548df403ad5fa9922591e94f305c4",
+    "schedulers/cosine.py": "73e90615da0d717f1515d1edbb516b289ba2ab242095e218f1a5ed6709ba78ab",
+    "tasks/finetune_task.py": "3ac0ad04c1e5af663a31a41bf9c2ab0b03fb3e752037edde1e4c7d8a776b3766",
+    "config/defaults.yaml": "45e7cd2db4d6d0ac4a77fe00e49c11253129fb4282981ad8399d0ba3775e861a",
+    "config/data_module/finetune_data_module.yaml": "255da340f5ce5c46a146867a2d0cdf8c5420409dbbca66f72553c0658e7e9dbb",
+    "config/task/finetune_task.yaml": "8ce613c4c8f38b24e9c6f6b0ec10c7d6cce0986b44e8f89bb48913d1a9bb796a",
+    "config/scheduler/cosine.yaml": "78db171e123ce3e3cca647c6957fa010d050f603a9dd287db0021962a2d891b2",
+    "config/model/FEMBA_finetune.yaml": "ae8367edfc96584cc5a4d3a75cc9164f88b3fb274f23075be9255709bed1deb2",
+    "config/criterion/finetune_criterion.yaml": "e85602bba92785a0e1f8fb31a6ee730b7feafdf303d58889fe00dcae52c6475e",
+    "config/experiment/FEMBA_finetune.yaml": "4957ee39cc299dbf9fd86d9e9bf6edc69f0a867073d58a60fc4ab7bef31425a4"
+  },
+  "pretrained_sha256": "a2f6151a74d7798d80094699f8eb005d7af510471414e274cf99b64e20a66010",
+  "precision": {
+    "trainer": "32-true",
+    "cuda_matmul_allow_tf32": false,
+    "cudnn_allow_tf32": false
+  },
+  "training_budget": {
+    "train_samples": 56172,
+    "global_batch_size": 1024,
+    "micro_batch_size": 256,
+    "accumulation_steps": 4,
+    "microbatches_per_epoch": 216,
+    "optimizer_steps_per_epoch": 54,
+    "total_optimizer_steps": 1620,
+    "warmup_optimizer_steps": 540,
+    "samples_per_epoch": 55296,
+    "dropped_samples_per_epoch": 876
+  },
+  "primary_checkpoint": "best",
+  "best_val_loss": 0.4483930766582489,
+  "training_metrics": {
+    "best": {
+      "test_BinaryAccuracy": 0.8534555435180664,
+      "test_MulticlassRecall": 0.8518978357315063,
+      "test_BinaryPrecision": 0.9160122871398926,
+      "test_BinaryF1Score": 0.8377829790115356,
+      "test_BinaryCohenKappa": 0.7059165239334106,
+      "test_BinaryAUROC": 0.9238886833190918,
+      "test_BinaryAveragePrecision": 0.9330927133560181,
+      "test_loss": 0.3675372302532196
+    },
+    "final_diagnostic": {
+      "test_BinaryAccuracy": 0.835119903087616,
+      "test_MulticlassRecall": 0.833747386932373,
+      "test_BinaryPrecision": 0.8846282362937927,
+      "test_BinaryF1Score": 0.8194594383239746,
+      "test_BinaryCohenKappa": 0.6692482233047485,
+      "test_BinaryAUROC": 0.8760790824890137,
+      "test_BinaryAveragePrecision": 0.8928483724594116,
+      "test_loss": 3.6785359382629395
+    }
+  },
+  "audit": {
+    "upstream_commit": "d88596590f3bd3fce573be07646b7d3977ce7bcc",
+    "test_windows": 7090,
+    "test_sha256": "6c4cdb7b2d14fcc0096e9a416fe8eb188ac687b3130fb6b1d7be0f5c19ec0b5f",
+    "checkpoints": {
+      "final": {
+        "checkpoint_sha256": "dbd4a1beaac34a198489c348d2103add524c0432b6dcdbd41e6442c313554ced",
+        "checkpoint_epoch": 30,
+        "checkpoint_step": 1620,
+        "native_metrics": {
+          "test_BinaryAccuracy": 0.835119903087616,
+          "test_MulticlassRecall": 0.833747386932373,
+          "test_BinaryPrecision": 0.8846282362937927,
+          "test_BinaryF1Score": 0.8194594383239746,
+          "test_BinaryCohenKappa": 0.6692482233047485,
+          "test_BinaryAUROC": 0.8760790824890137,
+          "test_BinaryAveragePrecision": 0.8928483724594116
+        },
+        "native_reload_max_abs_error": 0.0,
+        "diagnostic_metrics": {
+          "accuracy": 0.8351198871650212,
+          "balanced_accuracy": 0.8337474041303383,
+          "global_raw_logit_auroc": 0.8778732082051453,
+          "global_raw_logit_ap": 0.9022394794846972,
+          "softmax_auroc": 0.8717835415654376,
+          "softmax_ap": 0.8790118175026606
+        },
+        "labels": [
+          3614,
+          3476
+        ],
+        "predictions": [
+          4091,
+          2999
+        ],
+        "predictions_sha256": "6215066b2a67ab027d7fdffdd9bc882bd93488b033239058dc23e3f13dc3cdab"
+      },
+      "best": {
+        "checkpoint_sha256": "7b394054919f0db154f8bc1be663c0d0056c9a04fa115f29dc87643dec79fd70",
+        "checkpoint_epoch": 3,
+        "checkpoint_step": 216,
+        "native_metrics": {
+          "test_BinaryAccuracy": 0.8534555435180664,
+          "test_MulticlassRecall": 0.8518978357315063,
+          "test_BinaryPrecision": 0.9160122871398926,
+          "test_BinaryF1Score": 0.8377829790115356,
+          "test_BinaryCohenKappa": 0.7059165239334106,
+          "test_BinaryAUROC": 0.9238886833190918,
+          "test_BinaryAveragePrecision": 0.9330927133560181
+        },
+        "native_reload_max_abs_error": 0.0,
+        "diagnostic_metrics": {
+          "accuracy": 0.8534555712270804,
+          "balanced_accuracy": 0.8518977948560864,
+          "global_raw_logit_auroc": 0.9238886398184278,
+          "global_raw_logit_ap": 0.9330927233895465,
+          "softmax_auroc": 0.9239889402101403,
+          "softmax_ap": 0.9331084246060253
+        },
+        "labels": [
+          3614,
+          3476
+        ],
+        "predictions": [
+          4161,
+          2929
+        ],
+        "predictions_sha256": "28ced6ad32758183ab9729710025ad8e68e87a924318b94850d4634476858941"
+      }
+    },
+    "subject_counts": {
+      "train": 174,
+      "val": 26,
+      "test": 31
+    },
+    "subject_overlap": {
+      "train_val": 10,
+      "train_test": 11,
+      "val_test": 3
+    }
+  },
+  "process": {
+    "started_unix": 1789987056.5794234,
+    "train_exit": 0,
+    "audit_exit": 0,
+    "training_seconds": 1997.0259907245636,
+    "completed_unix": 1789989069.964552
+  },
+  "environment": {
+    "python": "3.11.16",
+    "packages": {
+      "torch": "2.7.1+cu128",
+      "pytorch-lightning": "2.6.5",
+      "timm": "1.0.28",
+      "mamba-ssm": "2.3.2.post1",
+      "causal-conv1d": null,
+      "torchmetrics": "1.9.0",
+      "hydra-core": "1.3.5",
+      "omegaconf": "2.3.1",
+      "numpy": "1.26.4",
+      "h5py": "3.16.0",
+      "safetensors": "0.8.0",
+      "mne": "1.12.1"
+    },
+    "gpu": "NVIDIA GeForce RTX 5060 Ti"
+  },
+  "data_manifest_sha256": "78cf97b26277cdc1d1eb443f35301334856ef740152d06506df1d841519ec144",
+  "verification": {
+    "cpu_tests_passed": 9,
+    "all_30_epoch_steps_match": true,
+    "prediction_rows_per_checkpoint": 7090,
+    "finite_logits": true,
+    "identical_label_order": true,
+    "pinned_sources_match": true,
+    "data_directory_copied": false
+  },
+  "validation_curve": [
+    {
+      "epoch": 0,
+      "step": 54,
+      "val_loss": 0.6839309930801392,
+      "val_BinaryAUROC": 0.7885823249816895
+    },
+    {
+      "epoch": 1,
+      "step": 108,
+      "val_loss": 0.5055964589118958,
+      "val_BinaryAUROC": 0.8780121803283691
+    },
+    {
+      "epoch": 2,
+      "step": 162,
+      "val_loss": 0.49477338790893555,
+      "val_BinaryAUROC": 0.8896291255950928
+    },
+    {
+      "epoch": 3,
+      "step": 216,
+      "val_loss": 0.4483930766582489,
+      "val_BinaryAUROC": 0.9060027003288269
+    },
+    {
+      "epoch": 4,
+      "step": 270,
+      "val_loss": 0.4673721492290497,
+      "val_BinaryAUROC": 0.9032795429229736
+    },
+    {
+      "epoch": 5,
+      "step": 324,
+      "val_loss": 0.46519550681114197,
+      "val_BinaryAUROC": 0.8971434235572815
+    },
+    {
+      "epoch": 6,
+      "step": 378,
+      "val_loss": 0.5083667635917664,
+      "val_BinaryAUROC": 0.8906707763671875
+    },
+    {
+      "epoch": 7,
+      "step": 432,
+      "val_loss": 0.5126136541366577,
+      "val_BinaryAUROC": 0.8846189379692078
+    },
+    {
+      "epoch": 8,
+      "step": 486,
+      "val_loss": 0.5307050347328186,
+      "val_BinaryAUROC": 0.8973208665847778
+    },
+    {
+      "epoch": 9,
+      "step": 540,
+      "val_loss": 0.5560201406478882,
+      "val_BinaryAUROC": 0.8822951912879944
+    },
+    {
+      "epoch": 10,
+      "step": 594,
+      "val_loss": 0.6342964172363281,
+      "val_BinaryAUROC": 0.8737872242927551
+    },
+    {
+      "epoch": 11,
+      "step": 648,
+      "val_loss": 0.6625393629074097,
+      "val_BinaryAUROC": 0.8691330552101135
+    },
+    {
+      "epoch": 12,
+      "step": 702,
+      "val_loss": 0.6852507591247559,
+      "val_BinaryAUROC": 0.8595278263092041
+    },
+    {
+      "epoch": 13,
+      "step": 756,
+      "val_loss": 0.8578896522521973,
+      "val_BinaryAUROC": 0.8514927625656128
+    },
+    {
+      "epoch": 14,
+      "step": 810,
+      "val_loss": 1.099660038948059,
+      "val_BinaryAUROC": 0.8342176675796509
+    },
+    {
+      "epoch": 15,
+      "step": 864,
+      "val_loss": 1.1304627656936646,
+      "val_BinaryAUROC": 0.8482218980789185
+    },
+    {
+      "epoch": 16,
+      "step": 918,
+      "val_loss": 1.5514367818832397,
+      "val_BinaryAUROC": 0.8347833156585693
+    },
+    {
+      "epoch": 17,
+      "step": 972,
+      "val_loss": 1.2690198421478271,
+      "val_BinaryAUROC": 0.8508906960487366
+    },
+    {
+      "epoch": 18,
+      "step": 1026,
+      "val_loss": 1.738023042678833,
+      "val_BinaryAUROC": 0.8351786136627197
+    },
+    {
+      "epoch": 19,
+      "step": 1080,
+      "val_loss": 2.0142712593078613,
+      "val_BinaryAUROC": 0.8443665504455566
+    },
+    {
+      "epoch": 20,
+      "step": 1134,
+      "val_loss": 3.0368080139160156,
+      "val_BinaryAUROC": 0.8260289430618286
+    },
+    {
+      "epoch": 21,
+      "step": 1188,
+      "val_loss": 3.3254549503326416,
+      "val_BinaryAUROC": 0.8329722285270691
+    },
+    {
+      "epoch": 22,
+      "step": 1242,
+      "val_loss": 4.033162593841553,
+      "val_BinaryAUROC": 0.8239765167236328
+    },
+    {
+      "epoch": 23,
+      "step": 1296,
+      "val_loss": 4.319226264953613,
+      "val_BinaryAUROC": 0.8346858024597168
+    },
+    {
+      "epoch": 24,
+      "step": 1350,
+      "val_loss": 4.879083156585693,
+      "val_BinaryAUROC": 0.8298336267471313
+    },
+    {
+      "epoch": 25,
+      "step": 1404,
+      "val_loss": 5.068612098693848,
+      "val_BinaryAUROC": 0.8276075124740601
+    },
+    {
+      "epoch": 26,
+      "step": 1458,
+      "val_loss": 5.195711135864258,
+      "val_BinaryAUROC": 0.8277605175971985
+    },
+    {
+      "epoch": 27,
+      "step": 1512,
+      "val_loss": 5.3230485916137695,
+      "val_BinaryAUROC": 0.8295129537582397
+    },
+    {
+      "epoch": 28,
+      "step": 1566,
+      "val_loss": 5.348404884338379,
+      "val_BinaryAUROC": 0.8289575576782227
+    },
+    {
+      "epoch": 29,
+      "step": 1620,
+      "val_loss": 5.37584114074707,
+      "val_BinaryAUROC": 0.8291456699371338
+    }
+  ],
+  "normalization_note": "Portable generated summary; local file paths omitted. Raw evidence retained in the WSL run directory.",
+  "raw_artifact_sha256": {
+    "upstream2025-run.json": "44eea20b97a659c2d5da3a20757cfa2050570a657f08068d47692b208af54f03",
+    "upstream2025-training-results.json": "6a209a190759d2b2bdc1e9deae6ef8b15a3e0f76741a4488e40903f340ed3a7f",
+    "upstream2025-audit.json": "ad27c2ac8a1f762f9ca3bd6c4cfee4279bcdeffc5d17ad5973148949daae5dca",
+    "fp32-control-process.json": "075511fa322340da1edf03b443de9fd6c213170e65c0f66e3aa28f707972b238"
+  }
+}
