@@ -1,9 +1,5 @@
 {
   "upstream_commit": "d88596590f3bd3fce573be07646b7d3977ce7bcc",
-  "execution_working_tree": {
-    "base_commit": "4a03dcaf473877ccdef5c652acd2c49cf43435c2",
-    "dirty": true
-  },
   "publication_base_commit": "64d663a3b0736200c5d83863414057ada67ced1c",
   "evidence": "Result JSON files preserve the original executed-source hashes. Original source snapshots, logs and predictions remain in the local experiment archive. The results were generated before this publication; published_sha256 identifies the submitted files.",
   "sources": [
@@ -64,10 +60,23 @@
     },
     {
       "published_path": "scripts/femba_precision_suite.py",
-      "published_sha256": "92e577434f2ba3611ecff71ab5cd6e69cbad389b20ae97d2485dd4b20bddfef0",
+      "published_sha256": "5221cc8511b963e26090ebd4e815303e56dbf0472097540999d8549557f2383e",
       "executed_versions": [
         {
           "sha256": "92e577434f2ba3611ecff71ab5cd6e69cbad389b20ae97d2485dd4b20bddfef0",
+          "changes_for_publication": [
+            "Add the 22 Linear-input activation scope alongside the unchanged 57-boundary numerical path, with separate calibration, parity gates and saved-state scope metadata.",
+            "Add optional --variants; an explicit subset must begin with FP32."
+          ],
+          "experiments": [
+            "precision_results.json"
+          ]
+        },
+        {
+          "sha256": "5221cc8511b963e26090ebd4e815303e56dbf0472097540999d8549557f2383e",
+          "experiments": [
+            "linear_scope_results.json"
+          ],
           "changes_for_publication": []
         }
       ]
@@ -80,7 +89,9 @@
           "sha256": "77f27983c504b29dd74d37e4be19b301f71478419309f2b44d4de3ba0a1523fe",
           "changes_for_publication": [],
           "experiments": [
-            "rotation_layout_results.json"
+            "rotation_layout_results.json",
+            "linear_scope_results.json",
+            "rotation_numeric_results.json"
           ]
         },
         {
@@ -93,6 +104,36 @@
           ]
         }
       ]
+    }
+  ],
+  "execution_working_trees": [
+    {
+      "base_commit": "4a03dcaf473877ccdef5c652acd2c49cf43435c2",
+      "dirty": true,
+      "experiments": [
+        "fp32_control_results.json",
+        "paper_label_results.json",
+        "lr_control_results.json",
+        "precision_results.json",
+        "rotation_layout_results.json"
+      ]
+    },
+    {
+      "base_commit": "67a82177f287c3593ea928e3a4300749fa2049fb",
+      "dirty": true,
+      "experiments": [
+        "linear_scope_results.json"
+      ],
+      "source_evidence": "Executed production snapshots and their hashes are retained with the raw suite artifacts; the portable summary records source_sha256."
+    },
+    {
+      "base_commit": "67a82177f287c3593ea928e3a4300749fa2049fb",
+      "dirty": false,
+      "experiments": [
+        "rotation_numeric_results.json"
+      ],
+      "external_probe_sha256": "586e0e704d57f17fc82362b7bc46f69016c102990b1f4d4fecdd86c38494d6f4",
+      "source_evidence": "The tracked checkout was clean; this separate numerical diagnostic ran an external probe, identified by its own source hash."
     }
   ]
 }

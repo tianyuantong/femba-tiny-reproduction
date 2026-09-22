@@ -1,9 +1,11 @@
 """Pure protocol contracts plus actual CPU tensor contracts (run in the WSL environment)."""
 from copy import deepcopy
 from dataclasses import asdict
+import io
 from pathlib import Path
+import sys
 from tempfile import TemporaryDirectory
-from types import SimpleNamespace
+from types import ModuleType, SimpleNamespace
 import unittest
 from unittest.mock import Mock, patch
 
@@ -13,6 +15,43 @@ try:
     import torch
 except ImportError:
     torch = None
+
+
+def _stub_mamba_task(scan):
+    """Use the production explicit forward with tiny CPU modules and a recorded scan."""
+    class Mamba(torch.nn.Module):
+        def __init__(self):
+            super().__init__()
+            self.dt_rank, self.d_state, self.activation = 1, 1, 'silu'
+            self.in_proj = torch.nn.Linear(2, 4, bias=False)
+            self.conv1d = torch.nn.Conv1d(2, 2, 1, groups=2, bias=False)
+            self.act = torch.nn.Identity()
+            self.x_proj = torch.nn.Linear(2, 3, bias=False)
+            self.dt_proj = torch.nn.Linear(1, 2)
+            self.out_proj = torch.nn.Linear(2, 2, bias=False)
+            self.A_log, self.D = torch.nn.Parameter(torch.zeros(2, 1)), torch.nn.Parameter(torch.ones(2))
+            with torch.no_grad():
+                self.in_proj.weight.copy_(torch.cat((torch.eye(2), 0.23 * torch.eye(2))))
+                self.conv1d.weight.fill_(0.3)
+                self.x_proj.weight.copy_(torch.tensor([[0.7, 0.2], [0.3, 0.4], [0.9, 0.6]]))
+                self.dt_proj.weight.copy_(torch.tensor([[0.7], [0.3]]))
+                self.dt_proj.bias.zero_()
+                self.out_proj.weight.copy_(torch.tensor([[0.31, 0.17], [0.23, 0.41]]))
+
+    model = torch.nn.Module()
+    model.mamba_blocks = torch.nn.ModuleList([torch.nn.Module(), torch.nn.Module()])
+    for block in model.mamba_blocks:
+        block.mamba_fwd, block.mamba_rev = Mamba(), Mamba()
+    model.classifier = torch.nn.Module()
+    model.classifier.mamba_1 = Mamba()
+    model.classifier.fc1, model.classifier.fc3 = torch.nn.Linear(2, 2), torch.nn.Linear(2, 2)
+    names = ('mamba_ssm', 'mamba_ssm.modules', 'mamba_ssm.modules.mamba_simple',
+             'mamba_ssm.ops', 'mamba_ssm.ops.selective_scan_interface', 'causal_conv1d')
+    imports = {name: ModuleType(name) for name in names}
+    imports['mamba_ssm.modules.mamba_simple'].Mamba = Mamba
+    imports['mamba_ssm.ops.selective_scan_interface'].selective_scan_fn = scan
+    imports['causal_conv1d'].causal_conv1d_fn = None
+    return SimpleNamespace(model=model), imports
 
 
 class PrecisionSuiteTests(unittest.TestCase):
@@ -34,6 +73,23 @@ class PrecisionSuiteTests(unittest.TestCase):
         self.assertEqual(len(suite.ACTIVATION_SITES), 57)
         self.assertEqual(len(set(suite.ACTIVATION_SITES)), 57)
         self.assertEqual(sum(name.endswith('.scan_gate_output') for name in suite.ACTIVATION_SITES), 5)
+
+    def test_linear_scope_has_only_the_22_linear_operation_inputs(self):
+        self.assertEqual(len(suite.LINEAR_INPUT_SITES), 22)
+        self.assertEqual(len(set(suite.LINEAR_INPUT_SITES)), 22)
+        self.assertFalse(set(suite.LINEAR_INPUT_SITES) & set(suite.ACTIVATION_SITES))
+        for name in suite.MAMBA_NAMES:
+            self.assertEqual(sum(site.startswith(name + '.') for site in suite.LINEAR_INPUT_SITES), 4)
+        with self.assertRaises(ValueError):
+            suite.Variant('invalid', activation_scope='unknown')
+
+    def test_subset_requires_unique_known_variants_and_fp32_first(self):
+        chosen = suite.selected_variants(['fp32', 'w8a8-linear', 'w4a8-linear'])
+        self.assertEqual([variant.activation_scope for variant in chosen], ['all57', 'linear_inputs', 'linear_inputs'])
+        self.assertEqual(suite.selected_variants(None), suite.VARIANTS)
+        for names in ([], ['w8a8-linear'], ['fp32', 'fp32'], ['fp32', 'unknown']):
+            with self.assertRaises(ValueError):
+                suite.selected_variants(names)
 
     def test_rotations_have_matching_weight_and_activation_controls(self):
         modes = {variant.name: variant for variant in suite.VARIANTS}
@@ -61,6 +117,16 @@ class PrecisionSuiteTests(unittest.TestCase):
         self.assertIsNone(suite.gate_failure_reason(suite.Variant('w8a32', 8), parity))
         self.assertIsNone(suite.gate_failure_reason(suite.Variant('fp16', precision='fp16-direct'), parity))
 
+    def test_linear_scope_cannot_reuse_the_legacy_gate(self):
+        variant = suite.Variant('linear', 8, 'float', activation_scope='linear_inputs')
+        gates = {'None': True, '8': True, '4': False}
+        parity = {'weight_gate_passed': gates, 'rotation_passed': True}
+        self.assertIsNotNone(suite.gate_failure_reason(variant, parity))
+        parity['scope_weight_gate_passed'] = {'linear_inputs': gates.copy()}
+        self.assertIsNone(suite.gate_failure_reason(variant, parity))
+        parity['scope_weight_gate_passed']['linear_inputs']['None'] = False
+        self.assertIsNotNone(suite.gate_failure_reason(variant, parity))
+
     def test_calibration_observes_once_per_rotation_group_and_shares_statistics(self):
         statistics = {'scale_float': {'node': 0.03}, 'scale_pot': {'node': 0.03125},
                       'max_abs': {'node': 3.81}, 'elements': {'node': 2048}}
@@ -82,6 +148,28 @@ class PrecisionSuiteTests(unittest.TestCase):
             results[0]['max_abs']['node'] = -1
             self.assertEqual(context.calibration_cache['plain_fp32']['max_abs']['node'], 3.81)
 
+    def test_calibration_cache_isolates_scope_and_rotation(self):
+        context = SimpleNamespace()
+        def statistics(context, rotation, cohort, scope):
+            return {'activation_scope': scope, 'statistics_group': suite.calibration_group(rotation, scope),
+                    'scale_float': {name: 0.03 for name in suite.ACTIVATION_SCOPES[scope]},
+                    'scale_pot': {name: 0.03125 for name in suite.ACTIVATION_SCOPES[scope]}}
+        with TemporaryDirectory() as temporary, patch.object(suite, '_collect_calibration', side_effect=statistics) as collect:
+            hashes = set()
+            for rotation in (False, True):
+                for scope in suite.ACTIVATION_SCOPES:
+                    reports = []
+                    for bits in (8, 4):
+                        variant = suite.Variant(f'{rotation}-{scope}-{bits}', bits, 'float', rotation,
+                                                activation_scope=scope)
+                        directory = Path(temporary) / variant.name
+                        directory.mkdir()
+                        reports.append(suite._calibrate(context, variant, [0, 1], directory))
+                    self.assertEqual(reports[0]['shared_statistics_sha256'], reports[1]['shared_statistics_sha256'])
+                    hashes.add(reports[0]['shared_statistics_sha256'])
+            self.assertEqual(collect.call_count, 4)
+            self.assertEqual(len(hashes), 4)
+
     def test_evidence_rejects_nonfinite_json_numbers(self):
         with self.assertRaises(ValueError):
             suite.canonical({'scale': float('nan')})
@@ -97,7 +185,8 @@ class PrecisionSuiteTests(unittest.TestCase):
     def test_saved_scales_and_rotation_are_required_and_integrity_checked(self):
         metadata = {'variant': asdict(suite.Variant('fixture', 8, 'float', True)),
                     'scales': {'node': 0.01}, 'rotation': {'hash': 'original'},
-                    'config': {'normalize': True}, 'checkpoint_sha256': 'parent'}
+                    'config': {'normalize': True}, 'checkpoint_sha256': 'parent',
+                    'activation_scope': 'all57', 'scope_sha256': 'all57-scope'}
         restored = suite.validate_saved_metadata(deepcopy(metadata), metadata)
         self.assertEqual(restored, suite.Variant(**metadata['variant']))
         for field in metadata:
@@ -105,7 +194,8 @@ class PrecisionSuiteTests(unittest.TestCase):
             del damaged[field]
             with self.assertRaises(ValueError):
                 suite.validate_saved_metadata(damaged, metadata)
-        for field, value in (('scales', {'node': 0.02}), ('rotation', {'hash': 'changed'})):
+        for field, value in (('scales', {'node': 0.02}), ('rotation', {'hash': 'changed'}),
+                             ('activation_scope', 'linear_inputs'), ('scope_sha256', 'wrong-scope')):
             damaged = deepcopy(metadata)
             damaged[field] = value
             with self.assertRaises(ValueError):
@@ -161,6 +251,83 @@ class TensorContracts(unittest.TestCase):
             manager.scales['model_input'] = 3.0
         with self.assertRaises(ValueError):
             suite._manager(None, 'qdq', {'model_input': 1.0})
+
+    def test_out_of_scope_calls_are_identity_and_never_observed(self):
+        value = torch.arange(12, dtype=torch.float32).reshape(3, 4).t()
+        for scope, excluded in (('all57', suite.LINEAR_INPUT_SITES[0]),
+                                 ('linear_inputs', suite.ACTIVATION_SITES[0])):
+            for mode in ('observe', 'qdq'):
+                scales = {site: 0.1 for site in suite.ACTIVATION_SCOPES[scope]} if mode == 'qdq' else None
+                manager = suite._manager(None, mode, scales, activation_scope=scope)
+                self.assertIs(manager.qdq(excluded, value), value)
+                self.assertEqual(manager.device_stats, {})
+                self.assertEqual(manager.device_maxima, {})
+
+    def test_each_scope_requires_its_complete_observation_and_restores_its_own_scales(self):
+        for scope, sites in suite.ACTIVATION_SCOPES.items():
+            observer = suite._manager(None, 'observe', activation_scope=scope)
+            for name in sites[:-1]:
+                observer.qdq(name, torch.tensor([0.21, -0.42]))
+            with self.assertRaises(ValueError):
+                observer.freeze()
+            observer.qdq(sites[-1], torch.zeros(2))
+            scales, _ = observer.freeze()
+            variant = suite.Variant('fixture', 8, 'float', activation_scope=scope)
+            metadata = {'variant': asdict(variant), 'scales': scales, 'rotation': None, 'config': {},
+                        'checkpoint_sha256': 'parent', 'activation_scope': scope, 'scope_sha256': scope}
+            buffer = io.BytesIO()
+            torch.save(metadata, buffer)
+            buffer.seek(0)
+            restored = torch.load(buffer, weights_only=False)
+            decoded = suite.validate_saved_metadata(restored, metadata)
+            manager = suite._manager(None, 'qdq', restored['scales'], activation_scope=decoded.activation_scope)
+            self.assertEqual(tuple(sorted(manager.scales)), sites)
+            with self.assertRaises(TypeError):
+                manager.scales[sites[0]] = 1.0
+            wrong_scope = 'linear_inputs' if scope == 'all57' else 'all57'
+            with self.assertRaises(ValueError):
+                suite._manager(None, 'qdq', restored['scales'], activation_scope=wrong_scope)
+
+    def test_linear_scope_quantizes_projection_inputs_without_direct_scan_quantization(self):
+        scan_inputs, projection_inputs, rotations = [], {}, []
+        def scan(x, dt, a, b, c, d, **kwargs):
+            scan_inputs.append({'x': x.clone(), 'dt': dt.clone(), 'B': b.clone(), 'C': c.clone(),
+                                'z': kwargs['z'].clone()})
+            return x + 0.06
+        def rotate(name, value):
+            rotations.append(name)
+            return value + 0.07
+        task, imports = _stub_mamba_task(scan)
+        scales = {name: 0.1 for name in suite.LINEAR_INPUT_SITES}
+        manager = suite._manager(None, 'qdq', scales, SimpleNamespace(rotate_activation=rotate), 'linear_inputs')
+        for name in suite.MAMBA_NAMES:
+            for operation in ('x_proj', 'dt_proj', 'out_proj'):
+                task.model.get_submodule(name + '.' + operation).register_forward_pre_hook(
+                    lambda module, args, key=name + '.' + operation: projection_inputs.__setitem__(key, args[0].clone()))
+        with patch.dict(sys.modules, imports):
+            suite.install_explicit_mamba_forward(task, manager)
+        with torch.inference_mode():
+            handles = suite.install_outer_boundaries(task, manager)
+            signals = torch.tensor([[[0.26, 0.73], [0.44, -0.04]]])
+            for name in suite.MAMBA_NAMES:
+                task.model.get_submodule(name)(signals)
+            task.model.classifier.fc1(signals)
+            task.model.classifier.fc3(signals)
+            for handle in handles:
+                handle.remove()
+        self.assertEqual(len(rotations), 5)
+        self.assertEqual(set(manager.device_stats), set(suite.LINEAR_INPUT_SITES))
+        self.assertEqual(len(handles), 2)
+        for name, received in zip(suite.MAMBA_NAMES, scan_inputs):
+            torch.testing.assert_close(projection_inputs[name + '.x_proj'], torch.tensor([[0.1, 0.2], [0.1, 0.0]]))
+            # The scan's convolution input is NOT the quantized x_proj input.
+            torch.testing.assert_close(received['x'], torch.tensor([[[0.09, 0.12], [0.21, 0.0]]]))
+            torch.testing.assert_close(received['B'], torch.tensor([[[0.11, 0.03]]]))
+            torch.testing.assert_close(received['C'], torch.tensor([[[0.21, 0.09]]]))
+            torch.testing.assert_close(received['dt'], torch.tensor([[[0.07, 0.07], [0.03, 0.03]]]))
+            torch.testing.assert_close(received['z'], torch.tensor([[[0.069, 0.092], [0.161, 0.0]]]))
+            expected_out_input = ((received['x'] + 0.06 + 0.07).transpose(1, 2) / 0.1).round() * 0.1
+            torch.testing.assert_close(projection_inputs[name + '.out_proj'], expected_out_input)
 
     def test_observer_requires_every_node_and_zero_maxima_use_unit_scale(self):
         manager = suite._manager(None, 'observe')

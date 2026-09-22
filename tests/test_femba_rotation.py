@@ -87,6 +87,34 @@ class RotationContracts(unittest.TestCase):
         actual = self.rotation.rotate_activation(name, value[:, :, None]).squeeze(-1)
         self.assertTrue(tensor_parity(expected, actual)["allclose"])
 
+    def test_encoder_tail_uses_h4_after_the_permutation_and_signs(self):
+        name, dimension = TARGETS[0], EXPECTED_DIMENSIONS[0]
+        metadata = self.rotation.metadata[name]
+        permutation = torch.tensor(metadata["permutation"])
+        signs = torch.tensor(metadata["signs"], dtype=torch.float32)
+        # Choose source coordinates which P moves into the four tail positions.
+        source_indices = permutation.argsort()[-4:]
+        value = torch.eye(dimension, dtype=torch.float32)[source_indices]
+        h4 = torch.tensor([[1, 1, 1, 1], [1, -1, 1, -1],
+                           [1, 1, -1, -1], [1, -1, -1, 1]], dtype=torch.float32) / 2
+        expected = torch.zeros((4, dimension), dtype=torch.float32)
+        expected[:, -4:] = signs[-4:, None] * h4
+        actual = self.rotation.rotate_activation(name, value[:, :, None]).squeeze(-1)
+        self.assertTrue(torch.equal(actual, expected))
+
+    def test_real_encoder_projection_width_preserves_the_linear_map(self):
+        name, dimension = TARGETS[0], EXPECTED_DIMENSIONS[0]
+        generator = torch.Generator().manual_seed(103)
+        weight = torch.randn((385, dimension), generator=generator) / dimension ** 0.5
+        bias = torch.randn((385,), generator=generator)
+        value = torch.randn((2, dimension, 8), generator=generator)
+        rotated_weight = self.rotation.transforms[name].apply(weight)
+        rotated_value = self.rotation.rotate_activation(name, value)
+        reference = F.linear(value.transpose(1, 2), weight, bias)
+        actual = F.linear(rotated_value.transpose(1, 2), rotated_weight, bias)
+        self.assertEqual(actual.shape, (2, 8, 385))
+        self.assertTrue(tensor_parity(reference, actual)["allclose"])
+
     def test_identity_preserves_weight_and_activation_qdq_paths(self):
         model = deepcopy(self.original)
         self.identity.transform_out_proj_weights_(model)

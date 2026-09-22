@@ -34,6 +34,10 @@ OUTER_SITES = ("model_input", "patch_embed_conv_out", "pos_embed_added",
                "encoder_residual_0", "encoder_residual_1", "encoder_norm_0", "encoder_norm_1",
                "classifier_fc1_out", "classifier_gelu_out", "classifier_pool_out")
 ACTIVATION_SITES = sorted([f"{name}.{site}" for name in MAMBA_NAMES for site in MAMBA_SITES] + list(OUTER_SITES))
+LINEAR_INPUT_SITES = sorted([f"{name}.{site}" for name in MAMBA_NAMES
+                             for site in ("in_proj_input", "x_proj_input", "dt_proj_input", "out_proj_input")]
+                            + ["classifier_fc1_input", "classifier_fc3_input"])
+ACTIVATION_SCOPES = {"all57": tuple(ACTIVATION_SITES), "linear_inputs": tuple(LINEAR_INPUT_SITES)}
 UPSTREAM_MODULES = (("models.FEMBA", "models/FEMBA.py"), ("util.train_utils", "util/train_utils.py"),
                     ("datasets.hdf5_dataset", "datasets/hdf5_dataset.py"),
                     ("data_module.finetune_data_module", "data_module/finetune_data_module.py"),
@@ -48,6 +52,11 @@ class Variant:
     rotation: bool = False
     precision: str = "fp32"
     diagnostic: bool = False
+    activation_scope: str = "all57"
+
+    def __post_init__(self):
+        if self.activation_scope not in ACTIVATION_SCOPES:
+            raise ValueError(f"Unknown activation scope: {self.activation_scope}")
 
 
 VARIANTS = (
@@ -56,10 +65,21 @@ VARIANTS = (
     Variant("rot-w8a32", 8, rotation=True), Variant("rot-w4a32", 4, rotation=True),
     Variant("w8a8-float", 8, "float"), Variant("w4a8-float", 4, "float"),
     Variant("w8a8-pot", 8, "pot"),
+    Variant("w8a8-linear", 8, "float", activation_scope="linear_inputs"),
+    Variant("w4a8-linear", 4, "float", activation_scope="linear_inputs"),
     Variant("rot-w8a8-float", 8, "float", True), Variant("rot-w4a8-float", 4, "float", True),
 )
 FP16_DIAGNOSTICS = (Variant("fp16-state-safe", precision="fp16-state-safe", diagnostic=True),
                     Variant("amp-fp16", precision="amp-fp16", diagnostic=True))
+
+
+def selected_variants(names: list[str] | None) -> tuple[Variant, ...]:
+    if names is None:
+        return VARIANTS
+    choices = {variant.name: variant for variant in VARIANTS}
+    if not names or names[0] != "fp32" or len(names) != len(set(names)) or any(name not in choices for name in names):
+        raise ValueError("Select unique known variants with fp32 first")
+    return tuple(choices[name] for name in names)
 
 
 def canonical(value: Any) -> bytes:
@@ -114,6 +134,7 @@ def install_explicit_mamba_forward(task, manager):
             batch, seqlen, _ = hidden_states.shape
             # Match the pinned mamba_ssm non-fast path exactly: project in
             # channel-first layout, including the module bias cast.
+            hidden_states = _manager.qdq(_prefix + '.in_proj_input', hidden_states)
             xz = rearrange(self.in_proj.weight @ rearrange(hidden_states, 'b l d -> d (b l)'), 'd (b l) -> b d l', l=seqlen)
             if self.in_proj.bias is not None:
                 xz = xz + rearrange(self.in_proj.bias.to(dtype=xz.dtype), 'd -> d 1')
@@ -126,12 +147,15 @@ def install_explicit_mamba_forward(task, manager):
                 x = self.conv1d(x)[..., :seqlen]
                 x = self.act(x)
             x = _manager.qdq(_prefix + '.conv_silu', x)
-            x_db = self.x_proj(rearrange(x, 'b d l -> (b l) d'))
+            # QDQ the projection input independently; scan still consumes x.
+            x_input = _manager.qdq(_prefix + '.x_proj_input', rearrange(x, 'b d l -> (b l) d'))
+            x_db = self.x_proj(x_input)
             dt, B, C = torch.split(x_db, [self.dt_rank, self.d_state, self.d_state], dim=-1)
             dt = _manager.qdq(_prefix + '.x_proj_dt_low', dt)
             B = _manager.qdq(_prefix + '.x_proj_B', B)
             C = _manager.qdq(_prefix + '.x_proj_C', C)
             # Exact upstream projection order/layout before selective scan.
+            dt = _manager.qdq(_prefix + '.dt_proj_input', dt)
             dt = self.dt_proj.weight @ dt.t()
             dt = _manager.qdq(_prefix + '.dt_proj_pre_softplus', dt)
             dt = rearrange(dt, 'd (b l) -> b d l', b=batch, l=seqlen).contiguous()
@@ -141,6 +165,7 @@ def install_explicit_mamba_forward(task, manager):
             y = selective_scan_fn(x, dt, A, B, C, self.D.float(), z=z, delta_bias=self.dt_proj.bias.float(), delta_softplus=True, return_last_state=False)
             y = _manager.qdq(_prefix + '.scan_gate_output', y)
             y = rearrange(y, 'b d l -> b l d')
+            y = _manager.qdq(_prefix + '.out_proj_input', y)
             out = self.out_proj(y)
             out = _manager.qdq(_prefix + '.out_proj', out)
             return out
@@ -152,6 +177,11 @@ def install_explicit_mamba_forward(task, manager):
 
 def install_outer_boundaries(task, manager):
     modules = dict(task.model.named_modules())
+    if manager.activation_scope == "linear_inputs":
+        return [modules[name].register_forward_pre_hook(
+            lambda module, args, site=site: (manager.qdq(site, args[0]), *args[1:]))
+                for name, site in (("classifier.fc1", "classifier_fc1_input"),
+                                   ("classifier.fc3", "classifier_fc3_input"))]
     required = ['patch_embed.proj', 'patch_embed', 'mamba_blocks.0', 'classifier.fc1', 'classifier.activation1', 'classifier.fc3']
     for name in required:
         if name not in modules:
@@ -305,13 +335,19 @@ def _weight_qdq(task: Any, bits: int) -> dict:
             "granularity": "per_output_channel", "layers": layers}
 
 
-def _manager(context: SimpleNamespace, mode: str, scales: dict | None = None, rotation: Any = None):
+def _manager(context: SimpleNamespace, mode: str, scales: dict | None = None, rotation: Any = None,
+             activation_scope: str = "all57"):
+    if activation_scope not in ACTIVATION_SCOPES:
+        raise ValueError(f"Unknown activation scope: {activation_scope}")
+    sites = ACTIVATION_SCOPES[activation_scope]
+    site_names = frozenset(sites)
     class Manager:
         def __init__(self):
             if mode not in ("off", "observe", "qdq"):
                 raise ValueError("Unknown activation mode")
-            if mode == "qdq" and (scales is None or sorted(scales) != ACTIVATION_SITES):
-                raise ValueError("QDQ requires all 57 frozen activation scales")
+            if mode == "qdq" and (scales is None or tuple(sorted(scales)) != sites):
+                raise ValueError(f"QDQ requires exactly {len(sites)} frozen {activation_scope} scales")
+            self.activation_scope = activation_scope
             self.mode, self.scales = mode, MappingProxyType(dict(scales or {}))
             self.max_abs, self.calibration_counts = {}, {}
             self.device_maxima, self.device_stats, self.device_scales = {}, {}, {}
@@ -319,7 +355,7 @@ def _manager(context: SimpleNamespace, mode: str, scales: dict | None = None, ro
         def qdq(self, name, value):
             if rotation is not None and name.endswith(".scan_gate_output"):
                 value = rotation.rotate_activation(name, value)
-            if self.mode == "off":
+            if self.mode == "off" or name not in site_names:
                 return value
             if self.mode == "observe":
                 maximum = value.detach().abs().amax()
@@ -352,8 +388,8 @@ def _manager(context: SimpleNamespace, mode: str, scales: dict | None = None, ro
 
         def freeze(self):
             names = sorted(self.device_maxima)
-            if names != ACTIVATION_SITES:
-                raise ValueError("Calibration requires exactly the 57 declared boundaries")
+            if tuple(names) != sites:
+                raise ValueError(f"Calibration requires exactly {len(sites)} {activation_scope} boundaries")
             values = torch.stack([self.device_maxima[name] for name in names]).cpu().tolist()
             self.max_abs = dict(zip(names, values))
             if any(not math.isfinite(value) for value in values):
@@ -404,7 +440,7 @@ def _build_variant(context: SimpleNamespace, variant: Variant, scales: dict | No
         plan.transform_out_proj_weights_(task.model)
     weight = _weight_qdq(task, variant.weight_bits) if variant.weight_bits and not observe else None
     mode = "observe" if observe else ("qdq" if variant.activation_scale else "off")
-    manager = _manager(context, mode, scales, plan)
+    manager = _manager(context, mode, scales, plan, variant.activation_scope)
     handles, patched = [], []
     if observe or variant.activation_scale or plan is not None:
         patched = install_explicit_mamba_forward(task, manager)
@@ -449,7 +485,8 @@ def _capture(built: SimpleNamespace, signals: Any) -> dict:
     return captures
 
 
-def _gate_pair(context: SimpleNamespace, signals: Any, bits: int | None) -> dict:
+def _gate_pair(context: SimpleNamespace, signals: Any, bits: int | None,
+               activation_scope: str = "all57") -> dict:
     from biofoundation.femba_rotation import compare_parity, tensor_parity
 
     native = _build_variant(context, Variant("gate-native", bits))
@@ -461,7 +498,8 @@ def _gate_pair(context: SimpleNamespace, signals: Any, bits: int | None) -> dict
         reference = _capture(native, signals)
     finally:
         _close(native)
-    explicit = _build_variant(context, Variant("gate-explicit", bits), rotation_mode="none")
+    explicit = _build_variant(context, Variant("gate-explicit", bits, activation_scope=activation_scope),
+                              rotation_mode="none")
     try:
         candidate = _capture(explicit, signals)
     finally:
@@ -499,33 +537,46 @@ def _report_passed(report: dict) -> bool:
 
 def _run_gates(context: SimpleNamespace, cohort: list[int], directory: Path) -> dict:
     gate_indices = {"train": cohort[:32], "val": balanced_indices(context.labels["val"].tolist(), 16, 43)}
+    scopes = sorted({variant.activation_scope for variant in context.variants})
     evidence = {"sample_indices": gate_indices, "splits": {}, "base_passed": True,
-                "weight_gate_passed": {"None": True, "8": True, "4": True}, "rotation_passed": True}
+                "scope_weight_gate_passed": {scope: {"None": True, "8": True, "4": True} for scope in scopes},
+                "rotation_passed": True}
     for split, indices in gate_indices.items():
         signals, _ = next(iter(_loader(context, split, indices)))
-        rows = {}
-        for bits in (None, 8, 4):
-            try:
-                rows[str(bits)] = _gate_pair(context, signals, bits)
-                passed = all(_report_passed(part) for part in rows[str(bits)].values())
-            except (RuntimeError, ValueError, FloatingPointError, TypeError, KeyError) as error:
-                rows[str(bits)] = {"passed": False, "failure": str(error)}
-                passed = False
-            evidence["weight_gate_passed"][str(bits)] &= passed
+        scoped_rows = {}
+        for scope in scopes:
+            rows = {}
+            for bits in (None, 8, 4):
+                try:
+                    rows[str(bits)] = _gate_pair(context, signals, bits, scope)
+                    passed = all(_report_passed(part) for part in rows[str(bits)].values())
+                except (RuntimeError, ValueError, FloatingPointError, TypeError, KeyError) as error:
+                    rows[str(bits)] = {"passed": False, "failure": str(error)}
+                    passed = False
+                evidence["scope_weight_gate_passed"][scope][str(bits)] &= passed
+            scoped_rows[scope] = rows
         try:
             rotations = _gate_rotations(context, signals)
             rotation_passed = all(_report_passed(row) for row in rotations.values())
         except (RuntimeError, ValueError, FloatingPointError, TypeError, KeyError) as error:
             rotations, rotation_passed = {"passed": False, "failure": str(error)}, False
-        evidence["splits"][split] = {"explicit_qdq_off": rows, "rotation_qdq_off": rotations}
+        evidence["splits"][split] = {"explicit_qdq_off": scoped_rows["all57"],
+                                     "explicit_qdq_off_by_scope": scoped_rows, "rotation_qdq_off": rotations}
         evidence["rotation_passed"] &= rotation_passed
+    evidence["weight_gate_passed"] = evidence["scope_weight_gate_passed"]["all57"]
     evidence["base_passed"] = all(evidence["weight_gate_passed"].values())
     write_json(directory / "parity.json", evidence)
     return evidence
 
 
-def _collect_calibration(context: SimpleNamespace, rotation: bool, cohort: list[int]) -> dict:
-    built = _build_variant(context, Variant("calibration", rotation=rotation), observe=True)
+def calibration_group(rotation: bool, activation_scope: str) -> str:
+    group = "rotated_fp32" if rotation else "plain_fp32"
+    return group if activation_scope == "all57" else f"{group}:{activation_scope}"
+
+
+def _collect_calibration(context: SimpleNamespace, rotation: bool, cohort: list[int],
+                         activation_scope: str = "all57") -> dict:
+    built = _build_variant(context, Variant("calibration", rotation=rotation, activation_scope=activation_scope), observe=True)
     try:
         with torch.inference_mode():
             for signals, _ in _loader(context, "train", cohort):
@@ -533,13 +584,14 @@ def _collect_calibration(context: SimpleNamespace, rotation: bool, cohort: list[
                 if not torch.isfinite(logits).all():
                     raise FloatingPointError("Nonfinite calibration logits")
         floating, powers = built.manager.freeze()
-        if sorted(floating) != ACTIVATION_SITES:
-            raise ValueError("Calibration did not execute exactly the 57 declared boundaries")
-        return {"statistics_group": "rotated_fp32" if rotation else "plain_fp32",
+        if tuple(sorted(floating)) != ACTIVATION_SCOPES[activation_scope]:
+            raise ValueError("Calibration did not execute exactly the declared scope boundaries")
+        return {"statistics_group": calibration_group(rotation, activation_scope),
+                       "activation_scope": activation_scope,
                        "calibration_model": "rot-fp32" if rotation else "fp32",
                        "weight_quantization_enabled": False, "activation_quantization_enabled": False,
                        "cohort_sha256": context.cohort_hash,
-                       "scope_sha256": context.scope_hash, "sample_count": len(cohort),
+                       "scope_sha256": context.scope_hashes[activation_scope], "sample_count": len(cohort),
                        "max_abs": built.manager.max_abs, "elements": built.manager.calibration_counts,
                        "scale_float": floating, "scale_pot": powers,
                        "rotation": built.plan.to_dict() if built.plan else None}
@@ -550,9 +602,9 @@ def _collect_calibration(context: SimpleNamespace, rotation: bool, cohort: list[
 def _calibrate(context: SimpleNamespace, variant: Variant, cohort: list[int], out: Path) -> dict:
     if not hasattr(context, "calibration_cache"):
         context.calibration_cache = {}
-    group = "rotated_fp32" if variant.rotation else "plain_fp32"
+    group = calibration_group(variant.rotation, variant.activation_scope)
     if group not in context.calibration_cache:
-        context.calibration_cache[group] = _collect_calibration(context, variant.rotation, cohort)
+        context.calibration_cache[group] = _collect_calibration(context, variant.rotation, cohort, variant.activation_scope)
     statistics = deepcopy(context.calibration_cache[group])
     calibration = {**statistics, "variant": variant.name,
                    "shared_statistics_sha256": hashlib.sha256(canonical(statistics)).hexdigest(),
@@ -563,7 +615,9 @@ def _calibrate(context: SimpleNamespace, variant: Variant, cohort: list[int], ou
 
 def gate_failure_reason(variant: Variant, parity: dict) -> str | None:
     if variant.activation_scale or variant.rotation:
-        gates = parity.get("weight_gate_passed", {})
+        gates = parity.get("scope_weight_gate_passed", {}).get(variant.activation_scope, {})
+        if variant.activation_scope == "all57" and not gates:
+            gates = parity.get("weight_gate_passed", {})
         if gates.get("None") is not True or gates.get(str(variant.weight_bits)) is not True:
             return "explicit_qdq_off_gate_failed"
     if variant.rotation and parity.get("rotation_passed") is not True:
@@ -576,7 +630,8 @@ def _identity_quant_gate(context: SimpleNamespace, variant: Variant, scales: dic
     from biofoundation.femba_rotation import compare_parity
 
     reports = {}
-    plain = Variant("identity-reference", variant.weight_bits, variant.activation_scale)
+    plain = Variant("identity-reference", variant.weight_bits, variant.activation_scale,
+                    activation_scope=variant.activation_scope)
     for split, indices in (("train", cohort[:32]),
                            ("val", balanced_indices(context.labels["val"].tolist(), 16, 43))):
         signals, _ = next(iter(_loader(context, split, indices)))
@@ -611,10 +666,13 @@ def native_labels(logits: Any):
 
 def validate_saved_metadata(payload: dict, expected: dict) -> Variant:
     """Reject incomplete or changed inference metadata before loading tensors."""
-    for key in ("variant", "scales", "rotation", "config", "checkpoint_sha256"):
+    for key in ("variant", "scales", "rotation", "config", "checkpoint_sha256", "activation_scope", "scope_sha256"):
         if key not in payload or canonical(payload[key]) != canonical(expected[key]):
             raise ValueError(f"Saved inference metadata mismatch: {key}")
-    return Variant(**payload["variant"])
+    variant = Variant(**payload["variant"])
+    if variant.activation_scope != payload["activation_scope"]:
+        raise ValueError("Saved scope differs from its variant")
+    return variant
 
 
 def _softmax_metrics(logits: Any, labels: Any) -> dict:
@@ -700,6 +758,8 @@ def _save_reload(context: SimpleNamespace, built: SimpleNamespace, calibration: 
     scales = calibration["scales"] if calibration else None
     metadata = {"variant": asdict(built.variant), "scales": scales,
                 "rotation": built.plan.to_dict() if built.plan else None,
+                "activation_scope": built.variant.activation_scope,
+                "scope_sha256": context.scope_hashes[built.variant.activation_scope],
                 "config": context.run["config"], "checkpoint_sha256": context.checkpoint_hash}
     torch.save({"model_state": {key: value.detach().cpu() for key, value in built.task.model.state_dict().items()},
                 **metadata}, artifact)
@@ -730,7 +790,8 @@ def _save_reload(context: SimpleNamespace, built: SimpleNamespace, calibration: 
 
 def _row_header(context: SimpleNamespace, variant: Variant) -> dict:
     return {"variant": asdict(variant), "status": "started", "checkpoint_sha256": context.checkpoint_hash,
-            "data_manifest_sha256": context.run["data_manifest_sha256"], "scope_sha256": context.scope_hash,
+            "activation_scope": variant.activation_scope,
+            "data_manifest_sha256": context.run["data_manifest_sha256"], "scope_sha256": context.scope_hashes[variant.activation_scope],
             "source_set_sha256": context.source_hash, "cohort_sha256": context.cohort_hash}
 
 
@@ -760,13 +821,14 @@ def _run_variant(context: SimpleNamespace, variant: Variant, cohort: list[int], 
         if hashlib.sha256(canonical(dict(built.manager.scales) or None)).hexdigest() != before:
             raise ValueError("Activation scales changed during evaluation")
         if variant.activation_scale:
-            if set(built.manager.device_stats) != set(ACTIVATION_SITES):
+            if set(built.manager.device_stats) != set(ACTIVATION_SCOPES[variant.activation_scope]):
                 raise ValueError("Not all calibrated activation sites executed")
             stats = built.manager.finalized_stats()
             for item in stats.values():
                 if item["sqnr_db"] is not None and not math.isfinite(item["sqnr_db"]):
                     item["sqnr_db"] = None
-            write_json(out / "activation-stats.json", {"scope": "validation+test before reload probe", "sites": stats})
+            write_json(out / "activation-stats.json", {"scope": "validation+test before reload probe",
+                        "activation_scope": variant.activation_scope, "sites": stats})
         if result["status"] == "ok":
             result["roundtrip"] = _save_reload(context, built, calibration, cohort, out)
             if baseline is not None:
@@ -799,6 +861,18 @@ def _verify_fp32(context: SimpleNamespace, result: dict) -> dict:
     return {"native_metric_errors": errors, "max_abs_error": max(errors.values())}
 
 
+def scope_definition(name: str) -> dict:
+    if name not in ACTIVATION_SCOPES:
+        raise ValueError(f"Unknown activation scope: {name}")
+    return {"activation_scope": name, "activation_sites": list(ACTIVATION_SCOPES[name]),
+             "activation_bits": 8, "qmin": -127, "qmax": 127,
+             "activation_granularity": "per_tensor", "weight_granularity": "per_output_channel",
+             "fake_quantization": True, "integer_kernels": False,
+             "calibration_weight_quantization": False, "calibration_activation_quantization": False,
+             "calibration_statistics": "one FP32 observation per plain/rotated group and activation scope; shared across W4/W8 and float/pot scales",
+             "floating_scope": ["bias", "A_log", "D", "pos_embed", "LayerNorm", "selective_scan", "nonlinearities", "arithmetic"]}
+
+
 def _manifest(context: SimpleNamespace, output: Path, cohort: list[int]) -> dict:
     source_dir = output / "sources"
     source_dir.mkdir()
@@ -811,13 +885,9 @@ def _manifest(context: SimpleNamespace, output: Path, cohort: list[int]) -> dict
                        "mamba_runtime": Path(inspect.getsourcefile(mamba_simple))}.items():
         sources[name] = _snapshot(path, source_dir)
     context.source_hash = hashlib.sha256(canonical({name: item["sha256"] for name, item in sources.items()})).hexdigest()
-    scope = {"activation_sites": ACTIVATION_SITES, "activation_bits": 8, "qmin": -127, "qmax": 127,
-             "activation_granularity": "per_tensor", "weight_granularity": "per_output_channel",
-             "fake_quantization": True, "integer_kernels": False,
-             "calibration_weight_quantization": False, "calibration_activation_quantization": False,
-             "calibration_statistics": "one FP32 observation per plain/rotated group; shared across W4/W8 and float/pot scales",
-             "floating_scope": ["bias", "A_log", "D", "pos_embed", "LayerNorm", "selective_scan", "nonlinearities", "arithmetic"]}
-    context.scope_hash = hashlib.sha256(canonical(scope)).hexdigest()
+    scopes = {name: scope_definition(name) for name in ACTIVATION_SCOPES}
+    context.scope_hashes = {name: hashlib.sha256(canonical(value)).hexdigest() for name, value in scopes.items()}
+    context.scope_hash = context.scope_hashes["all57"]
     cohort_info = {"seed": 42, "split": "train", "indices": cohort,
                    "labels": [int(context.labels["train"][index]) for index in cohort],
                    "data_manifest_sha256": context.run["data_manifest_sha256"],
@@ -828,7 +898,10 @@ def _manifest(context: SimpleNamespace, output: Path, cohort: list[int]) -> dict
                 "parent_root": str(context.args.parent_root), "parent_run_sha256": sha256(context.args.parent_root / "results/upstream2025-run.json"),
                 "data_manifest": context.run["data_manifest_path"], "data_manifest_sha256": context.run["data_manifest_sha256"],
                 "config": context.run["config"], "upstream_commit": REF, "upstream_hashes": context.upstream_hashes,
-                "sources": sources, "native_helpers_original_sha256": NATIVE_SOURCE_SHA256, "source_set_sha256": context.source_hash, "scope": scope, "scope_sha256": context.scope_hash,
+                "sources": sources, "native_helpers_original_sha256": NATIVE_SOURCE_SHA256, "source_set_sha256": context.source_hash,
+                "scope": scopes["all57"], "scope_sha256": context.scope_hash,
+                "scopes": scopes, "scope_sha256_by_name": context.scope_hashes,
+                "requested_variants": [asdict(variant) for variant in context.variants],
                 "cohort_sha256": context.cohort_hash, "batch_size": int(context.cfg.batch_size),
                 "torch": torch.__version__, "gpu": torch.cuda.get_device_name(),
                 "tf32_matmul": torch.backends.cuda.matmul.allow_tf32, "tf32_cudnn": torch.backends.cudnn.allow_tf32,
@@ -862,14 +935,16 @@ def _finish(context: SimpleNamespace, output: Path, results: list[dict], parity:
 def run(args: argparse.Namespace) -> None:
     if args.output_root.exists():
         raise FileExistsError("Output root already exists; use a new directory")
+    variants = selected_variants(getattr(args, "variants", None))
     context = _initialize_runtime(args)
+    context.variants = variants
     _load_data(context)
     args.output_root.mkdir(parents=True, exist_ok=False)
     cohort = balanced_indices(context.labels["train"].tolist())
     _manifest(context, args.output_root, cohort)
     parity = _run_gates(context, cohort, args.output_root)
     results = []
-    for variant in VARIANTS:
+    for variant in variants:
         reason = gate_failure_reason(variant, parity)
         if reason:
             blocked = {**_row_header(context, variant), "status": "gate_failed", "reason": reason}
@@ -893,6 +968,8 @@ def main() -> None:
     parser.add_argument("--parent-root", type=Path, required=True)
     parser.add_argument("--output-root", type=Path, required=True)
     parser.add_argument("--checkpoint-sha256")
+    parser.add_argument("--variants", nargs="+", choices=[variant.name for variant in VARIANTS],
+                        help="Explicit subset in evaluation order; fp32 must be first")
     args = parser.parse_args()
     sys.path.insert(0, str(REPO))
     existed_before = args.output_root.exists()

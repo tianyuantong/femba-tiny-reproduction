@@ -1,0 +1,759 @@
+{
+  "checkpoint_sha256": "233b15df818d93b964a3d5c305a184de2ef1e62c2d50119a4349fb13b30c8890",
+  "sample_indices": {
+    "train": [
+      13177,
+      5265,
+      12267,
+      23061,
+      29676,
+      31197,
+      14271,
+      48978,
+      3250,
+      2691,
+      30373,
+      39226,
+      3465,
+      51792,
+      2292,
+      15285,
+      7937,
+      47500,
+      11126,
+      40511,
+      7047,
+      26361,
+      45267,
+      17635,
+      47043,
+      35812,
+      26974,
+      9718,
+      305,
+      28938,
+      4128,
+      53805
+    ],
+    "val": [
+      4335,
+      4878,
+      3146,
+      4445,
+      5560,
+      2900,
+      5861,
+      3411,
+      1550,
+      4701,
+      2503,
+      3554,
+      3536,
+      5474,
+      259,
+      588,
+      3711,
+      244,
+      5370,
+      4566,
+      316,
+      2493,
+      2566,
+      5662,
+      5150,
+      2698,
+      620,
+      5354,
+      37,
+      2836,
+      2553,
+      3471
+    ]
+  },
+  "probe_source_sha256": "586e0e704d57f17fc82362b7bc46f69016c102990b1f4d4fecdd86c38494d6f4",
+  "executed_commit": "67a82177f287c3593ea928e3a4300749fa2049fb",
+  "raw_results_sha256": "02d14052dc8c6ec00d6c0180de9db27a77525232cb7e9451ce0fb9b849e38706",
+  "runtime": {
+    "gpu": "RTX 5060 Ti",
+    "torch": "2.7.1+cu128",
+    "formal_dtype": "float32",
+    "reference_dtype": "float64",
+    "reference_purpose": "diagnosis only"
+  },
+  "splits": {
+    "train": {
+      "mamba_blocks.0.mamba_fwd": {
+        "activation_shape": [
+          32,
+          80,
+          1540
+        ],
+        "activation_abs_max": 3521.93505859375,
+        "output_abs_max": 1716.699951171875,
+        "comparisons": {
+          "published_dense_contiguous": {
+            "failure_count": 915,
+            "elements": 985600,
+            "max_abs_diff": 0.0015869140625,
+            "max_error_over_tolerance": 12.100224494934082,
+            "worst_reference": -0.0030887594912201166,
+            "worst_candidate": -0.002964019775390625
+          },
+          "published_dense_preserved": {
+            "failure_count": 1073,
+            "elements": 985600,
+            "max_abs_diff": 0.0029296875,
+            "max_error_over_tolerance": 14.837244033813477,
+            "worst_reference": 0.012323052622377872,
+            "worst_candidate": 0.012489709071815014
+          },
+          "butterfly_contiguous": {
+            "failure_count": 776,
+            "elements": 985600,
+            "max_abs_diff": 0.0018310546875,
+            "max_error_over_tolerance": 9.509943962097168,
+            "worst_reference": -0.0030887594912201166,
+            "worst_candidate": -0.00299072265625
+          },
+          "butterfly_preserved": {
+            "failure_count": 949,
+            "elements": 985600,
+            "max_abs_diff": 0.0028076171875,
+            "max_error_over_tolerance": 14.133367538452148,
+            "worst_reference": -0.0030887594912201166,
+            "worst_candidate": -0.0029430603608489037
+          },
+          "original_repeat": {
+            "failure_count": 0,
+            "elements": 985600,
+            "max_abs_diff": 0.0,
+            "max_error_over_tolerance": 0.0,
+            "worst_reference": 6.678039073944092,
+            "worst_candidate": 6.678039073944092
+          },
+          "original_fp32_vs_fp64_gold": {
+            "failure_count": 477,
+            "elements": 985600,
+            "max_abs_diff": 0.0015869140625,
+            "max_error_over_tolerance": 12.230124473571777,
+            "worst_reference": -0.002962834667414427,
+            "worst_candidate": -0.0030887594912201166
+          },
+          "rotated_fp64_vs_fp64_gold": {
+            "failure_count": 0,
+            "elements": 985600,
+            "max_abs_diff": 0.0,
+            "max_error_over_tolerance": 0.0,
+            "worst_reference": 6.678046703338623,
+            "worst_candidate": 6.678046703338623
+          }
+        }
+      },
+      "mamba_blocks.0.mamba_rev": {
+        "activation_shape": [
+          32,
+          80,
+          1540
+        ],
+        "activation_abs_max": 2154.71044921875,
+        "output_abs_max": 1753.9420166015625,
+        "comparisons": {
+          "published_dense_contiguous": {
+            "failure_count": 421,
+            "elements": 985600,
+            "max_abs_diff": 0.0020751953125,
+            "max_error_over_tolerance": 8.944570541381836,
+            "worst_reference": 0.010244942270219326,
+            "worst_candidate": 0.010343551635742188
+          },
+          "published_dense_preserved": {
+            "failure_count": 481,
+            "elements": 985600,
+            "max_abs_diff": 0.0040283203125,
+            "max_error_over_tolerance": 9.672986030578613,
+            "worst_reference": -0.019072357565164566,
+            "worst_candidate": -0.01918753609061241
+          },
+          "butterfly_contiguous": {
+            "failure_count": 356,
+            "elements": 985600,
+            "max_abs_diff": 0.0023193359375,
+            "max_error_over_tolerance": 8.023904800415039,
+            "worst_reference": -0.019072357565164566,
+            "worst_candidate": -0.01916790008544922
+          },
+          "butterfly_preserved": {
+            "failure_count": 409,
+            "elements": 985600,
+            "max_abs_diff": 0.0047607421875,
+            "max_error_over_tolerance": 8.87707233428955,
+            "worst_reference": -0.019072357565164566,
+            "worst_candidate": -0.019178058952093124
+          },
+          "original_repeat": {
+            "failure_count": 0,
+            "elements": 985600,
+            "max_abs_diff": 0.0,
+            "max_error_over_tolerance": 0.0,
+            "worst_reference": -7.826417446136475,
+            "worst_candidate": -7.826417446136475
+          },
+          "original_fp32_vs_fp64_gold": {
+            "failure_count": 174,
+            "elements": 985600,
+            "max_abs_diff": 0.00244140625,
+            "max_error_over_tolerance": 7.217458724975586,
+            "worst_reference": -0.019158359616994858,
+            "worst_candidate": -0.019072357565164566
+          },
+          "rotated_fp64_vs_fp64_gold": {
+            "failure_count": 0,
+            "elements": 985600,
+            "max_abs_diff": 0.0,
+            "max_error_over_tolerance": 0.0,
+            "worst_reference": -7.826422691345215,
+            "worst_candidate": -7.826422691345215
+          }
+        }
+      },
+      "mamba_blocks.1.mamba_fwd": {
+        "activation_shape": [
+          32,
+          80,
+          1540
+        ],
+        "activation_abs_max": 3679.488525390625,
+        "output_abs_max": 22316.423828125,
+        "comparisons": {
+          "published_dense_contiguous": {
+            "failure_count": 1616,
+            "elements": 985600,
+            "max_abs_diff": 0.0224609375,
+            "max_error_over_tolerance": 16.515384674072266,
+            "worst_reference": 0.019699374213814735,
+            "worst_candidate": 0.019501686096191406
+          },
+          "published_dense_preserved": {
+            "failure_count": 1647,
+            "elements": 985600,
+            "max_abs_diff": 0.0380859375,
+            "max_error_over_tolerance": 16.04964256286621,
+            "worst_reference": 0.019699374213814735,
+            "worst_candidate": 0.019507260993123055
+          },
+          "butterfly_contiguous": {
+            "failure_count": 1041,
+            "elements": 985600,
+            "max_abs_diff": 0.0244140625,
+            "max_error_over_tolerance": 14.426962852478027,
+            "worst_reference": 0.01387380063533783,
+            "worst_candidate": 0.0140380859375
+          },
+          "butterfly_preserved": {
+            "failure_count": 1132,
+            "elements": 985600,
+            "max_abs_diff": 0.03515625,
+            "max_error_over_tolerance": 13.468927383422852,
+            "worst_reference": 0.01387380063533783,
+            "worst_candidate": 0.014027176424860954
+          },
+          "original_repeat": {
+            "failure_count": 0,
+            "elements": 985600,
+            "max_abs_diff": 0.0,
+            "max_error_over_tolerance": 0.0,
+            "worst_reference": 676.223876953125,
+            "worst_candidate": 676.223876953125
+          },
+          "original_fp32_vs_fp64_gold": {
+            "failure_count": 373,
+            "elements": 985600,
+            "max_abs_diff": 0.021484375,
+            "max_error_over_tolerance": 10.011716842651367,
+            "worst_reference": 0.013987922109663486,
+            "worst_candidate": 0.01387380063533783
+          },
+          "rotated_fp64_vs_fp64_gold": {
+            "failure_count": 0,
+            "elements": 985600,
+            "max_abs_diff": 0.0,
+            "max_error_over_tolerance": 0.0,
+            "worst_reference": 676.224365234375,
+            "worst_candidate": 676.224365234375
+          }
+        }
+      },
+      "mamba_blocks.1.mamba_rev": {
+        "activation_shape": [
+          32,
+          80,
+          1540
+        ],
+        "activation_abs_max": 63348.69921875,
+        "output_abs_max": 114168.9140625,
+        "comparisons": {
+          "published_dense_contiguous": {
+            "failure_count": 2067,
+            "elements": 985600,
+            "max_abs_diff": 0.078125,
+            "max_error_over_tolerance": 38.750911712646484,
+            "worst_reference": -0.04826882854104042,
+            "worst_candidate": -0.0488433837890625
+          },
+          "published_dense_preserved": {
+            "failure_count": 2211,
+            "elements": 985600,
+            "max_abs_diff": 0.1171875,
+            "max_error_over_tolerance": 37.33912658691406,
+            "worst_reference": -0.04826882854104042,
+            "worst_candidate": -0.04882245138287544
+          },
+          "butterfly_contiguous": {
+            "failure_count": 1785,
+            "elements": 985600,
+            "max_abs_diff": 0.09375,
+            "max_error_over_tolerance": 42.870182037353516,
+            "worst_reference": 0.1557031124830246,
+            "worst_candidate": 0.15679931640625
+          },
+          "butterfly_preserved": {
+            "failure_count": 2023,
+            "elements": 985600,
+            "max_abs_diff": 0.1015625,
+            "max_error_over_tolerance": 43.35059356689453,
+            "worst_reference": -0.014465175569057465,
+            "worst_candidate": -0.013968962244689465
+          },
+          "original_repeat": {
+            "failure_count": 0,
+            "elements": 985600,
+            "max_abs_diff": 0.0,
+            "max_error_over_tolerance": 0.0,
+            "worst_reference": 414.73992919921875,
+            "worst_candidate": 414.73992919921875
+          },
+          "original_fp32_vs_fp64_gold": {
+            "failure_count": 1186,
+            "elements": 985600,
+            "max_abs_diff": 0.0859375,
+            "max_error_over_tolerance": 38.11131286621094,
+            "worst_reference": 0.1566813588142395,
+            "worst_candidate": 0.1557031124830246
+          },
+          "rotated_fp64_vs_fp64_gold": {
+            "failure_count": 0,
+            "elements": 985600,
+            "max_abs_diff": 0.0,
+            "max_error_over_tolerance": 0.0,
+            "worst_reference": 414.73992919921875,
+            "worst_candidate": 414.73992919921875
+          }
+        }
+      },
+      "classifier.mamba_1": {
+        "activation_shape": [
+          32,
+          80,
+          512
+        ],
+        "activation_abs_max": 14.965339660644531,
+        "output_abs_max": 3.6274163722991943,
+        "comparisons": {
+          "published_dense_contiguous": {
+            "failure_count": 0,
+            "elements": 655360,
+            "max_abs_diff": 3.5762786865234375e-06,
+            "max_error_over_tolerance": 0.06331654638051987,
+            "worst_reference": -0.012670883908867836,
+            "worst_candidate": -0.012671597301959991
+          },
+          "published_dense_preserved": {
+            "failure_count": 0,
+            "elements": 655360,
+            "max_abs_diff": 3.5762786865234375e-06,
+            "max_error_over_tolerance": 0.06331654638051987,
+            "worst_reference": -0.012670883908867836,
+            "worst_candidate": -0.012671597301959991
+          },
+          "butterfly_contiguous": {
+            "failure_count": 0,
+            "elements": 655360,
+            "max_abs_diff": 3.814697265625e-06,
+            "max_error_over_tolerance": 0.06715639680624008,
+            "worst_reference": -0.0014094957150518894,
+            "worst_candidate": -0.001410176744684577
+          },
+          "butterfly_preserved": {
+            "failure_count": 0,
+            "elements": 655360,
+            "max_abs_diff": 3.814697265625e-06,
+            "max_error_over_tolerance": 0.06715639680624008,
+            "worst_reference": -0.0014094957150518894,
+            "worst_candidate": -0.001410176744684577
+          },
+          "original_repeat": {
+            "failure_count": 0,
+            "elements": 655360,
+            "max_abs_diff": 0.0,
+            "max_error_over_tolerance": 0.0,
+            "worst_reference": 0.08126392960548401,
+            "worst_candidate": 0.08126392960548401
+          },
+          "original_fp32_vs_fp64_gold": {
+            "failure_count": 0,
+            "elements": 655360,
+            "max_abs_diff": 2.86102294921875e-06,
+            "max_error_over_tolerance": 0.050350822508335114,
+            "worst_reference": 0.017268897965550423,
+            "worst_candidate": 0.01726948842406273
+          },
+          "rotated_fp64_vs_fp64_gold": {
+            "failure_count": 0,
+            "elements": 655360,
+            "max_abs_diff": 0.0,
+            "max_error_over_tolerance": 0.0,
+            "worst_reference": 0.08126392960548401,
+            "worst_candidate": 0.08126392960548401
+          }
+        }
+      }
+    },
+    "val": {
+      "mamba_blocks.0.mamba_fwd": {
+        "activation_shape": [
+          32,
+          80,
+          1540
+        ],
+        "activation_abs_max": 13433.3662109375,
+        "output_abs_max": 3182.106201171875,
+        "comparisons": {
+          "published_dense_contiguous": {
+            "failure_count": 789,
+            "elements": 985600,
+            "max_abs_diff": 0.002685546875,
+            "max_error_over_tolerance": 8.454585075378418,
+            "worst_reference": -0.022072581574320793,
+            "worst_candidate": -0.02217578887939453
+          },
+          "published_dense_preserved": {
+            "failure_count": 956,
+            "elements": 985600,
+            "max_abs_diff": 0.004638671875,
+            "max_error_over_tolerance": 17.689773559570312,
+            "worst_reference": -0.011666439473628998,
+            "worst_candidate": -0.011468904092907906
+          },
+          "butterfly_contiguous": {
+            "failure_count": 692,
+            "elements": 985600,
+            "max_abs_diff": 0.0023193359375,
+            "max_error_over_tolerance": 11.762754440307617,
+            "worst_reference": 0.02152814343571663,
+            "worst_candidate": 0.02138519287109375
+          },
+          "butterfly_preserved": {
+            "failure_count": 818,
+            "elements": 985600,
+            "max_abs_diff": 0.0048828125,
+            "max_error_over_tolerance": 21.636281967163086,
+            "worst_reference": -0.011666439473628998,
+            "worst_candidate": -0.011424834839999676
+          },
+          "original_repeat": {
+            "failure_count": 0,
+            "elements": 985600,
+            "max_abs_diff": 0.0,
+            "max_error_over_tolerance": 0.0,
+            "worst_reference": 18.20703887939453,
+            "worst_candidate": 18.20703887939453
+          },
+          "original_fp32_vs_fp64_gold": {
+            "failure_count": 407,
+            "elements": 985600,
+            "max_abs_diff": 0.002197265625,
+            "max_error_over_tolerance": 11.965575218200684,
+            "worst_reference": 0.021382901817560196,
+            "worst_candidate": 0.02152814343571663
+          },
+          "rotated_fp64_vs_fp64_gold": {
+            "failure_count": 0,
+            "elements": 985600,
+            "max_abs_diff": 0.0,
+            "max_error_over_tolerance": 0.0,
+            "worst_reference": 18.2070255279541,
+            "worst_candidate": 18.2070255279541
+          }
+        }
+      },
+      "mamba_blocks.0.mamba_rev": {
+        "activation_shape": [
+          32,
+          80,
+          1540
+        ],
+        "activation_abs_max": 6927.494140625,
+        "output_abs_max": 2451.56884765625,
+        "comparisons": {
+          "published_dense_contiguous": {
+            "failure_count": 230,
+            "elements": 985600,
+            "max_abs_diff": 0.002685546875,
+            "max_error_over_tolerance": 10.543843269348145,
+            "worst_reference": -0.056599486619234085,
+            "worst_candidate": -0.05676460266113281
+          },
+          "published_dense_preserved": {
+            "failure_count": 287,
+            "elements": 985600,
+            "max_abs_diff": 0.004150390625,
+            "max_error_over_tolerance": 12.042052268981934,
+            "worst_reference": -0.056599486619234085,
+            "worst_candidate": -0.056788064539432526
+          },
+          "butterfly_contiguous": {
+            "failure_count": 197,
+            "elements": 985600,
+            "max_abs_diff": 0.0025634765625,
+            "max_error_over_tolerance": 8.107885360717773,
+            "worst_reference": -0.056599486619234085,
+            "worst_candidate": -0.05672645568847656
+          },
+          "butterfly_preserved": {
+            "failure_count": 244,
+            "elements": 985600,
+            "max_abs_diff": 0.005126953125,
+            "max_error_over_tolerance": 6.9981536865234375,
+            "worst_reference": -0.02391987107694149,
+            "worst_candidate": -0.023833150044083595
+          },
+          "original_repeat": {
+            "failure_count": 0,
+            "elements": 985600,
+            "max_abs_diff": 0.0,
+            "max_error_over_tolerance": 0.0,
+            "worst_reference": -16.257080078125,
+            "worst_candidate": -16.257080078125
+          },
+          "original_fp32_vs_fp64_gold": {
+            "failure_count": 87,
+            "elements": 985600,
+            "max_abs_diff": 0.0023193359375,
+            "max_error_over_tolerance": 8.257052421569824,
+            "worst_reference": -0.0238176342099905,
+            "worst_candidate": -0.02391987107694149
+          },
+          "rotated_fp64_vs_fp64_gold": {
+            "failure_count": 0,
+            "elements": 985600,
+            "max_abs_diff": 3.725290298461914e-09,
+            "max_error_over_tolerance": 0.0002615418052300811,
+            "worst_reference": -0.04243575781583786,
+            "worst_candidate": -0.04243576154112816
+          }
+        }
+      },
+      "mamba_blocks.1.mamba_fwd": {
+        "activation_shape": [
+          32,
+          80,
+          1540
+        ],
+        "activation_abs_max": 4429.28955078125,
+        "output_abs_max": 25093.384765625,
+        "comparisons": {
+          "published_dense_contiguous": {
+            "failure_count": 1683,
+            "elements": 985600,
+            "max_abs_diff": 0.029296875,
+            "max_error_over_tolerance": 14.11613655090332,
+            "worst_reference": 0.025609899312257767,
+            "worst_candidate": 0.025432586669921875
+          },
+          "published_dense_preserved": {
+            "failure_count": 1739,
+            "elements": 985600,
+            "max_abs_diff": 0.052734375,
+            "max_error_over_tolerance": 16.43729019165039,
+            "worst_reference": 0.025609899312257767,
+            "worst_candidate": 0.025403430685400963
+          },
+          "butterfly_contiguous": {
+            "failure_count": 1163,
+            "elements": 985600,
+            "max_abs_diff": 0.029296875,
+            "max_error_over_tolerance": 9.825414657592773,
+            "worst_reference": 0.009180531837046146,
+            "worst_candidate": 0.009073257446289062
+          },
+          "butterfly_preserved": {
+            "failure_count": 1241,
+            "elements": 985600,
+            "max_abs_diff": 0.052734375,
+            "max_error_over_tolerance": 9.693623542785645,
+            "worst_reference": 0.009180531837046146,
+            "worst_candidate": 0.009074696339666843
+          },
+          "original_repeat": {
+            "failure_count": 0,
+            "elements": 985600,
+            "max_abs_diff": 0.0,
+            "max_error_over_tolerance": 0.0,
+            "worst_reference": 439.0875549316406,
+            "worst_candidate": 439.0875549316406
+          },
+          "original_fp32_vs_fp64_gold": {
+            "failure_count": 460,
+            "elements": 985600,
+            "max_abs_diff": 0.029296875,
+            "max_error_over_tolerance": 6.670561790466309,
+            "worst_reference": 0.009107750840485096,
+            "worst_candidate": 0.009180531837046146
+          },
+          "rotated_fp64_vs_fp64_gold": {
+            "failure_count": 0,
+            "elements": 985600,
+            "max_abs_diff": 0.0,
+            "max_error_over_tolerance": 0.0,
+            "worst_reference": 439.0876159667969,
+            "worst_candidate": 439.0876159667969
+          }
+        }
+      },
+      "mamba_blocks.1.mamba_rev": {
+        "activation_shape": [
+          32,
+          80,
+          1540
+        ],
+        "activation_abs_max": 75379.953125,
+        "output_abs_max": 92886.5625,
+        "comparisons": {
+          "published_dense_contiguous": {
+            "failure_count": 2123,
+            "elements": 985600,
+            "max_abs_diff": 0.15625,
+            "max_error_over_tolerance": 32.977657318115234,
+            "worst_reference": -0.23283283412456512,
+            "worst_candidate": -0.2317352294921875
+          },
+          "published_dense_preserved": {
+            "failure_count": 2306,
+            "elements": 985600,
+            "max_abs_diff": 0.1640625,
+            "max_error_over_tolerance": 43.96393966674805,
+            "worst_reference": -0.23283283412456512,
+            "worst_candidate": -0.23136956989765167
+          },
+          "butterfly_contiguous": {
+            "failure_count": 1880,
+            "elements": 985600,
+            "max_abs_diff": 0.15625,
+            "max_error_over_tolerance": 27.05849838256836,
+            "worst_reference": -0.4419235289096832,
+            "worst_candidate": -0.443389892578125
+          },
+          "butterfly_preserved": {
+            "failure_count": 2110,
+            "elements": 985600,
+            "max_abs_diff": 0.1640625,
+            "max_error_over_tolerance": 29.41995620727539,
+            "worst_reference": -0.06928443163633347,
+            "worst_candidate": -0.06978246569633484
+          },
+          "original_repeat": {
+            "failure_count": 0,
+            "elements": 985600,
+            "max_abs_diff": 0.0,
+            "max_error_over_tolerance": 0.0,
+            "worst_reference": 390.7043151855469,
+            "worst_candidate": 390.7043151855469
+          },
+          "original_fp32_vs_fp64_gold": {
+            "failure_count": 1201,
+            "elements": 985600,
+            "max_abs_diff": 0.1484375,
+            "max_error_over_tolerance": 24.791641235351562,
+            "worst_reference": -0.44327038526535034,
+            "worst_candidate": -0.4419235289096832
+          },
+          "rotated_fp64_vs_fp64_gold": {
+            "failure_count": 0,
+            "elements": 985600,
+            "max_abs_diff": 0.0,
+            "max_error_over_tolerance": 0.0,
+            "worst_reference": 390.7042236328125,
+            "worst_candidate": 390.7042236328125
+          }
+        }
+      },
+      "classifier.mamba_1": {
+        "activation_shape": [
+          32,
+          80,
+          512
+        ],
+        "activation_abs_max": 15.389893531799316,
+        "output_abs_max": 5.545529365539551,
+        "comparisons": {
+          "published_dense_contiguous": {
+            "failure_count": 0,
+            "elements": 655360,
+            "max_abs_diff": 8.106231689453125e-06,
+            "max_error_over_tolerance": 0.045902907848358154,
+            "worst_reference": 0.0076329708099365234,
+            "worst_candidate": 0.007633464876562357
+          },
+          "published_dense_preserved": {
+            "failure_count": 0,
+            "elements": 655360,
+            "max_abs_diff": 8.106231689453125e-06,
+            "max_error_over_tolerance": 0.045902907848358154,
+            "worst_reference": 0.0076329708099365234,
+            "worst_candidate": 0.007633464876562357
+          },
+          "butterfly_contiguous": {
+            "failure_count": 0,
+            "elements": 655360,
+            "max_abs_diff": 7.152557373046875e-06,
+            "max_error_over_tolerance": 0.04861252382397652,
+            "worst_reference": -0.005752598401159048,
+            "worst_candidate": -0.00575208431109786
+          },
+          "butterfly_preserved": {
+            "failure_count": 0,
+            "elements": 655360,
+            "max_abs_diff": 7.152557373046875e-06,
+            "max_error_over_tolerance": 0.04861252382397652,
+            "worst_reference": -0.005752598401159048,
+            "worst_candidate": -0.00575208431109786
+          },
+          "original_repeat": {
+            "failure_count": 0,
+            "elements": 655360,
+            "max_abs_diff": 0.0,
+            "max_error_over_tolerance": 0.0,
+            "worst_reference": -0.019939472898840904,
+            "worst_candidate": -0.019939472898840904
+          },
+          "original_fp32_vs_fp64_gold": {
+            "failure_count": 0,
+            "elements": 655360,
+            "max_abs_diff": 3.814697265625e-06,
+            "max_error_over_tolerance": 0.03543293848633766,
+            "worst_reference": 0.0076333521865308285,
+            "worst_candidate": 0.0076329708099365234
+          },
+          "rotated_fp64_vs_fp64_gold": {
+            "failure_count": 0,
+            "elements": 655360,
+            "max_abs_diff": 0.0,
+            "max_error_over_tolerance": 0.0,
+            "worst_reference": -0.019939476624131203,
+            "worst_candidate": -0.019939476624131203
+          }
+        }
+      }
+    }
+  }
+}
