@@ -6,6 +6,8 @@
 
 ## FP32 复现
 
+![FP32 复现结果与论文 Table IV 的 AUROC 对照](reproduction/figures/fp32-gap.svg)
+
 | 配置 | 标签／AdamW 学习率 | AUROC | AP |
 | --- | --- | ---: | ---: |
 | 公开代码配方 | 18 类、占比 ≥30%／5e-4 | 0.923889 | 0.933093 |
@@ -16,6 +18,8 @@
 论文标签组保留代码的归一化、AdamW 和模型实现。
 
 ## 精度对照
+
+![各量化配置的测试 AUROC](reproduction/figures/precision-ladder.svg)
 
 统一使用按最低验证 loss 选定的 1e-4 检查点，FP32 AUROC 为 **0.8988**。
 W/A 表示权重／激活位宽；A8 使用 57 处量化位置、浮点尺度。
@@ -33,8 +37,7 @@ W8A32 精度接近 FP32，已测 A8 配置均预测为正类。
 Linear22/W8A8 的首个前向分支 `out_proj` 输入在静态 max 尺度下，99.9964% 的元素从非零量化为零。
 H128 将五处输出投影输入的校准峰值缩小 4.3–11.1 倍，Rot-A8 分类仍未恢复。
 
-[完整结果](reproduction/RESULTS.md) · [复现步骤](reproduction/PROTOCOL.md) ·
-[FP32 对照图](reproduction/figures/fp32-gap.svg) · [量化对照图](reproduction/figures/precision-ladder.svg)
+[完整结果](reproduction/RESULTS.md) · [复现步骤](reproduction/PROTOCOL.md)
 
 ## 来源
 

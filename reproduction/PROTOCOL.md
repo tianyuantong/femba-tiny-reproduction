@@ -8,6 +8,7 @@
 从仓库根目录运行。参考环境：WSL、RTX 5060 Ti、Python 3.11、PyTorch 2.7.1+cu128、
 Lightning 2.6.5、TorchMetrics 1.9.0、mamba-ssm 2.3.2.post1。
 当前环境有 selective-scan CUDA 扩展，未安装可选 causal-conv1d 扩展。
+精度套件直接导入 `einops`（已列在 `requirements.txt`）。
 
 训练适配器读取官方提交 `d88596590f3bd3fce573be07646b7d3977ce7bcc` 的模型、task、
 loader、归一化和 scheduler。先确认本地 Git 对象存在，并设置已有文件路径：

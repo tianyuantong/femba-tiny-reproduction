@@ -39,7 +39,10 @@ class LabelComparisonTests(unittest.TestCase):
                       "windows": 4, "positive": 2, "changed_labels": 2, "transition_matrix": [[1, 1], [1, 1]]}
             control = {"audit": {"test_windows": 4}}
             paper = {"audit": {"test_windows": 4}, "manifest": {"outputs": {"test": output}}}
-            with patch("scripts.femba_label_comparison._paired_data_paths", return_value=(old_path, new_path)):
+            # _paired_data_paths returns resolved paths; the stub must honour that
+            # contract or a symlinked temp directory (macOS /var) breaks the link check.
+            with patch("scripts.femba_label_comparison._paired_data_paths",
+                       return_value=(old_path.resolve(), new_path.resolve())):
                 original, relabeled = _paired_labels(control, paper)
                 np.testing.assert_array_equal(original, old_y)
                 np.testing.assert_array_equal(relabeled, new_y)
