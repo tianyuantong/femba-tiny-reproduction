@@ -48,10 +48,10 @@ index 84a0bf3..36f6f72 100644
          """
 diff --git a/models/femba_ptq.py b/models/femba_ptq.py
 new file mode 100644
-index 0000000..7d0dbd8
+index 0000000..8f1b4dd
 --- /dev/null
 +++ b/models/femba_ptq.py
-@@ -0,0 +1,174 @@
+@@ -0,0 +1,171 @@
 +#*----------------------------------------------------------------------------*
 +#* Copyright (C) 2026 ETH Zurich, Switzerland                                 *
 +#* SPDX-License-Identifier: Apache-2.0                                        *
@@ -100,10 +100,7 @@ index 0000000..7d0dbd8
 +    model: nn.Module, state_dict: dict, prefix: str, local_metadata: dict,
 +    strict: bool, missing_keys: list, unexpected_keys: list, error_msgs: list,
 +) -> None:
-+    model._ptq_unobserved_scales = (
-+        local_metadata.get("femba_unobserved_scales", [])
-+        if not model.quantization_enabled else []
-+    )
++    model._ptq_unobserved_scales = local_metadata.get("femba_unobserved_scales", [])
 +
 +
 +def _restore_unobserved_scales(model: nn.Module, incompatible_keys: object) -> None:

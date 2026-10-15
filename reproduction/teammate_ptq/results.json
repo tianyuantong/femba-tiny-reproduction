@@ -19,7 +19,8 @@
       "tasks/pretrain_task.py": "42e6bb4b2c0b231e4debc87d55e1fbf4b0aaa3895e1bcd70f48bffde6eb1af2d",
       "util/train_utils.py": "13eba63f611af0cf8d6b58efe28eb1e7be7909735e25f2ae460b74703aab9e9b",
       "run_train.py": "a6fd5637001af987180126ef362b0005cdb2396730fff6b05c20f702e8e24aae"
-    }
+    },
+    "model_patch_revision": "8633bdbc3d1b62110e7454c1d093ff19a6a0c16d"
   },
   "model": {
     "parameters": 8670626,

@@ -45,6 +45,8 @@ git -C teammate-source checkout a2a4d441485efd8423c44b35d7448a30ccd44437
 git -C teammate-source apply /path/to/this-repo/reproduction/teammate_ptq/source.patch
 ```
 
+补丁保留 FP32 检查点中“尚未统计”的激活状态；加载到量化模型后会重新统计，供 C 组量化微调使用。上表对应修复前的补丁，版本记录见 `results.json` 的 `source.model_patch_revision`。
+
 下列路径由运行者提供；数据目录包含 `train.h5`、`val.h5`、`test.h5`。输出目录使用仓库外的新目录。
 
 ```bash
