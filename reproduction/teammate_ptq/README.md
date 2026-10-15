@@ -5,21 +5,39 @@
 
 ## 结果
 
-完整测试集 7,211 个窗口，负类 3,304、正类 3,907。四组使用同一套预处理、样本顺序与指标。
-两份 PTQ 来自同一 FP32 检查点；QAP B 使用队友预训练及量化微调的检查点。
+完整测试集 7,211 个窗口，负类 3,304、正类 3,907。各组使用同一套预处理、样本顺序与指标。
+PTQ 均来自同一 FP32 检查点；QAP B 使用队友预训练及量化微调的检查点。
 
 | 模型 | AUROC | 默认阈值 BAcc | 验证集阈值 BAcc |
 | --- | ---: | ---: | ---: |
 | FP32 | 0.9140 | 83.27% | 83.43% |
 | 原 PTQ INT8 | 0.6925 | 49.28% | 66.73% |
 | P99 PTQ INT8 | 0.8717 | 50.09% | 76.86% |
+| P95 PTQ INT8（七档验证集选定） | 0.8659 | 68.48% | 76.42% |
 | 队友 QAP B | 0.9017 | 81.98% | 82.18% |
 
-AUROC/AP 统一使用两类 logit 的差值 `z1-z0`；上游使用单列 `z1`。QAP B 行来自收到的检查点在本机 WSL 的完整测试。原生指标和队友报告参考值一并保存在结果 JSON 中。
+AUROC/AP 统一使用两类 logit 的差值 `z1-z0`；上游使用单列 `z1`。QAP B 行来自收到的检查点在 WSL 的完整测试。原生指标和队友报告参考值一并保存在结果 JSON 中。
 
-P99 恢复了大部分排序能力，但输出偏向正类：真实负类的正类概率中位数从 FP32 的 0.077 升到 0.830，默认阈值 0.5 下判正类比例为 99.82%。只在验证集选择阈值后，P99 的概率阈值为 0.886678，测试判正类比例降到 62.77%，Accuracy 为 77.74%。量化权重和尺度均未改变。
+扩展校准固定比较 99.999、99.99、99.9、99、98、95、90 七档，按验证集 AUROC 选 P95，AP、CE loss 和固定顺序用于破除并列。七档统一使用 `z1-z0` 后，验证 AUROC 并非单调变化：P99.9 为 0.8454，P95 为 0.8479，P90 降到 0.8201。
 
-四组统一在 6,426 个验证窗口上最大化 Balanced Accuracy；并列时取候选中离默认阈值最近、再取较低的阈值。阈值脚本先保存四组选择，再读取测试 logits 计算对照指标。调整阈值不改变 AUROC/AP。
+<details>
+<summary>七档验证集 AUROC</summary>
+
+| 激活百分位 | AUROC |
+| --- | ---: |
+| 99.999 | 0.6901 |
+| 99.99 | 0.8023 |
+| 99.9 | 0.8454 |
+| 99 | 0.8417 |
+| 98 | 0.8392 |
+| **95** | **0.8479** |
+| 90 | 0.8201 |
+
+</details>
+
+P95 默认判正类比例为 80.56%，低于 P99 的 99.82%；验证集选出的概率阈值为 0.780837，测试判正类比例为 61.89%，Accuracy 为 77.23%。P95 的测试 AUROC 略低于此前 P99 的 0.8717，表中保留两组结果。
+
+各组阈值只在 6,426 个验证窗口上最大化 Balanced Accuracy；并列时取离默认阈值最近、再取较低的阈值。先保存选择，再测测试集。调整阈值不改变 AUROC/AP，也不改变权重和量化尺度。
 
 [完整数值与来源](results.json) 包含 AP、Accuracy、混淆矩阵、阈值和数据/权重哈希。
 
@@ -30,10 +48,10 @@ P99 恢复了大部分排序能力，但输出偏向正类：真实负类的正�
 | 训练 | batch 32；预训练 AdamW 1e-4；微调 AdamW 5e-5、weight decay 0.5、warmup 1 轮、分层衰减 0.75 |
 | 输入 | 22×1,280；固定归一化 `(x+20)/(40+1e-8)`；HDF5 样本缓存关闭 |
 | PTQ | 同一份 FP32 权重；seed 42 固定抽取 512 个训练窗口；35 个激活、18 个权重量化器全部开启 |
-| 校准 | 原生 Brevitas 百分位统计，按调用求平均；原 PTQ 为 99.999，P99 为 99.0 |
+| 校准 | 原生 Brevitas 百分位统计，按调用求平均；激活候选为 99.999 至 90 的七档，权重量化保持原设置 |
 | 推理 | RTX 5060 Ti；batch 32；FP32 执行；TF32 开启；INT8 使用原生 Brevitas 伪量化 |
 
-P99 沿用此前在 99.999、99.99、99.9、99.0 四组中按验证集原生 AUROC 选出的方案。本轮固定它的权重和尺度，只比较指标口径与分类阈值。
+P99 为此前四档校准选出的对照；P95 为扩展七档后按正确排序分数选出的方案。
 
 ## 运行
 
@@ -45,7 +63,7 @@ git -C teammate-source checkout a2a4d441485efd8423c44b35d7448a30ccd44437
 git -C teammate-source apply /path/to/this-repo/reproduction/teammate_ptq/source.patch
 ```
 
-补丁保留 FP32 检查点中“尚未统计”的激活状态；加载到量化模型后会重新统计，供 C 组量化微调使用。上表对应修复前的补丁，版本记录见 `results.json` 的 `source.model_patch_revision`。
+补丁保留 FP32 检查点中“尚未统计”的激活状态；加载到量化模型后会重新统计，供 C 组量化微调使用。旧结果保留对应补丁版本；新增校准使用修复后的补丁，均记录在 `results.json`。
 
 下列路径由运行者提供；数据目录包含 `train.h5`、`val.h5`、`test.h5`。输出目录使用仓库外的新目录。
 
@@ -68,6 +86,28 @@ python "$study/threshold_control.py" --captures "$artifacts/captures" \
 ```
 
 `calibrate.py` 只读取训练数据，保存后严格重载，核对浮点参数、53 个量化尺度和探针输出。`evaluate.py` 保存有序 logits；`threshold_control.py` 只用验证输出选择阈值。
+
+从同一 FP32 权重重新校准七档并选择验证集方案：
+
+```bash
+python "$study/sweep.py" --source "$teammate_source" --data "$data" \
+  --fp32 "$artifacts/fp32.ckpt" --output "$artifacts/seven-percentiles"
+```
+
+## 训练曲线
+
+![预训练 loss 与学习率](curves/pretrain-loss-lr.svg)
+![微调 loss 与学习率](curves/finetune-loss-lr.svg)
+
+预训练验证 loss 整体下降，第 10 轮最低；微调验证 loss 在第 3 轮最低，后两轮训练 loss 继续下降，验证 loss 略回升，因此选用第 3 轮检查点。[原生验证 AUROC 曲线](curves/native-positive-logit-auroc.svg) 保留训练时的 `z1` 口径；上表采用 `z1-z0`。
+
+`export_curves.py --manifest runs.json --output /path/to/new-curves` 导出完整标量 CSV 和 SVG。清单示例：
+
+```json
+{"runs":[{"run":"fp32-seed42-finetune","stage":"finetune","seed":42,"epochs":5,"tensorboard_dir":"/path/to/exact/tensorboard/run"}]}
+```
+
+CSV 保留重复的最终验证事件；图只取训练预算内每轮首条记录。已有 seed 42 导出 19,038 条标量，来源 event 文件哈希见结果 JSON。
 
 训练配置及完整覆盖参数保存在 `results.json` 的 `training` 字段。环境版本见 `runtime` 字段。数据集、检查点、逐样本输出和原始日志保存在本地。
 

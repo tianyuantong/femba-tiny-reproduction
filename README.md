@@ -42,7 +42,7 @@ H128 将五处输出投影输入的校准峰值缩小 4.3–11.1 倍，Rot-A8 �
 ## 队友模型的 PTQ 对照
 
 使用队友的 ARES 模型与 7,211 个测试窗口，比较 FP32、INT8 PTQ 和 QAP。
-P99 PTQ 的 AUROC 为 **0.8717**；仅用验证集调整分类阈值后，Balanced Accuracy 从 **50.09%** 提高到 **76.86%**。
+七档校准由验证集选出 P95，测试 AUROC 为 **0.8659**；默认阈值 Balanced Accuracy 为 **68.48%**，验证集阈值下为 **76.42%**。
 
 [结果、配置与运行命令](reproduction/teammate_ptq/README.md)
 
