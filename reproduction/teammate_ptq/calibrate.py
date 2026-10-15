@@ -1,0 +1,169 @@
+#*----------------------------------------------------------------------------*
+#* Copyright (C) 2026.                                                        *
+#* SPDX-License-Identifier: Apache-2.0                                        *
+#*                                                                            *
+#* Licensed under the Apache License, Version 2.0 (the "License");              *
+#* you may not use this file except in compliance with the License.             *
+#* You may obtain a copy of the License at                                      *
+#*                                                                            *
+#* http://www.apache.org/licenses/LICENSE-2.0                                   *
+#*                                                                            *
+#* Unless required by applicable law or agreed to in writing, software          *
+#* distributed under the License is distributed on an "AS IS" BASIS,            *
+#* WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.    *
+#* See the License for the specific language governing permissions and         *
+#* limitations under the License.                                              *
+#*----------------------------------------------------------------------------*
+"""Calibrate all native INT8 quantizers on 512 fixed training windows."""
+
+import argparse
+import math
+from numbers import Real
+from pathlib import Path
+import sys
+
+from evaluate import configure_runtime, load_task, quantization_contract, sha256, source_record, write_json
+
+
+def validate_percentile(percentile: float) -> float:
+    if isinstance(percentile, bool) or not isinstance(percentile, Real):
+        raise TypeError("Percentile must be a real number")
+    percentile = float(percentile)
+    if not math.isfinite(percentile) or not 0 < percentile <= 100:
+        raise ValueError("Percentile must be finite and in (0,100]")
+    return percentile
+
+
+def calibration_indices(windows: int) -> list[int]:
+    import torch
+
+    if isinstance(windows, bool) or not isinstance(windows, int) or windows < 512:
+        raise ValueError("The training split must contain at least 512 windows")
+    return torch.randperm(windows, generator=torch.Generator().manual_seed(42))[:512].tolist()
+
+
+def set_percentile(model, percentile: float) -> None:
+    import brevitas
+    from brevitas.core.scaling.standalone import ParameterFromRuntimeStatsScaling
+    from brevitas.core.stats.stats_op import AbsPercentile
+    from brevitas.proxy.runtime_quant import ActQuantProxyFromInjectorBase
+
+    percentile = validate_percentile(percentile)
+    if brevitas.__version__ != "0.12.1":
+        raise RuntimeError("Native calibration requires Brevitas 0.12.1")
+    observers = []
+    for proxy in model.modules():
+        if isinstance(proxy, ActQuantProxyFromInjectorBase) and proxy.fused_activation_quant_proxy is not None:
+            scaling = proxy.fused_activation_quant_proxy.tensor_quant.scaling_impl
+            if type(scaling) is not ParameterFromRuntimeStatsScaling or scaling.counter != 0:
+                raise ValueError("Calibration requires fresh native activation scales")
+            stats = scaling.stats.stats_impl
+            if type(stats) is not AbsPercentile or stats.stats_reduce_dim is not None or stats.q != 99.999:
+                raise ValueError("Expected native per-tensor 99.999 percentile observers")
+            observers.append(stats)
+    if len(observers) != 35 or len({id(stats) for stats in observers}) != 35:
+        raise ValueError("Expected 35 distinct activation observers")
+    for stats in observers:
+        stats.q = percentile
+
+
+def floating_parameters(model) -> dict:
+    from brevitas.core.scaling.standalone import ParameterFromRuntimeStatsScaling
+
+    scales = {name + ".value" for name, module in model.named_modules()
+              if isinstance(module, ParameterFromRuntimeStatsScaling)}
+    assert len(scales) == 35
+    return {name: parameter.detach().cpu().clone() for name, parameter in model.named_parameters()
+            if name not in scales}
+
+
+def batches(task, dataset, indices):
+    from torch.utils.data import DataLoader, Subset
+
+    for signals, _ in DataLoader(Subset(dataset, indices), batch_size=32, shuffle=False):
+        yield task.normalize_fct(signals.to("cuda"))
+
+
+def save_reload(task, output: Path, parent_sha: str, recipe: dict, probe) -> dict:
+    import pytorch_lightning as pl
+    import torch
+    from brevitas.proxy.quant_proxy import QuantProxyFromInjector
+    from omegaconf import OmegaConf
+
+    cfg = OmegaConf.create(dict(task.hparams))
+    cfg.model.quantization_enabled = True
+    checkpoint = output / "ptq_int8.ckpt"
+    with checkpoint.open("xb") as stream:
+        torch.save({"state_dict": task.state_dict(), "hyper_parameters": cfg,
+                    "parent_sha256": parent_sha, "ptq_recipe": recipe,
+                    "pytorch-lightning_version": pl.__version__}, stream)
+    restored, contract = load_task(checkpoint, "ptq_original")
+    quantization_contract(task.model, enabled=True)
+    def scales(model):
+        return {name: proxy.scale().detach().cpu().clone() for name, proxy in model.named_modules()
+                if isinstance(proxy, QuantProxyFromInjector) and proxy.is_quant_enabled}
+    expected_scales, actual_scales = scales(task.model), scales(restored.model)
+    assert len(expected_scales) == 53 and expected_scales.keys() == actual_scales.keys()
+    assert all(torch.equal(value, actual_scales[name]) for name, value in expected_scales.items())
+    with torch.no_grad():
+        mask = torch.zeros_like(probe, dtype=torch.bool)
+        expected, actual = task.model(probe, mask)[0], restored.model(probe, mask)[0]
+        assert torch.isfinite(expected).all() and torch.isfinite(actual).all()
+        torch.testing.assert_close(actual, expected, rtol=0, atol=0)
+    return {"checkpoint_sha256": sha256(checkpoint), "strict_reload_exact": True,
+            "all_53_scales_exact": True, "quantization": contract}
+
+
+def run(args) -> dict:
+    import torch
+
+    percentile = validate_percentile(args.percentile)
+    source = args.source.resolve()
+    sys.path.insert(0, str(source))
+    from datasets.hdf5_dataset import HDF5Loader
+    from models.femba_ptq import calibrate_int8
+
+    args.output.mkdir(parents=True, exist_ok=False)
+    runtime, provenance = configure_runtime(), source_record(source)
+    parent_sha, train_sha = sha256(args.checkpoint), sha256(args.data / "train.h5")
+    task, _ = load_task(args.checkpoint, "fp32")
+    initial = floating_parameters(task.model)
+    dataset = HDF5Loader(str(args.data / "train.h5"), use_cache=False)
+    try:
+        indices = calibration_indices(len(dataset))
+        manifest = {"split": "train.h5", "seed": 42, "indices": indices, "train_sha256": train_sha}
+        manifest_path = args.output / "calibration_indices.json"
+        write_json(manifest_path, manifest)
+        recipe = {"activation_percentile": percentile, "seed": 42, "batch_size": 32,
+                  "windows": 512, "indices_sha256": sha256(manifest_path)}
+        set_percentile(task.model, percentile)
+        report = calibrate_int8(task.model, batches(task, dataset, indices))
+        assert report["num_batches"] == 16
+        current = floating_parameters(task.model)
+        assert current.keys() == initial.keys()
+        assert all(torch.equal(value, current[name]) for name, value in initial.items())
+        probe = next(batches(task, dataset, indices[:32]))
+        reload = save_reload(task, args.output, parent_sha, recipe, probe)
+    finally:
+        dataset.data.close()
+    assert source_record(source) == provenance and sha256(args.checkpoint) == parent_sha
+    assert sha256(args.data / "train.h5") == train_sha
+    result = {"parent_sha256": parent_sha, "train_sha256": train_sha, "recipe": recipe,
+              "runtime": runtime, "source": provenance, "calibration": report, **reload,
+              "floating_parameters_unchanged": True, "runner_sha256": sha256(Path(__file__))}
+    write_json(args.output / "results.json", result)
+    return result
+
+
+def main() -> None:
+    parser = argparse.ArgumentParser(description=__doc__)
+    for name in ("source", "data", "checkpoint", "output"):
+        parser.add_argument("--" + name, required=True, type=Path)
+    parser.add_argument("--percentile", type=float, default=99.999)
+    args = parser.parse_args()
+    run(args)
+    print("CALIBRATION_COMPLETE", args.output.name)
+
+
+if __name__ == "__main__":
+    main()

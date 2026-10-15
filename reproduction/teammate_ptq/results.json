@@ -1,0 +1,689 @@
+{
+  "study": "Teammate ARES FP32, native INT8 PTQ and QAP B on TUAR",
+  "representation": "Summary of retained raw records; machine paths replaced by logical model and split IDs",
+  "source": {
+    "repository": "https://github.com/berumottovv00/BioFoundation",
+    "base_commit": "a2a4d441485efd8423c44b35d7448a30ccd44437",
+    "dirty": true,
+    "model_patch": "source.patch",
+    "model_patch_sha256": "72ae455a302c7196c2564fa2ae1f36cb5a1b9fccf49230235ab8bc5f21a6291b",
+    "executed_files_sha256": {
+      "models/FEMBA_int8.py": "bd1cb7d988f59e7a48059677d4c7f9d0bdc0cd68f5e5374b7fb1aa881a92fbaf",
+      "models/femba_ptq.py": "7f921f6f5adaa6502e6c35851843ade824657e20217a432345227574ad048436",
+      "ARES/tests/test_networks/test_25_femba_tiny_int8.py": "8c41e693f861515a2de15b7b5ca87fb864fb654d86dd63e625078701ba444cac",
+      "ARES/tests/test_networks/brevitas_custom_layers.py": "6d9202f4417817e741dc02a40e683d6bbbc74e89f966203f0335b0bf80b9d9e5",
+      "tasks/finetune_task.py": "3547367acf92ffbddabe2d60610e88207e527db8815940d985909e681f02b573",
+      "datasets/hdf5_dataset.py": "f0461d1d4a20fe9930d3fc5d35df791899ec33d2b401ab547d01c2cd8cf92c98",
+      "data_module/finetune_data_module.py": "f5e15802a45ebc8af98165320cfb2daba4b62b742b1cf8f9cbbfba565672474a",
+      "data_module/pretrain_data_module.py": "3e907ebde7ac71fadee4daeccbe8d74399972057aa9ec808e5fff97fd1dda155",
+      "tasks/pretrain_task.py": "42e6bb4b2c0b231e4debc87d55e1fbf4b0aaa3895e1bcd70f48bffde6eb1af2d",
+      "util/train_utils.py": "13eba63f611af0cf8d6b58efe28eb1e7be7909735e25f2ae460b74703aab9e9b",
+      "run_train.py": "a6fd5637001af987180126ef362b0005cdb2396730fff6b05c20f702e8e24aae"
+    }
+  },
+  "model": {
+    "parameters": 8670626,
+    "d_model": 385,
+    "d_inner": 1540,
+    "dt_rank": 96,
+    "dt_proj_shapes": [
+      [
+        1540,
+        96
+      ],
+      [
+        1540,
+        96
+      ],
+      [
+        1540,
+        96
+      ],
+      [
+        1540,
+        96
+      ]
+    ],
+    "activation_quantizers": 35,
+    "weight_quantizers": 18
+  },
+  "data": {
+    "train": {
+      "bytes": 12508987552,
+      "sha256": "9fb802613f4256e6fb15ba1bd5c0853a22b983567ae48b0c8b88ac64c123d8b5",
+      "windows": 55524,
+      "classes": [
+        32205,
+        23319
+      ]
+    },
+    "val": {
+      "bytes": 1447713360,
+      "sha256": "e293d3a96ee12be7673fd67485b5ea3cc179ca8b86a102f684aa93e72fe78711",
+      "windows": 6426,
+      "classes": [
+        2927,
+        3499
+      ]
+    },
+    "test": {
+      "bytes": 1624566488,
+      "sha256": "fb9950063c5d877f01d93d096af7a09208b12e4241a6cc6946ed1f905a03cd97",
+      "windows": 7211,
+      "classes": [
+        3304,
+        3907
+      ]
+    }
+  },
+  "training": {
+    "seed": 42,
+    "batch_size": 32,
+    "workers": 4,
+    "normalization": "(x+20)/(40+1e-8), no clipping",
+    "HDF5_sample_cache": false,
+    "quantization_enabled": false,
+    "checkpoint_selection": "minimum validation loss",
+    "pretraining": {
+      "epochs": 10,
+      "optimizer": "AdamW",
+      "lr": 0.0001,
+      "weight_decay": 0.01,
+      "scheduler": "MultiStepLR; milestones 200000/400000 not reached",
+      "data": "train.h5 signals only, native seed42 random 9:1 split",
+      "mask_ratio": 0.6,
+      "mask_patch": [
+        2,
+        16
+      ],
+      "loss": "masked SmoothL1",
+      "hydra_overrides": [
+        "+experiment=FEMBA_qap_tuar",
+        "tag=FEMBA_ptq_fp_pretrain",
+        "seed=42",
+        "resume=false",
+        "+model.quantization_enabled=false",
+        "+data_module.datasets.tuar_train.use_cache=false"
+      ]
+    },
+    "finetuning": {
+      "epochs": 5,
+      "optimizer": "AdamW",
+      "lr": 5e-05,
+      "weight_decay": 0.5,
+      "warmup_epochs": 1,
+      "minimum_lr": 1e-06,
+      "layerwise_lr_decay": 0.75,
+      "trainable": "entire model",
+      "loss": "two-logit cross entropy",
+      "best_checkpoint": {
+        "epoch": 2,
+        "step": 5205
+      },
+      "hydra_overrides": [
+        "+experiment=FEMBA_quantized",
+        "data_module=finetune_data_module_tuar",
+        "gpus=1",
+        "trainer.strategy=auto",
+        "batch_size=32",
+        "num_workers=4",
+        "scheduler.warmup_epochs=1",
+        "io.base_output_path=${CHECKPOINT_DIR}/tb_logs",
+        "tag=FEMBA_ptq_fp_ft_B",
+        "seed=42",
+        "resume=false",
+        "pretrained_checkpoint_path=${PRETRAIN_CKPT}",
+        "+model.quantization_enabled=false",
+        "+data_module.train.use_cache=false",
+        "+data_module.val.use_cache=false",
+        "+data_module.test.use_cache=false"
+      ]
+    }
+  },
+  "calibration": {
+    "split": "train.h5",
+    "windows": 512,
+    "seed": 42,
+    "batch_size": 32,
+    "num_batches": 16,
+    "indices_file_sha256": "58886a53d3250e3d803f044aa3bd412bdb5a6a4b49aec38c196f071ff9c804bf",
+    "indices_order_preserved": true,
+    "activation_quantizers": 35,
+    "weight_quantizers": 18,
+    "parent_sha256": "e2e54fff5d123053870bd7f7866daef011ccf81d6a7e813334e8d2942692fa39",
+    "method": "Native per-call AbsPercentile thresholds, arithmetic mean, observer-only float graph",
+    "weight_quantization": "native signed per-tensor 8-bit absmax, narrow range",
+    "activation_percentiles": {
+      "ptq_original": 99.999,
+      "ptq_p99": 99.0
+    },
+    "selection_rule_used": "maximum native validation positive-logit AUROC, then AP, then minimum loss, then candidate order",
+    "selected_before_test": true,
+    "selected_candidate": "p99",
+    "validation_candidates": [
+      {
+        "percentile": 99.999,
+        "native_AUROC": 0.6961590051651001,
+        "native_AP": 0.7694206833839417,
+        "native_loss": 1.0327229499816895
+      },
+      {
+        "percentile": 99.99,
+        "native_AUROC": 0.8041070699691772,
+        "native_AP": 0.8294947743415833,
+        "native_loss": 0.9487147927284241
+      },
+      {
+        "percentile": 99.9,
+        "native_AUROC": 0.8356214761734009,
+        "native_AP": 0.8495885729789734,
+        "native_loss": 0.7105001211166382
+      },
+      {
+        "percentile": 99.0,
+        "native_AUROC": 0.8402001261711121,
+        "native_AP": 0.8379359245300293,
+        "native_loss": 0.957007646560669
+      }
+    ]
+  },
+  "evaluation": {
+    "ranking_score": "float64(z1)-float64(z0)",
+    "default_decision": "positive iff z1>z0, equivalent to softmax p1>0.5 in every measured window",
+    "native_score": "z1 passed to TorchMetrics; retained separately",
+    "class_order": [
+      0,
+      1
+    ],
+    "confusion_matrix": "rows=true; columns=predicted",
+    "ordered": true,
+    "drop_last": false,
+    "retraining_or_recalibration_during_threshold_control": false
+  },
+  "threshold_protocol": {
+    "score": "float64(logit_1) - float64(logit_0)",
+    "decision": "positive iff score > threshold; ties are class 0",
+    "default_threshold": 0.0,
+    "selection_split": "val",
+    "objective": "maximum validation balanced accuracy",
+    "candidates": "unique validation scores, 0, and nextafter(minimum score, -inf)",
+    "tie_break": [
+      "smallest absolute threshold",
+      "lowest threshold"
+    ],
+    "execution": "save all selections exclusively before reading any test capture"
+  },
+  "runtime": {
+    "versions": {
+      "torch": "2.7.1+cu128",
+      "pytorch-lightning": "2.6.5",
+      "torchmetrics": "1.9.0",
+      "brevitas": "0.12.1",
+      "h5py": "3.16.0",
+      "numpy": "1.26.4"
+    },
+    "device": "NVIDIA GeForce RTX 5060 Ti",
+    "cuda": "12.8",
+    "matmul_precision": "high",
+    "tf32_matmul": true,
+    "tf32_cudnn": true,
+    "cudnn_benchmark": true,
+    "precision": "32-true",
+    "batch_size": 32,
+    "num_workers": 4
+  },
+  "results": [
+    {
+      "model": "fp32",
+      "checkpoint_sha256": "e2e54fff5d123053870bd7f7866daef011ccf81d6a7e813334e8d2942692fa39",
+      "AUROC": 0.9140095755367996,
+      "AP": 0.9293508764406799,
+      "default": {
+        "threshold": 0.0,
+        "confusion_matrix": [
+          [
+            2844,
+            460
+          ],
+          [
+            763,
+            3144
+          ]
+        ],
+        "accuracy": 0.8303980030508945,
+        "balanced_accuracy": 0.8327421570893739,
+        "predicted_positive_rate": 0.49979198446817363
+      },
+      "validation_threshold": {
+        "margin": 0.026097774505615234,
+        "probability": 0.5065240733384301,
+        "validation_default": {
+          "threshold": 0.0,
+          "confusion_matrix": [
+            [
+              2335,
+              592
+            ],
+            [
+              573,
+              2926
+            ]
+          ],
+          "accuracy": 0.8187052598817305,
+          "balanced_accuracy": 0.8169920284706265,
+          "predicted_positive_rate": 0.547463429816371
+        },
+        "validation_selected": {
+          "threshold": 0.026097774505615234,
+          "confusion_matrix": [
+            [
+              2347,
+              580
+            ],
+            [
+              576,
+              2923
+            ]
+          ],
+          "accuracy": 0.8201058201058201,
+          "balanced_accuracy": 0.818613214981722,
+          "predicted_positive_rate": 0.5451291627762216
+        }
+      },
+      "test_with_validation_threshold": {
+        "threshold": 0.026097774505615234,
+        "confusion_matrix": [
+          [
+            2857,
+            447
+          ],
+          [
+            766,
+            3141
+          ]
+        ],
+        "accuracy": 0.8317847732630703,
+        "balanced_accuracy": 0.8343255431518892,
+        "predicted_positive_rate": 0.4975731521286923
+      },
+      "native_metrics": {
+        "test_BinaryAUROC": 0.9117809534072876,
+        "test_BinaryAveragePrecision": 0.9272931218147278,
+        "test_BinaryAccuracy": 0.8303980231285095,
+        "test_MulticlassRecall": 0.8327421545982361
+      },
+      "test_probability_median_by_class": {
+        "0": 0.07712884277832649,
+        "1": 0.944538063249336
+      }
+    },
+    {
+      "model": "ptq_original",
+      "checkpoint_sha256": "de6c0700413f2e31440045715b8963473935d9adb871cc9f98677cae5ce98880",
+      "AUROC": 0.6924768265316303,
+      "AP": 0.7815234385797998,
+      "default": {
+        "threshold": 0.0,
+        "confusion_matrix": [
+          [
+            10,
+            3294
+          ],
+          [
+            68,
+            3839
+          ]
+        ],
+        "accuracy": 0.5337678546664818,
+        "balanced_accuracy": 0.4928109880384806,
+        "predicted_positive_rate": 0.9891831923450284
+      },
+      "validation_threshold": {
+        "margin": 2.318449318408966,
+        "probability": 0.9103935209468708,
+        "validation_default": {
+          "threshold": 0.0,
+          "confusion_matrix": [
+            [
+              12,
+              2915
+            ],
+            [
+              86,
+              3413
+            ]
+          ],
+          "accuracy": 0.5329909741674448,
+          "balanced_accuracy": 0.48976065493064397,
+          "predicted_positive_rate": 0.9847494553376906
+        },
+        "validation_selected": {
+          "threshold": 2.318449318408966,
+          "confusion_matrix": [
+            [
+              2448,
+              479
+            ],
+            [
+              1640,
+              1859
+            ]
+          ],
+          "accuracy": 0.6702458761282291,
+          "balanced_accuracy": 0.6838229342309038,
+          "predicted_positive_rate": 0.3638344226579521
+        }
+      },
+      "test_with_validation_threshold": {
+        "threshold": 2.318449318408966,
+        "confusion_matrix": [
+          [
+            2697,
+            607
+          ],
+          [
+            1882,
+            2025
+          ]
+        ],
+        "accuracy": 0.6548328941894328,
+        "balanced_accuracy": 0.6672918896424187,
+        "predicted_positive_rate": 0.3649979198446817
+      },
+      "native_metrics": {
+        "test_BinaryAUROC": 0.6862428188323975,
+        "test_BinaryAveragePrecision": 0.7462960481643677,
+        "test_BinaryAccuracy": 0.5337678790092468,
+        "test_MulticlassRecall": 0.4928109645843506
+      },
+      "test_probability_median_by_class": {
+        "0": 0.8753518272456393,
+        "1": 0.9135348063036942
+      }
+    },
+    {
+      "model": "ptq_p99",
+      "checkpoint_sha256": "9b9cc77001f4fd6ec63b8a440ff9ebce89177bde6f717331e2faa59d5fe77dd5",
+      "AUROC": 0.871673490989972,
+      "AP": 0.8879452679631195,
+      "default": {
+        "threshold": 0.0,
+        "confusion_matrix": [
+          [
+            9,
+            3295
+          ],
+          [
+            4,
+            3903
+          ]
+        ],
+        "accuracy": 0.5425045070031895,
+        "balanced_accuracy": 0.5008500837572842,
+        "predicted_positive_rate": 0.9981971987241715
+      },
+      "validation_threshold": {
+        "margin": 2.057247579097748,
+        "probability": 0.8866779003295745,
+        "validation_default": {
+          "threshold": 0.0,
+          "confusion_matrix": [
+            [
+              6,
+              2921
+            ],
+            [
+              2,
+              3497
+            ]
+          ],
+          "accuracy": 0.5451291627762216,
+          "balanced_accuracy": 0.5007391442701233,
+          "predicted_positive_rate": 0.998755057578587
+        },
+        "validation_selected": {
+          "threshold": 2.057247579097748,
+          "confusion_matrix": [
+            [
+              2028,
+              899
+            ],
+            [
+              411,
+              3088
+            ]
+          ],
+          "accuracy": 0.7961406784936197,
+          "balanced_accuracy": 0.7876987255766277,
+          "predicted_positive_rate": 0.6204481792717087
+        }
+      },
+      "test_with_validation_threshold": {
+        "threshold": 2.057247579097748,
+        "confusion_matrix": [
+          [
+            2192,
+            1112
+          ],
+          [
+            493,
+            3414
+          ]
+        ],
+        "accuracy": 0.7774233809457772,
+        "balanced_accuracy": 0.7686272419714786,
+        "predicted_positive_rate": 0.6276521980307863
+      },
+      "native_metrics": {
+        "test_BinaryAUROC": 0.8657532930374146,
+        "test_BinaryAveragePrecision": 0.8859536051750183,
+        "test_BinaryAccuracy": 0.5425044894218445,
+        "test_MulticlassRecall": 0.5008500814437866
+      },
+      "test_probability_median_by_class": {
+        "0": 0.8301245624297049,
+        "1": 0.9739856105842714
+      }
+    },
+    {
+      "model": "qap_b",
+      "checkpoint_sha256": "8c005d5524760a30cdd7c0452e1b18cbe6588b8b638856d89b77ab1430bb26eb",
+      "AUROC": 0.9017215716374224,
+      "AP": 0.9184462543918532,
+      "default": {
+        "threshold": 0.0,
+        "confusion_matrix": [
+          [
+            2854,
+            450
+          ],
+          [
+            876,
+            3031
+          ]
+        ],
+        "accuracy": 0.8161142698654833,
+        "balanced_accuracy": 0.8197942508355587,
+        "predicted_positive_rate": 0.48273471085841074
+      },
+      "validation_threshold": {
+        "margin": -0.20967578887939453,
+        "probability": 0.44777225748497185,
+        "validation_default": {
+          "threshold": 0.0,
+          "confusion_matrix": [
+            [
+              2381,
+              546
+            ],
+            [
+              650,
+              2849
+            ]
+          ],
+          "accuracy": 0.813881107998755,
+          "balanced_accuracy": 0.813846759672562,
+          "predicted_positive_rate": 0.528322440087146
+        },
+        "validation_selected": {
+          "threshold": -0.20967578887939453,
+          "confusion_matrix": [
+            [
+              2330,
+              597
+            ],
+            [
+              580,
+              2919
+            ]
+          ],
+          "accuracy": 0.816837846249611,
+          "balanced_accuracy": 0.8151376258315006,
+          "predicted_positive_rate": 0.5471521942110178
+        }
+      },
+      "test_with_validation_threshold": {
+        "threshold": -0.20967578887939453,
+        "confusion_matrix": [
+          [
+            2810,
+            494
+          ],
+          [
+            808,
+            3099
+          ]
+        ],
+        "accuracy": 0.8194425183747053,
+        "balanced_accuracy": 0.821837984346715,
+        "predicted_positive_rate": 0.4982665372347802
+      },
+      "native_metrics": {
+        "test_BinaryAUROC": 0.9013767242431641,
+        "test_BinaryAveragePrecision": 0.9175976514816284,
+        "test_BinaryAccuracy": 0.8161142468452454,
+        "test_MulticlassRecall": 0.8197942972183228
+      },
+      "test_probability_median_by_class": {
+        "0": 0.08809278193355444,
+        "1": 0.9140585117376316
+      }
+    }
+  ],
+  "teammate_report": {
+    "source": "https://github.com/berumottovv00/BioFoundation/blob/a2a4d441485efd8423c44b35d7448a30ccd44437/docs/08_qap_finetune_compare.md",
+    "model": "QAP B, reported native evaluator",
+    "AUROC": 0.9013848304748535,
+    "AP": 0.9175984859466553,
+    "Accuracy": 0.8159756064414978,
+    "Balanced_Accuracy": 0.8196662664413452
+  },
+  "evidence": {
+    "raw_records_retained_outside_repository": true,
+    "threshold_selection_sha256": "c18b7f2a76c77dd3eb5235580853d6871624459333825382860a73da3a8de9aa",
+    "original_capture_results_sha256": "2785b6212d814c11b3104e6144839eb45c31dd4d8ca9663ca169ec4fff3c7b93",
+    "independent_logits_audit_sha256": "a76acf74b751a9776cfa6e273ae7a72e541c1113c977036363c3567f98095c2b",
+    "original_threshold_results_sha256": "ba744326e18d5db731a48681fdf5f3f01dfb3c60be747fd389c3375929bc6dcf",
+    "source_patch_check": {
+      "pinned_source": "a2a4d441485efd8423c44b35d7448a30ccd44437",
+      "source_patch_sha256": "72ae455a302c7196c2564fa2ae1f36cb5a1b9fccf49230235ab8bc5f21a6291b",
+      "applies_cleanly": true,
+      "patched_executed_model_files_exact": true,
+      "patched_files_sha256": {
+        "models/FEMBA_int8.py": "bd1cb7d988f59e7a48059677d4c7f9d0bdc0cd68f5e5374b7fb1aa881a92fbaf",
+        "models/femba_ptq.py": "7f921f6f5adaa6502e6c35851843ade824657e20217a432345227574ad048436"
+      }
+    }
+  },
+  "verification": {
+    "result": "PASS",
+    "public_files_sha256": {
+      "evaluate.py": "c496449791d4d1f64c4fdbe73c5e02dfdecdcbd65c8efe0bb90032c19bf0169f",
+      "calibrate.py": "66ee81ad3af7570a09ffeb351f129e6a34d9fb4abe6a5fbc7725b924ae466104",
+      "threshold_control.py": "0de32020f9ce7f06446aa464721fd71b0f2ab7961d80f96179f99a73b88fdc4a",
+      "test_evaluate.py": "8b1e2bfa6fc741f72519cd5ecba244c65c2dfc52b7b3f4198f36c0510ee30dd3",
+      "test_calibrate.py": "64d04f507fa1156bdd0a69316bad339a45d23d32af5480698a817ccb4e1f705d",
+      "test_threshold_control.py": "e412c5094036c44406f616ac879b87fb0d7783aa79303d7787ba5af64bbd4915"
+    },
+    "tests_returncode": 0,
+    "test_count": 13,
+    "regenerated_checkpoints": {
+      "ptq_original": {
+        "strict_reload_all_state_tensors_exact": true,
+        "tensor_count": 84,
+        "original_sha256": "de6c0700413f2e31440045715b8963473935d9adb871cc9f98677cae5ce98880",
+        "regenerated_sha256": "ba5ab97e7988dddaae97cb1fb703d9310216123c169a1ea67b18a314e984bbbc"
+      },
+      "ptq_p99": {
+        "strict_reload_all_state_tensors_exact": true,
+        "tensor_count": 84,
+        "original_sha256": "9b9cc77001f4fd6ec63b8a440ff9ebce89177bde6f717331e2faa59d5fe77dd5",
+        "regenerated_sha256": "ba6ede3ec94984541a5c783779b6169c6277f358d1a9c80be3d3f06af1df228f"
+      }
+    },
+    "frozen_capture_replays": [
+      {
+        "model": "fp32",
+        "split": "val",
+        "all_arrays_byte_exact": true,
+        "native_and_margin_metrics_exact": true,
+        "windows": 6426
+      },
+      {
+        "model": "ptq_original",
+        "split": "val",
+        "all_arrays_byte_exact": true,
+        "native_and_margin_metrics_exact": true,
+        "windows": 6426
+      },
+      {
+        "model": "ptq_p99",
+        "split": "val",
+        "all_arrays_byte_exact": true,
+        "native_and_margin_metrics_exact": true,
+        "windows": 6426
+      },
+      {
+        "model": "qap_b",
+        "split": "val",
+        "all_arrays_byte_exact": true,
+        "native_and_margin_metrics_exact": true,
+        "windows": 6426
+      },
+      {
+        "model": "fp32",
+        "split": "test",
+        "all_arrays_byte_exact": true,
+        "native_and_margin_metrics_exact": true,
+        "windows": 7211
+      },
+      {
+        "model": "ptq_original",
+        "split": "test",
+        "all_arrays_byte_exact": true,
+        "native_and_margin_metrics_exact": true,
+        "windows": 7211
+      },
+      {
+        "model": "ptq_p99",
+        "split": "test",
+        "all_arrays_byte_exact": true,
+        "native_and_margin_metrics_exact": true,
+        "windows": 7211
+      },
+      {
+        "model": "qap_b",
+        "split": "test",
+        "all_arrays_byte_exact": true,
+        "native_and_margin_metrics_exact": true,
+        "windows": 7211
+      }
+    ],
+    "validation_threshold_rows_exact": true,
+    "source_17_hashes_unchanged": true,
+    "reference_threshold_sha256": "ba744326e18d5db731a48681fdf5f3f01dfb3c60be747fd389c3375929bc6dcf",
+    "verification_driver_sha256": "f977f848b23e1038418f75349cecf507e29bdb15df89244d323e63f1ff88eabb",
+    "gpu_released": true,
+    "process_exited": true
+  }
+}
