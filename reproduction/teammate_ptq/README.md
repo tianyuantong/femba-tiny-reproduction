@@ -1,61 +1,70 @@
 # 队友模型的 FP32、PTQ 与 QAP 对照
 
-使用 [队友代码的固定提交](https://github.com/berumottovv00/BioFoundation/tree/a2a4d441485efd8423c44b35d7448a30ccd44437) 和同一份 TUAR 数据。
-模型为 ARES 版本，8,670,626 个参数，实际 `dt_rank=96`。seed 42，预训练 10 轮、微调 5 轮，按最低验证 loss 保存检查点。
+使用 [队友代码的固定提交](https://github.com/berumottovv00/BioFoundation/tree/a2a4d441485efd8423c44b35d7448a30ccd44437)、同一份 TUAR 数据和完整的 7,211 个测试窗口。模型为 ARES 版本，8,670,626 个参数，实际 `dt_rank=96`。
 
-## 结果
+## 三种子结果
 
-完整测试集 7,211 个窗口，负类 3,304、正类 3,907。各组使用同一套预处理、样本顺序与指标。
-PTQ 均来自同一 FP32 检查点；QAP B 使用队友预训练及量化微调的检查点。
+训练种子为 42、43、44，下表为均值 ± 样本标准差。PTQ 各自由对应种子的 FP32 权重校准，档位和分类阈值均在验证集上选择。
 
-| 模型 | AUROC | 默认阈值 BAcc | 验证集阈值 BAcc |
-| --- | ---: | ---: | ---: |
-| FP32 | 0.9140 | 83.27% | 83.43% |
-| 原 PTQ INT8 | 0.6925 | 49.28% | 66.73% |
-| P99 PTQ INT8 | 0.8717 | 50.09% | 76.86% |
-| P95 PTQ INT8（七档验证集选定） | 0.8659 | 68.48% | 76.42% |
-| 队友 QAP B | 0.9017 | 81.98% | 82.18% |
+| 方法 | AUROC | AP | 默认 BAcc | 验证阈值 BAcc |
+| --- | ---: | ---: | ---: | ---: |
+| FP32 | 0.9045 ± 0.0095 | 0.9233 ± 0.0061 | 83.08 ± 0.19% | 82.76 ± 0.60% |
+| PTQ INT8 | 0.8707 ± 0.0082 | 0.8871 ± 0.0068 | 62.74 ± 11.07% | 77.06 ± 1.68% |
+| QAP B | 0.9021 ± 0.0055 | 0.9194 ± 0.0041 | 81.83 ± 0.70% | 82.12 ± 0.72% |
 
-AUROC/AP 统一使用两类 logit 的差值 `z1-z0`；上游使用单列 `z1`。QAP B 行来自收到的检查点在 WSL 的完整测试。原生指标和队友报告参考值一并保存在结果 JSON 中。
+![逐种子 AUROC 与均值、样本标准差](curves/seed-auroc.svg)
 
-扩展校准固定比较 99.999、99.99、99.9、99、98、95、90 七档，按验证集 AUROC 选 P95，AP、CE loss 和固定顺序用于破除并列。七档统一使用 `z1-z0` 后，验证 AUROC 并非单调变化：P99.9 为 0.8454，P95 为 0.8479，P90 降到 0.8201。
+QAP B 在三个种子上都高于 PTQ，AUROC 同种子差值为 **0.0314 ± 0.0041**；PTQ 相对 FP32 为 **−0.0338 ± 0.0126**。QAP B 与 FP32 的平均 AUROC 相差 −0.0024。
+
+seed42 的 QAP B 使用队友提供的检查点在 WSL 复测；43/44 为本机按原配方重训，并核对了预训练初值、9:1 划分和分类头初值。单独看严格配对的 43/44，QAP−PTQ 的 AUROC 为 **0.0292 ± 0.0022**。
 
 <details>
-<summary>七档验证集 AUROC</summary>
+<summary>逐种子 AUROC 与 PTQ 档位</summary>
 
-| 激活百分位 | AUROC |
-| --- | ---: |
-| 99.999 | 0.6901 |
-| 99.99 | 0.8023 |
-| 99.9 | 0.8454 |
-| 99 | 0.8417 |
-| 98 | 0.8392 |
-| **95** | **0.8479** |
-| 90 | 0.8201 |
+| 种子 | FP32 | PTQ INT8 | QAP B | 验证集所选百分位 |
+| --- | ---: | ---: | ---: | ---: |
+| 42 | 0.914010 | 0.865885 | 0.901722 | 95 |
+| 43 | 0.894974 | 0.865982 | 0.896775 | 99.9 |
+| 44 | 0.904437 | 0.880125 | 0.907740 | 95 |
+
+[完整结果](seed-results.json) 包含 Accuracy、混淆矩阵、判正类比例、阈值、检查点哈希和配对差值。队友原报告的 `z1` 指标保留在 [历史结果](results.json) 的 `teammate_report` 中。
 
 </details>
 
-P95 默认判正类比例为 80.56%，低于 P99 的 99.82%；验证集选出的概率阈值为 0.780837，测试判正类比例为 61.89%，Accuracy 为 77.23%。P95 的测试 AUROC 略低于此前 P99 的 0.8717，表中保留两组结果。
+## 校准与阈值
 
-各组阈值只在 6,426 个验证窗口上最大化 Balanced Accuracy；并列时取离默认阈值最近、再取较低的阈值。先保存选择，再测测试集。调整阈值不改变 AUROC/AP，也不改变权重和量化尺度。
+PTQ 固定 512 个训练窗口，抽样种子 42、batch 32，35 个激活和 18 个权重量化器全部开启。七档候选为 99.999、99.99、99.9、99、98、95、90，按验证 AUROC 选档，AP、CE loss 和固定顺序用于破除并列，选择锁定后才测测试集。
 
-[完整数值与来源](results.json) 包含 AP、Accuracy、混淆矩阵、阈值和数据/权重哈希。
+AUROC/AP 使用 `float64(z1)-float64(z0)`。默认分类阈值为 margin 0；另一列阈值只在 6,426 个验证窗口上最大化 BAcc，并列时取离 0 最近、再取较低的阈值。调整阈值不改变 AUROC/AP。
 
-## 设置
+seed43 的 PTQ AUROC 为 0.8660，默认阈值却把 99.94% 的测试窗口判为正类，BAcc 为 49.98%；验证集阈值下判正类比例降到 62.79%，BAcc 为 75.80%。这说明排序能力和输出分布偏移需要分别看。
+
+seed42 扩展到七档后选出 P95：验证 AUROC 0.8479，测试 0.8659。此前 P99 的测试 0.8717 保留为历史对照；七档汇总采用验证集选出的 P95。[七档对照](results.json) 中 P90 的验证 AUROC 降到 0.8201。
+
+## C 组：FP32 预训练后量化微调
+
+C42 从原 FP32 预训练检查点开始，开启量化微调 5 轮。测试 AUROC **0.8749**，AP **0.8976**，Accuracy **79.56%**，默认 BAcc **79.85%**，验证阈值 BAcc **79.86%**。
+
+34 个共享激活 observer 加载后保持未统计状态；加上新分类头共 35 个，首批均重新统计。输入 observer 的 buffer 从 1 更新为 88.9251。检查点仍按最低验证 loss 选出，第 3 轮最佳。C 目前保留 seed42 单独结果。
+
+## 训练曲线
+
+![新增九个训练阶段的 loss](curves/seed-training-loss.svg)
+
+预训练为重建 loss，微调为分类交叉熵，各子图独立纵轴。43/44 的 FP32 与 QAP 均完成预训练 10 轮、微调 5 轮；C42 完成微调 5 轮，共 65 轮。微调 loss 的最优轮次随种子变化，所有组都按验证 loss 选检查点。
+
+[seed42 预训练 loss/学习率](curves/pretrain-loss-lr.svg) · [seed42 微调 loss/学习率](curves/finetune-loss-lr.svg) · [原生 `z1` 验证 AUROC](curves/native-positive-logit-auroc.svg)。原生曲线保留训练时的指标口径；主表统一用 margin。
+
+## 设置与运行
 
 | 项目 | 设置 |
 | --- | --- |
-| 训练 | batch 32；预训练 AdamW 1e-4；微调 AdamW 5e-5、weight decay 0.5、warmup 1 轮、分层衰减 0.75 |
-| 输入 | 22×1,280；固定归一化 `(x+20)/(40+1e-8)`；HDF5 样本缓存关闭 |
-| PTQ | 同一份 FP32 权重；seed 42 固定抽取 512 个训练窗口；35 个激活、18 个权重量化器全部开启 |
-| 校准 | 原生 Brevitas 百分位统计，按调用求平均；激活候选为 99.999 至 90 的七档，权重量化保持原设置 |
-| 推理 | RTX 5060 Ti；batch 32；FP32 执行；TF32 开启；INT8 使用原生 Brevitas 伪量化 |
+| 训练 | batch 32；预训练 AdamW 1e-4；微调 AdamW 5e-5、weight decay 0.5、warmup 1 轮、分层衰减 0.75；原生 val_loss 选检查点 |
+| 数据 | train 55,524、val 6,426、test 7,211；测试负类 3,304、正类 3,907 |
+| 输入 | 22×1,280；`(x+20)/(40+1e-8)`；HDF5 样本缓存关闭 |
+| 推理 | RTX 5060 Ti；batch 32；TF32 开启；INT8 使用原生 Brevitas 伪量化 |
 
-P99 为此前四档校准选出的对照；P95 为扩展七档后按正确排序分数选出的方案。
-
-## 运行
-
-在实验环境中固定队友代码并应用补丁。补丁只增加量化开关和原生 PTQ 校准函数，保留模型结构。
+补丁增加量化开关和原生 PTQ 校准函数，保留模型结构；FP32 存档中的未统计激活状态在加载进量化模型后会重新统计。
 
 ```bash
 git clone https://github.com/berumottovv00/BioFoundation.git teammate-source
@@ -63,54 +72,8 @@ git -C teammate-source checkout a2a4d441485efd8423c44b35d7448a30ccd44437
 git -C teammate-source apply /path/to/this-repo/reproduction/teammate_ptq/source.patch
 ```
 
-补丁保留 FP32 检查点中“尚未统计”的激活状态；加载到量化模型后会重新统计，供 C 组量化微调使用。旧结果保留对应补丁版本；新增校准使用修复后的补丁，均记录在 `results.json`。
+[训练与评估命令](TRAINING.md) 包含 FP32、QAP B、C 和七档 PTQ 的入口。`export_curves.py` 从 TensorBoard 导出标量 CSV/SVG；`summarize_seeds.py` 从保留的阶段记录生成三种子统计及图表。
 
-下列路径由运行者提供；数据目录包含 `train.h5`、`val.h5`、`test.h5`。输出目录使用仓库外的新目录。
+`seed-results.json` 记录实际执行文件和私有驱动哈希、重建补丁、严格重载与数据完整性检查。公开训练入口补充了参数保护，历史执行文件哈希单独保留。数据集、权重、逐样本输出和原始日志留在仓库外。
 
-```bash
-study=/path/to/this-repo/reproduction/teammate_ptq
-teammate_source=/path/to/teammate-source
-data=/path/to/TUAR_data
-artifacts=/path/to/artifacts
-
-python "$study/calibrate.py" --source "$teammate_source" --data "$data" \
-  --checkpoint "$artifacts/fp32.ckpt" --percentile 99.999 --output "$artifacts/ptq-original"
-python "$study/calibrate.py" --source "$teammate_source" --data "$data" \
-  --checkpoint "$artifacts/fp32.ckpt" --percentile 99.0 --output "$artifacts/ptq-p99"
-python "$study/evaluate.py" --source "$teammate_source" --data "$data" \
-  --fp32 "$artifacts/fp32.ckpt" --ptq-original "$artifacts/ptq-original/ptq_int8.ckpt" \
-  --ptq-p99 "$artifacts/ptq-p99/ptq_int8.ckpt" --qap-b "$artifacts/qap-b.ckpt" \
-  --output "$artifacts/captures"
-python "$study/threshold_control.py" --captures "$artifacts/captures" \
-  --output "$artifacts/thresholds"
-```
-
-`calibrate.py` 只读取训练数据，保存后严格重载，核对浮点参数、53 个量化尺度和探针输出。`evaluate.py` 保存有序 logits；`threshold_control.py` 只用验证输出选择阈值。
-
-从同一 FP32 权重重新校准七档并选择验证集方案：
-
-```bash
-python "$study/sweep.py" --source "$teammate_source" --data "$data" \
-  --fp32 "$artifacts/fp32.ckpt" --output "$artifacts/seven-percentiles"
-```
-
-## 训练曲线
-
-![预训练 loss 与学习率](curves/pretrain-loss-lr.svg)
-![微调 loss 与学习率](curves/finetune-loss-lr.svg)
-
-预训练验证 loss 整体下降，第 10 轮最低；微调验证 loss 在第 3 轮最低，后两轮训练 loss 继续下降，验证 loss 略回升，因此选用第 3 轮检查点。[原生验证 AUROC 曲线](curves/native-positive-logit-auroc.svg) 保留训练时的 `z1` 口径；上表采用 `z1-z0`。
-
-`export_curves.py --manifest runs.json --output /path/to/new-curves` 导出完整标量 CSV 和 SVG。清单示例：
-
-```json
-{"runs":[{"run":"fp32-seed42-finetune","stage":"finetune","seed":42,"epochs":5,"tensorboard_dir":"/path/to/exact/tensorboard/run"}]}
-```
-
-CSV 保留重复的最终验证事件；图只取训练预算内每轮首条记录。已有 seed 42 导出 19,038 条标量，来源 event 文件哈希见结果 JSON。
-
-训练配置及完整覆盖参数保存在 `results.json` 的 `training` 字段。环境版本见 `runtime` 字段。数据集、检查点、逐样本输出和原始日志保存在本地。
-
-```bash
-FEMBA_SOURCE="$teammate_source" python -m unittest discover -s "$study" -p 'test_*.py' -v
-```
+测试命令见 [训练文档](TRAINING.md#验证)。
