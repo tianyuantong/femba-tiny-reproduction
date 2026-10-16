@@ -1,0 +1,225 @@
+diff --git a/models/FEMBA_int8.py b/models/FEMBA_int8.py
+index 84a0bf3..36f6f72 100644
+--- a/models/FEMBA_int8.py
++++ b/models/FEMBA_int8.py
+@@ -36,6 +36,7 @@ import torch
+ 
+ from ARES.tests.test_networks.test_25_femba_tiny_int8 import FEMBATinyInt8
+ from models.femba_decoder import Decoder
++from models.femba_ptq import set_quantization_enabled
+ 
+ 
+ class FEMBATinyInt8Pretrain(FEMBATinyInt8):
+@@ -73,7 +74,8 @@ class FEMBATinyInt8Pretrain(FEMBATinyInt8):
+                  d_conv: int = 4,
+                  patch_size: Tuple[int, int] = (2, 16),
+                  stride: Tuple[int, int] = (2, 16),
+-                 kernel_dec: Tuple[int, int] = (31, 31)):
++                 kernel_dec: Tuple[int, int] = (31, 31),
++                 quantization_enabled: bool = True):
+         # Hydra 传进来的是 ListConfig，QuantPatchEmbed 用 isinstance(..., tuple) 判断，必须先转成 tuple
+         patch_size = tuple(patch_size)
+         stride = tuple(stride)
+@@ -103,6 +105,7 @@ class FEMBATinyInt8Pretrain(FEMBATinyInt8):
+             patch_size=patch_size,
+             stride=stride,
+         )
++        set_quantization_enabled(self, quantization_enabled)
+ 
+     def forward_features(self, x):
+         """
+@@ -234,7 +237,8 @@ class FEMBATinyInt8Classifier(FEMBATinyInt8):
+                  patch_size: Tuple[int, int] = (2, 16),
+                  stride: Tuple[int, int] = (2, 16),
+                  num_classes: int = 2,
+-                 classification_type: str = "bc"):
++                 classification_type: str = "bc",
++                 quantization_enabled: bool = True):
+         if classification_type not in self.SUPPORTED_CLASSIFICATION_TYPES:
+             raise NotImplementedError(
+                 f"classification_type={classification_type!r} is not supported by the INT8 head; "
+@@ -257,6 +261,7 @@ class FEMBATinyInt8Classifier(FEMBATinyInt8):
+             num_classes=num_classes,
+         )
+         self.classification_type = classification_type
++        set_quantization_enabled(self, quantization_enabled)
+ 
+     def forward(self, x: torch.Tensor, mask: Optional[torch.Tensor] = None):
+         """
+diff --git a/models/femba_ptq.py b/models/femba_ptq.py
+new file mode 100644
+index 0000000..8f1b4dd
+--- /dev/null
++++ b/models/femba_ptq.py
+@@ -0,0 +1,171 @@
++#*----------------------------------------------------------------------------*
++#* Copyright (C) 2026 ETH Zurich, Switzerland                                 *
++#* SPDX-License-Identifier: Apache-2.0                                        *
++#*                                                                            *
++#* Licensed under the Apache License, Version 2.0 (the "License");            *
++#* you may not use this file except in compliance with the License.           *
++#* You may obtain a copy of the License at                                    *
++#*                                                                            *
++#* http://www.apache.org/licenses/LICENSE-2.0                                 *
++#*                                                                            *
++#* Unless required by applicable law or agreed to in writing, software        *
++#* distributed under the License is distributed on an "AS IS" BASIS,          *
++#* WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.   *
++#* See the License for the specific language governing permissions and        *
++#* limitations under the License.                                             *
++#*----------------------------------------------------------------------------*
++"""FP32 training and native Brevitas INT8 calibration for the same ARES graph."""
++
++from collections.abc import Iterable
++
++import torch
++from torch import nn
++
++from brevitas.core.scaling.standalone import ParameterFromRuntimeStatsScaling
++from brevitas.graph.calibrate import calibration_mode
++from brevitas.proxy.parameter_quant import WeightQuantProxyFromInjectorBase
++from brevitas.proxy.quant_proxy import QuantProxyFromInjector
++from brevitas.proxy.runtime_quant import ActQuantProxyFromInjectorBase
++
++
++def _save_unobserved_scales(
++    model: nn.Module, state_dict: dict, prefix: str, local_metadata: dict
++) -> None:
++    if model.quantization_enabled:
++        return
++    unobserved = []
++    for name, module in model.named_modules():
++        if isinstance(module, ParameterFromRuntimeStatsScaling) and module.counter == 0:
++            # Brevitas normally omits these parameters, which breaks strict FP32 reload.
++            state_dict[prefix + name + ".value"] = module.value.detach()
++            unobserved.append(name)
++    local_metadata["femba_unobserved_scales"] = unobserved
++
++
++def _remember_unobserved_scales(
++    model: nn.Module, state_dict: dict, prefix: str, local_metadata: dict,
++    strict: bool, missing_keys: list, unexpected_keys: list, error_msgs: list,
++) -> None:
++    model._ptq_unobserved_scales = local_metadata.get("femba_unobserved_scales", [])
++
++
++def _restore_unobserved_scales(model: nn.Module, incompatible_keys: object) -> None:
++    for name in model._ptq_unobserved_scales:
++        scaling = model.get_submodule(name)
++        assert isinstance(scaling, ParameterFromRuntimeStatsScaling)
++        # Loading a scale marks it initialized in Brevitas; retain the saved fresh state.
++        scaling.counter = 0
++        scaling.buffer.fill_(1)
++    model._ptq_unobserved_scales = []
++
++
++def set_quantization_enabled(model: nn.Module, enabled: bool) -> None:
++    """Toggle every proxy without replacing layers, parameters, or the scan."""
++    if not isinstance(enabled, bool):
++        raise TypeError("enabled must be a bool")
++    if not hasattr(model, "_ptq_return_quant_tensor_defaults"):
++        model._ptq_return_quant_tensor_defaults = {
++            name: module.return_quant_tensor
++            for name, module in model.named_modules()
++            if hasattr(module, "return_quant_tensor")
++        }
++        model.register_state_dict_post_hook(_save_unobserved_scales)
++        model.register_load_state_dict_pre_hook(_remember_unobserved_scales)
++        model.register_load_state_dict_post_hook(_restore_unobserved_scales)
++    for name, module in model.named_modules():
++        if isinstance(module, QuantProxyFromInjector):
++            module.disable_quant = not enabled
++        if name in model._ptq_return_quant_tensor_defaults:
++            module.return_quant_tensor = (
++                model._ptq_return_quant_tensor_defaults[name] if enabled else False
++            )
++    model.quantization_enabled = enabled
++
++
++def _quantizer_scales(proxies: dict[str, nn.Module]) -> dict[str, float]:
++    scales = {}
++    for name, proxy in proxies.items():
++        scale = proxy.scale()
++        if scale is None or not torch.isfinite(scale).all() or not (scale > 0).all():
++            raise ValueError(f"Invalid quantization scale: {name}")
++        if scale.numel() != 1 or proxy.bit_width().item() != 8:
++            raise ValueError(f"Expected the original per-tensor INT8 quantizer: {name}")
++        scales[name] = scale.item()
++    return scales
++
++
++def _fresh_quantizers(model: nn.Module) -> dict[str, nn.Module]:
++    proxies = {
++        name: module for name, module in model.named_modules()
++        if isinstance(module, QuantProxyFromInjector) and module.is_quant_enabled
++    }
++    if not proxies:
++        raise ValueError("The model has no enabled quantizers")
++    for name, proxy in proxies.items():
++        if isinstance(proxy, ActQuantProxyFromInjectorBase):
++            scaling = proxy.fused_activation_quant_proxy.tensor_quant.scaling_impl
++            if scaling.counter != 0:
++                raise ValueError(f"Load a fresh FP32 checkpoint before calibration: {name}")
++    return proxies
++
++
++def calibrate_int8(
++    model: nn.Module, calibration_batches: Iterable[torch.Tensor]
++) -> dict:
++    """Calibrate fresh FP32 weights using normalized train tensors [B,C,T].
++
++    The caller fixes train indices and applies the training normalization before
++    yielding batches on the model device. Existing percentile quantizers and
++    float scan operations are preserved. No optimizer or weight update is used.
++    """
++    set_quantization_enabled(model, True)
++    model.eval()
++    proxies = _fresh_quantizers(model)
++    visits = dict.fromkeys(proxies, 0)
++
++    def record_visit(module: nn.Module, inputs: tuple, name: str) -> None:
++        visits[name] += 1
++
++    hooks = [
++        proxy.register_forward_pre_hook(
++            lambda module, inputs, name=name: record_visit(module, inputs, name)
++        ) for name, proxy in proxies.items()
++    ]
++    try:
++        batches = _collect_calibration_batches(model, calibration_batches)
++    finally:
++        for hook in hooks:
++            hook.remove()
++        model.eval()
++    unvisited = [name for name, count in visits.items() if count == 0]
++    if unvisited:
++        raise ValueError(f"Calibration did not visit quantizers: {unvisited}")
++    return {
++        "num_batches": batches,
++        "activation_quantizers": sum(
++            isinstance(proxy, ActQuantProxyFromInjectorBase) for proxy in proxies.values()
++        ),
++        "weight_quantizers": sum(
++            isinstance(proxy, WeightQuantProxyFromInjectorBase) for proxy in proxies.values()
++        ),
++        "scales": _quantizer_scales(proxies),
++    }
++
++
++def _collect_calibration_batches(model: nn.Module, batches: Iterable[torch.Tensor]) -> int:
++    count = 0
++    with torch.no_grad(), calibration_mode(model):
++        for signals in batches:
++            if not isinstance(signals, torch.Tensor):
++                raise TypeError("Calibration batches must be normalized signal tensors")
++            if signals.ndim != 3 or signals.dtype != torch.float32 or signals.shape[0] == 0:
++                raise ValueError("Expected nonempty FP32 calibration tensors [B,C,T]")
++            if not torch.isfinite(signals).all():
++                raise ValueError("Calibration input contains nonfinite values")
++            output, _ = model(signals, torch.zeros_like(signals, dtype=torch.bool))
++            if not torch.isfinite(output).all():
++                raise ValueError("Calibration output contains nonfinite values")
++            count += 1
++    if count == 0:
++        raise ValueError("Calibration requires at least one train batch")
++    return count

@@ -1,0 +1,4 @@
+source.patch whitespace=-blank-at-eol
+
+# Keep Matplotlib exports byte-for-byte.
+curves/*.svg whitespace=-blank-at-eol

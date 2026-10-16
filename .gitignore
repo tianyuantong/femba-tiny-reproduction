@@ -18,6 +18,8 @@ checkpoints/
 *.hdf5
 *.HDF5
 *.pkl
+*.npz
+*.npy
 *.pt
 *.pth
 *.ckpt
