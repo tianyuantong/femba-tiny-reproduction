@@ -1,6 +1,6 @@
 # 训练、校准与评估
 
-环境与版本见 [seed-results.json](seed-results.json) 的 `runtime`。使用已应用 `source.patch` 的队友代码，运行目录与输出目录分开。
+环境与版本见 [seed-results.json](seed-results.json) 的 `runtime`。使用已应用 `source.patch` 的上游仓库（berumottovv00/BioFoundation）代码，运行目录与输出目录分开。
 
 ```bash
 study=/path/to/this-repo/reproduction/teammate_ptq
@@ -12,7 +12,7 @@ mkdir -p "$artifacts"
 
 ## 数据校验
 
-首次训练前核对三个 H5 的完整 SHA256，生成各训练阶段共用的清单。清单对应本次队友数据，不重新划分 `val.h5`、`test.h5`。
+首次训练前核对三个 H5 的完整 SHA256，生成各训练阶段共用的清单。清单对应上游仓库作者提供的这份数据，不重新划分 `val.h5`、`test.h5`。
 
 ```bash
 PYTHONPATH="$study" python - "$data" "$artifacts/data-manifest.json" <<'PY'
@@ -116,7 +116,7 @@ python "$study/summarize_seeds.py" --raw /path/to/retained-stage-records \
 
 ## 验证
 
-先设置本文开头的变量。测试使用 CPU，原生模型与数据 fixture 读取指定的队友代码和 H5：
+先设置本文开头的变量。测试使用 CPU，原生模型与数据 fixture 读取指定的上游仓库代码和 H5：
 
 ```bash
 FEMBA_SOURCE="$teammate_source" FEMBA_DATA_ROOT="$data" \
