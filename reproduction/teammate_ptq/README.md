@@ -1,79 +1,30 @@
-# 队友模型的 FP32、PTQ 与 QAP 对照
+# 上游仓库模型的 int8 对比：FP32 / PTQ / QAP
 
-使用 [队友代码的固定提交](https://github.com/berumottovv00/BioFoundation/tree/a2a4d441485efd8423c44b35d7448a30ccd44437)、同一份 TUAR 数据和完整的 7,211 个测试窗口。模型为 ARES 版本，8,670,626 个参数，实际 `dt_rank=96`。
+模型与 QAP 方法来自上游仓库 [berumottovv00/BioFoundation](https://github.com/berumottovv00/BioFoundation)。
 
-## 三种子结果
+**结论**：在上游仓库的模型和 TUAR 数据上压缩到 8 位，“训练时就带着压缩”（QAP）基本不掉分，“训完再压缩”（PTQ）掉了一截。三个随机种子的结果一致。
 
-训练种子为 42、43、44，下表为均值 ± 样本标准差。PTQ 各自由对应种子的 FP32 权重校准，档位和分类阈值均在验证集上选择。
+| 模型 | AUROC（三个种子平均） | 比 FP32 |
+| --- | ---: | ---: |
+| FP32（不压缩） | 0.9045 | — |
+| QAP int8（上游仓库的方法） | 0.9021 | −0.0024 |
+| PTQ int8（训完再压缩） | 0.8707 | −0.0338 |
 
-| 方法 | AUROC | AP | 默认 BAcc | 验证阈值 BAcc |
-| --- | ---: | ---: | ---: | ---: |
-| FP32 | 0.9045 ± 0.0095 | 0.9233 ± 0.0061 | 83.08 ± 0.19% | 82.76 ± 0.60% |
-| PTQ INT8 | 0.8707 ± 0.0082 | 0.8871 ± 0.0068 | 62.74 ± 11.07% | 77.06 ± 1.68% |
-| QAP B | 0.9021 ± 0.0055 | 0.9194 ± 0.0041 | 81.83 ± 0.70% | 82.12 ± 0.72% |
+- **QAP 比 PTQ 高约 0.03**，三个种子都是 QAP 更高。
+- **PTQ 的输出整体偏向“有伪迹”**：测试集里真正有伪迹的占 54%，但用默认判断线时，PTQ 把 80%–100% 的样本都判成有伪迹；只用验证集重新选判断线后，平衡准确率回到约 77%（FP32 约 83%）。
+- **C 组**（先正常预训练，最后带着压缩微调）：0.875，接近 PTQ。说明关键在于预训练阶段就带着压缩。目前只有一个种子。
 
-![逐种子 AUROC 与均值、样本标准差](curves/seed-auroc.svg)
+**适用范围**：只测了 TUAR 一个任务；数据按录音划分，不是按人；模型完全沿用上游仓库的代码。
 
-QAP B 在三个种子上都高于 PTQ，AUROC 同种子差值为 **0.0314 ± 0.0041**；PTQ 相对 FP32 为 **−0.0338 ± 0.0126**。QAP B 与 FP32 的平均 AUROC 相差 −0.0024。
+![各种子的 AUROC](curves/seed-auroc.svg)
 
-seed42 的 QAP B 使用队友提供的检查点在 WSL 复测；43/44 为本机按原配方重训，并核对了预训练初值、9:1 划分和分类头初值。单独看严格配对的 43/44，QAP−PTQ 的 AUROC 为 **0.0292 ± 0.0022**。
+## 用这套流程跑 int4 / 三值
 
-<details>
-<summary>逐种子 AUROC 与 PTQ 档位</summary>
+1. 取上游仓库的[固定版本](https://github.com/berumottovv00/BioFoundation/tree/a2a4d441485efd8423c44b35d7448a30ccd44437)，打上 [`source.patch`](source.patch)。补丁只加了量化开关和校准函数，不改模型结构。
+2. 按 [TRAINING.md](TRAINING.md) 的顺序跑：数据校验 → FP32 和 QAP 训练 → 评估与 PTQ 校准 → 汇总结果。
+3. 现在的脚本里写死了 8 位，跑 int4 / 三值之前要先改成可配置。
 
-| 种子 | FP32 | PTQ INT8 | QAP B | 验证集所选百分位 |
-| --- | ---: | ---: | ---: | ---: |
-| 42 | 0.914010 | 0.865885 | 0.901722 | 95 |
-| 43 | 0.894974 | 0.865982 | 0.896775 | 99.9 |
-| 44 | 0.904437 | 0.880125 | 0.907740 | 95 |
+## 更多细节
 
-[完整结果](seed-results.json) 包含 Accuracy、混淆矩阵、判正类比例、阈值、检查点哈希和配对差值。队友原报告的 `z1` 指标保留在 [历史结果](results.json) 的 `teammate_report` 中。
-
-</details>
-
-## 校准与阈值
-
-PTQ 固定 512 个训练窗口，抽样种子 42、batch 32，35 个激活和 18 个权重量化器全部开启。七档候选为 99.999、99.99、99.9、99、98、95、90，按验证 AUROC 选档，AP、CE loss 和固定顺序用于破除并列，选择锁定后才测测试集。
-
-AUROC/AP 使用 `float64(z1)-float64(z0)`。默认分类阈值为 margin 0；另一列阈值只在 6,426 个验证窗口上最大化 BAcc，并列时取离 0 最近、再取较低的阈值。调整阈值不改变 AUROC/AP。
-
-seed43 的 PTQ AUROC 为 0.8660，默认阈值却把 99.94% 的测试窗口判为正类，BAcc 为 49.98%；验证集阈值下判正类比例降到 62.79%，BAcc 为 75.80%。这说明排序能力和输出分布偏移需要分别看。
-
-seed42 扩展到七档后选出 P95：验证 AUROC 0.8479，测试 0.8659。此前 P99 的测试 0.8717 保留为历史对照；七档汇总采用验证集选出的 P95。[七档对照](results.json) 中 P90 的验证 AUROC 降到 0.8201。
-
-## C 组：FP32 预训练后量化微调
-
-C42 从原 FP32 预训练检查点开始，开启量化微调 5 轮。测试 AUROC **0.8749**，AP **0.8976**，Accuracy **79.56%**，默认 BAcc **79.85%**，验证阈值 BAcc **79.86%**。
-
-34 个共享激活 observer 加载后保持未统计状态；加上新分类头共 35 个，首批均重新统计。输入 observer 的 buffer 从 1 更新为 88.9251。检查点仍按最低验证 loss 选出，第 3 轮最佳。C 目前保留 seed42 单独结果。
-
-## 训练曲线
-
-![新增九个训练阶段的 loss](curves/seed-training-loss.svg)
-
-预训练为重建 loss，微调为分类交叉熵，各子图独立纵轴。43/44 的 FP32 与 QAP 均完成预训练 10 轮、微调 5 轮；C42 完成微调 5 轮，共 65 轮。微调 loss 的最优轮次随种子变化，所有组都按验证 loss 选检查点。
-
-[seed42 预训练 loss/学习率](curves/pretrain-loss-lr.svg) · [seed42 微调 loss/学习率](curves/finetune-loss-lr.svg) · [原生 `z1` 验证 AUROC](curves/native-positive-logit-auroc.svg)。原生曲线保留训练时的指标口径；主表统一用 margin。
-
-## 设置与运行
-
-| 项目 | 设置 |
-| --- | --- |
-| 训练 | batch 32；预训练 AdamW 1e-4；微调 AdamW 5e-5、weight decay 0.5、warmup 1 轮、分层衰减 0.75；原生 val_loss 选检查点 |
-| 数据 | train 55,524、val 6,426、test 7,211；测试负类 3,304、正类 3,907 |
-| 输入 | 22×1,280；`(x+20)/(40+1e-8)`；HDF5 样本缓存关闭 |
-| 推理 | RTX 5060 Ti；batch 32；TF32 开启；INT8 使用原生 Brevitas 伪量化 |
-
-补丁增加量化开关和原生 PTQ 校准函数，保留模型结构；FP32 存档中的未统计激活状态在加载进量化模型后会重新统计。
-
-```bash
-git clone https://github.com/berumottovv00/BioFoundation.git teammate-source
-git -C teammate-source checkout a2a4d441485efd8423c44b35d7448a30ccd44437
-git -C teammate-source apply /path/to/this-repo/reproduction/teammate_ptq/source.patch
-```
-
-[训练与评估命令](TRAINING.md) 包含 FP32、QAP B、C 和七档 PTQ 的入口。`export_curves.py` 从 TensorBoard 导出标量 CSV/SVG；`summarize_seeds.py` 从保留的阶段记录生成三种子统计及图表。
-
-`seed-results.json` 记录实际执行文件和私有驱动哈希、重建补丁、严格重载与数据完整性检查。公开训练入口补充了参数保护，历史执行文件哈希单独保留。数据集、权重、逐样本输出和原始日志留在仓库外。
-
-测试命令见 [训练文档](TRAINING.md#验证)。
+- [详细说明](DETAILS.md)：校准档位和判断线怎么选、C 组、训练曲线、实验设置
+- [逐种子结果](seed-results.json)：每个种子的全部指标、阈值和哈希
