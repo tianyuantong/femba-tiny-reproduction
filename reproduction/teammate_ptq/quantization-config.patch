@@ -1,0 +1,919 @@
+diff --git a/ARES/tests/test_networks/brevitas_custom_layers.py b/ARES/tests/test_networks/brevitas_custom_layers.py
+--- a/ARES/tests/test_networks/brevitas_custom_layers.py
++++ b/ARES/tests/test_networks/brevitas_custom_layers.py
+@@ -20,6 +20,18 @@
+ import math
+ from brevitas.nn import QuantIdentity, QuantLinear, QuantConv2d
+ from brevitas.quant import Int8ActPerTensorFloat
++
++from models.femba_quantization import quantization_config
++
++
++def _resolve_bit_widths(bit_width: int, weight_bit_width: int | None,
++                        activation_bit_width: int | None) -> tuple[int, int]:
++    """Keep the shared bit_width argument compatible with older ARES callers."""
++    quantization_config(bit_width, bit_width)
++    config = quantization_config(
++        bit_width if weight_bit_width is None else weight_bit_width,
++        bit_width if activation_bit_width is None else activation_bit_width)
++    return config["weight_bit_width"], config["activation_bit_width"]
+
+
+ # Pre-computed LUT for integer softmax: exp(x) * 2^24 for x in [-128, 0]
+@@ -292,7 +304,9 @@
+         stride: Stride for the convolution (typically equals patch_size for non-overlapping)
+         in_chans: Number of input channels (default: 1 for EMG spectrograms)
+         embed_dim: Embedding dimension per patch row (output channels of Conv2D)
+-        bit_width: Bit width for quantization (default: 8)
++        bit_width: Legacy shared width (default: 8); explicit W/A arguments override it
++        weight_bit_width: Optional weight width override (2..16)
++        activation_bit_width: Optional activation width override (2..16)
+         return_quant_tensor: Whether to return QuantTensor (default: True)
+
+     Example for EMG (inp_size=(10, 32), patch_size=2, stride=2, embed_dim=35):
+@@ -311,8 +325,13 @@
+         embed_dim=35,
+         bit_width=8,
+         return_quant_tensor=True,
++        *,
++        weight_bit_width: int | None = None,
++        activation_bit_width: int | None = None,
+     ):
+         super().__init__()
++        weight_bit_width, activation_bit_width = _resolve_bit_widths(
++            bit_width, weight_bit_width, activation_bit_width)
+         self.inp_size = inp_size if isinstance(inp_size, tuple) else (inp_size, inp_size)
+         # Support both scalar and tuple patch_size/stride
+         self.patch_size = patch_size if isinstance(patch_size, tuple) else (patch_size, patch_size)
+@@ -337,13 +356,13 @@
+             stride=self.stride,
+             padding=0,
+             bias=True,
+-            weight_bit_width=bit_width,
++            weight_bit_width=weight_bit_width,
+             return_quant_tensor=False  # We'll requantize after reshape
+         )
+
+         # Output quantization after reshape
+         self.output_quant = QuantIdentity(
+-            bit_width=bit_width,
++            bit_width=activation_bit_width,
+             return_quant_tensor=return_quant_tensor
+         )
+
+@@ -965,7 +984,8 @@
+         kernel_size: Size of the convolution kernel (default: 4 for MAMBA)
+         bias: Whether to include a bias term (default: True)
+         causal: If True, use left-only padding for causal convolution
+-        bit_width: Bit width for quantization (default: 8)
++        bit_width: Legacy shared width (default: 8); explicit W/A arguments override it
++        activation_bit_width: Optional activation width override (2..16)
+         return_quant_tensor: Whether to return QuantTensor (default: True)
+     """
+
+@@ -977,8 +997,11 @@
+         causal: bool = True,
+         bit_width: int = 8,
+         return_quant_tensor: bool = True,
++        *,
++        activation_bit_width: int | None = None,
+     ):
+         super().__init__()
++        _, activation_bit_width = _resolve_bit_widths(bit_width, None, activation_bit_width)
+         self.in_channels = in_channels
+         self.kernel_size = kernel_size
+         self.causal = causal
+@@ -993,12 +1016,12 @@
+             padding=0  # We handle padding manually for causal conv
+         )
+
+-        # Weight quantization (will be extracted during export)
++        # Legacy export placeholder; conv weights remain FP32 in this graph.
+         self.weight_scale = nn.Parameter(torch.ones(1), requires_grad=False)
+
+         # Output quantization
+         self.output_quant = QuantIdentity(
+-            bit_width=bit_width,
++            bit_width=activation_bit_width,
+             return_quant_tensor=return_quant_tensor
+         )
+
+@@ -1037,7 +1060,8 @@
+     integer-only execution.
+
+     Args:
+-        bit_width: Bit width for quantization (default: 8)
++        bit_width: Legacy shared width (default: 8); explicit W/A arguments override it
++        activation_bit_width: Optional activation width override (2..16)
+         return_quant_tensor: Whether to return QuantTensor (default: True)
+     """
+
+@@ -1045,13 +1069,16 @@
+         self,
+         bit_width: int = 8,
+         return_quant_tensor: bool = True,
++        *,
++        activation_bit_width: int | None = None,
+     ):
+         super().__init__()
+-        self.bit_width = bit_width
++        _, activation_bit_width = _resolve_bit_widths(bit_width, None, activation_bit_width)
++        self.bit_width = activation_bit_width
+
+         # Output quantization
+         self.output_quant = QuantIdentity(
+-            bit_width=bit_width,
++            bit_width=activation_bit_width,
+             return_quant_tensor=return_quant_tensor
+         )
+
+@@ -1096,7 +1123,9 @@
+         d_inner: Inner dimension (number of channels M)
+         d_state: State dimension (D)
+         dt_rank: Rank of dt projection (default: d_inner // 16)
+-        bit_width: Bit width for quantization (default: 8)
++        bit_width: Legacy shared width (default: 8); explicit W/A arguments override it
++        weight_bit_width: Optional weight width override (2..16)
++        activation_bit_width: Optional activation width override (2..16)
+         return_quant_tensor: Whether to return QuantTensor (default: True)
+     """
+
+@@ -1107,8 +1136,13 @@
+         dt_rank: int = None,
+         bit_width: int = 8,
+         return_quant_tensor: bool = True,
++        *,
++        weight_bit_width: int | None = None,
++        activation_bit_width: int | None = None,
+     ):
+         super().__init__()
++        weight_bit_width, activation_bit_width = _resolve_bit_widths(
++            bit_width, weight_bit_width, activation_bit_width)
+         self.d_inner = d_inner
+         self.d_state = d_state
+         self.dt_rank = dt_rank if dt_rank is not None else max(1, d_inner // 16)
+@@ -1125,7 +1159,7 @@
+         self.x_proj = QuantLinear(
+             d_inner, self.dt_rank + 2 * d_state,
+             bias=False,
+-            weight_bit_width=bit_width,
++            weight_bit_width=weight_bit_width,
+             return_quant_tensor=False
+         )
+
+@@ -1133,7 +1167,7 @@
+         self.dt_proj = QuantLinear(
+             self.dt_rank, d_inner,
+             bias=True,  # Important: bias initializes dt range
+-            weight_bit_width=bit_width,
++            weight_bit_width=weight_bit_width,
+             return_quant_tensor=False
+         )
+
+@@ -1152,7 +1186,7 @@
+
+         # Output quantization
+         self.output_quant = QuantIdentity(
+-            bit_width=bit_width,
++            bit_width=activation_bit_width,
+             return_quant_tensor=return_quant_tensor
+         )
+
+@@ -1269,7 +1303,9 @@
+         d_state: SSM state dimension (default: 16)
+         conv_kernel: Conv1d kernel size (default: 4)
+         bidirectional_strategy: How to combine outputs ("add" or "concat")
+-        bit_width: Bit width for quantization (default: 8)
++        bit_width: Legacy shared width (default: 8); explicit W/A arguments override it
++        weight_bit_width: Optional weight width override (2..16)
++        activation_bit_width: Optional activation width override (2..16)
+         return_quant_tensor: Whether to return QuantTensor (default: True)
+     """
+
+@@ -1282,8 +1318,13 @@
+         bidirectional_strategy: str = "add",
+         bit_width: int = 8,
+         return_quant_tensor: bool = True,
++        *,
++        weight_bit_width: int | None = None,
++        activation_bit_width: int | None = None,
+     ):
+         super().__init__()
++        weight_bit_width, activation_bit_width = _resolve_bit_widths(
++            bit_width, weight_bit_width, activation_bit_width)
+         self.d_model = d_model
+         self.d_inner = d_inner if d_inner is not None else 2 * d_model
+         self.d_state = d_state
+@@ -1295,7 +1336,8 @@
+             d_inner=self.d_inner,
+             d_state=d_state,
+             conv_kernel=conv_kernel,
+-            bit_width=bit_width,
++            weight_bit_width=weight_bit_width,
++            activation_bit_width=activation_bit_width,
+             return_quant_tensor=True
+         )
+
+@@ -1305,13 +1347,14 @@
+             d_inner=self.d_inner,
+             d_state=d_state,
+             conv_kernel=conv_kernel,
+-            bit_width=bit_width,
++            weight_bit_width=weight_bit_width,
++            activation_bit_width=activation_bit_width,
+             return_quant_tensor=True
+         )
+
+         # Scale equalizer for combining outputs (ensures same quantization scale)
+         self.scale_equalizer = QuantIdentity(
+-            bit_width=bit_width,
++            bit_width=activation_bit_width,
+             return_quant_tensor=True
+         )
+
+@@ -1322,7 +1365,7 @@
+             return_quant_tensor=False
+         )
+         self.post_flip_quant = QuantIdentity(
+-            bit_width=bit_width,
++            bit_width=activation_bit_width,
+             return_quant_tensor=True
+         )
+
+@@ -1332,13 +1375,13 @@
+             return_quant_tensor=False
+         )
+         self.rev_post_flip_quant = QuantIdentity(
+-            bit_width=bit_width,
++            bit_width=activation_bit_width,
+             return_quant_tensor=True
+         )
+
+         # Final output quantization
+         self.output_quant = QuantIdentity(
+-            bit_width=bit_width,
++            bit_width=activation_bit_width,
+             return_quant_tensor=return_quant_tensor
+         )
+
+@@ -1446,7 +1489,9 @@
+         d_inner: Inner dimension (default: 2 * d_model)
+         d_state: SSM state dimension (default: 16)
+         conv_kernel: Conv1d kernel size (default: 4)
+-        bit_width: Bit width for quantization (default: 8)
++        bit_width: Legacy shared width (default: 8); explicit W/A arguments override it
++        weight_bit_width: Optional weight width override (2..16)
++        activation_bit_width: Optional activation width override (2..16)
+         return_quant_tensor: Whether to return QuantTensor (default: True)
+     """
+
+@@ -1458,8 +1503,13 @@
+         conv_kernel: int = 4,
+         bit_width: int = 8,
+         return_quant_tensor: bool = True,
++        *,
++        weight_bit_width: int | None = None,
++        activation_bit_width: int | None = None,
+     ):
+         super().__init__()
++        weight_bit_width, activation_bit_width = _resolve_bit_widths(
++            bit_width, weight_bit_width, activation_bit_width)
+         self.d_model = d_model
+         self.d_inner = d_inner if d_inner is not None else 2 * d_model
+         self.d_state = d_state
+@@ -1469,11 +1519,11 @@
+         self.in_proj = QuantLinear(
+             d_model, 2 * self.d_inner,
+             bias=False,
+-            weight_bit_width=bit_width,
++            weight_bit_width=weight_bit_width,
+             return_quant_tensor=False
+         )
+         self.in_proj_quant = QuantIdentity(
+-            bit_width=bit_width,
++            bit_width=activation_bit_width,
+             return_quant_tensor=True
+         )
+
+@@ -1482,13 +1532,13 @@
+             in_channels=self.d_inner,
+             kernel_size=conv_kernel,
+             causal=True,
+-            bit_width=bit_width,
++            activation_bit_width=activation_bit_width,
+             return_quant_tensor=True
+         )
+
+         # SiLU after conv1d
+         self.silu = QuantSiLU(
+-            bit_width=bit_width,
++            activation_bit_width=activation_bit_width,
+             return_quant_tensor=True
+         )
+
+@@ -1496,7 +1546,8 @@
+         self.ssm = QuantSSM(
+             d_inner=self.d_inner,
+             d_state=d_state,
+-            bit_width=bit_width,
++            weight_bit_width=weight_bit_width,
++            activation_bit_width=activation_bit_width,
+             return_quant_tensor=True
+         )
+
+@@ -1504,11 +1555,11 @@
+         self.out_proj = QuantLinear(
+             self.d_inner, d_model,
+             bias=False,
+-            weight_bit_width=bit_width,
++            weight_bit_width=weight_bit_width,
+             return_quant_tensor=False
+         )
+         self.output_quant = QuantIdentity(
+-            bit_width=bit_width,
++            bit_width=activation_bit_width,
+             return_quant_tensor=return_quant_tensor
+         )
+
+diff --git a/ARES/tests/test_networks/test_25_femba_tiny_int8.py b/ARES/tests/test_networks/test_25_femba_tiny_int8.py
+--- a/ARES/tests/test_networks/test_25_femba_tiny_int8.py
++++ b/ARES/tests/test_networks/test_25_femba_tiny_int8.py
+@@ -42,6 +42,7 @@
+ from brevitas.quant import Int8ActPerTensorFloat
+
+ from .brevitas_custom_layers import QuantPatchEmbed, QuantMambaWrapper
++from models.femba_quantization import quantization_config
+
+
+ class FEMBATinyInt8(nn.Module):
+@@ -90,7 +91,11 @@
+         d_state=16,
+         d_conv=4,
+         num_blocks=2,
+-        num_classes=2
++        num_classes=2,
++        weight_bit_width: int = 8,
++        activation_bit_width: int = 8,
++        weight_quant_scheme: str = "uniform",
++        activation_quant_scheme: str = "uniform",
+     ):
+         super().__init__()
+         self.inp_size = inp_size
+@@ -102,7 +107,9 @@
+         self.d_state = d_state
+         self.d_conv = d_conv
+         self.num_blocks = num_blocks
+-        bit_width = 8  # 全局量化位宽：权重与激活统一用 INT8
++        self.quantization_config = quantization_config(
++            weight_bit_width, activation_bit_width, weight_quant_scheme, activation_quant_scheme)
++        # Keep the historical graph and initialization order for default W8A8.
+
+         # Calculate dimensions after patch embedding
+         # 计算 patch embedding 之后的网格尺寸/序列长度/模型维度
+@@ -126,24 +133,12 @@
+         print(f"  d_model: {self.d_model}, seq_len: {self.seq_len}")
+         print(f"  d_inner: {self.d_inner} (expand={expand})")
+         print(f"  d_state: {d_state}, dt_rank: {self.dt_rank}")
+-        print(f"  Weight bit width: {bit_width}")
+-
+-        # Estimate weight size per direction
+-        in_proj_size = self.d_model * 2 * self.d_inner  # projects to 2*d_inner
+-        out_proj_size = self.d_inner * self.d_model
+-        conv_size = self.d_inner * d_conv + self.d_inner  # depthwise + bias
+-        x_proj_size = self.d_inner * (self.dt_rank + 2 * d_state)  # dt_rank + 2*d_state
+-        dt_proj_size = self.dt_rank * self.d_inner + self.d_inner  # with bias
+-        a_log_size = self.d_inner * d_state * 4  # FP32
+-        d_size = self.d_inner * 4  # FP32
+-        total_per_dir = in_proj_size + out_proj_size + conv_size + x_proj_size + dt_proj_size + a_log_size + d_size
+-        print(f"  Weight size per direction: {total_per_dir / 1024 / 1024:.2f} MB")
+-        print(f"  Total for 4 directions (2 blocks): {4 * total_per_dir / 1024 / 1024:.2f} MB")
++        print(f"  Weight / activation bit widths: {weight_bit_width} / {activation_bit_width}")
+
+         # Input quantization
+         # 对原始输入做量化（对应 FP32 版 FEMBA 中没有的一步：这里给输入信号打一个 INT8 量化"探针"）
+         self.input_quant = qnn.QuantIdentity(
+-            bit_width=bit_width,
++            bit_width=activation_bit_width,
+             return_quant_tensor=True
+         )
+
+@@ -155,7 +150,8 @@
+             stride=stride,
+             in_chans=in_chans,
+             embed_dim=embed_dim,
+-            bit_width=bit_width,
++            weight_bit_width=weight_bit_width,
++            activation_bit_width=activation_bit_width,
+             return_quant_tensor=True
+         )
+
+@@ -169,7 +165,7 @@
+         # Quantization for positional embedding
+         # 位置编码单独量化，保证和 patch_embed 输出相加前 scale 可控
+         self.pos_quant = qnn.QuantIdentity(
+-            bit_width=bit_width,
++            bit_width=activation_bit_width,
+             return_quant_tensor=True
+         )
+
+@@ -177,7 +173,7 @@
+         # scale 均衡器：两路不同来源的量化张量相加前，先统一到同一个 scale，
+         # 否则 INT8 定点加法会因为 scale 不一致而出错
+         self.scale_equalizer = qnn.QuantIdentity(
+-            bit_width=bit_width,
++            bit_width=activation_bit_width,
+             return_quant_tensor=True
+         )
+
+@@ -197,7 +193,8 @@
+                     d_state=d_state,
+                     conv_kernel=d_conv,
+                     bidirectional_strategy="add",
+-                    bit_width=bit_width,
++                    weight_bit_width=weight_bit_width,
++                    activation_bit_width=activation_bit_width,
+                     return_quant_tensor=True
+                 )
+             )
+@@ -212,7 +209,7 @@
+             # LayerNorm 输出（FP32）重新量化回 INT8，供下一个 block 使用
+             self.post_norm_quants.append(
+                 qnn.QuantIdentity(
+-                    bit_width=bit_width,
++                    bit_width=activation_bit_width,
+                     return_quant_tensor=True
+                 )
+             )
+@@ -224,7 +221,7 @@
+         # Pre-classifier quantization
+         # 分类头之前再量化一次
+         self.pre_classifier_quant = qnn.QuantIdentity(
+-            bit_width=bit_width,
++            bit_width=activation_bit_width,
+             return_quant_tensor=True
+         )
+
+@@ -234,7 +231,7 @@
+             self.d_model,
+             num_classes,
+             bias=True,
+-            weight_bit_width=bit_width,
++            weight_bit_width=weight_bit_width,
+             return_quant_tensor=False
+         )
+
+diff --git a/models/FEMBA_int8.py b/models/FEMBA_int8.py
+--- a/models/FEMBA_int8.py
++++ b/models/FEMBA_int8.py
+@@ -17,7 +17,7 @@
+ """
+ FEMBA Tiny INT8 的 QAP（Quantization-Aware Pretraining，量化感知预训练）与量化微调模型。
+
+-两个类都继承 ARES/tests/test_networks/test_25_femba_tiny_int8.py 里的 FEMBATinyInt8（不修改原文件），
++两个类都继承 ARES/tests/test_networks/test_25_femba_tiny_int8.py 里的 FEMBATinyInt8（保持编码器参数名），
+ 所以 INT8 编码器的参数名完全相同，预训练权重可以直接加载到微调模型：
+
+ - FEMBATinyInt8Pretrain：去掉分类头，接上 FP32 的 Decoder 做掩码重建。
+@@ -37,6 +37,7 @@
+ from ARES.tests.test_networks.test_25_femba_tiny_int8 import FEMBATinyInt8
+ from models.femba_decoder import Decoder
+ from models.femba_ptq import set_quantization_enabled
++from models.femba_quantization import quantization_config
+
+
+ class FEMBATinyInt8Pretrain(FEMBATinyInt8):
+@@ -75,7 +76,13 @@
+                  patch_size: Tuple[int, int] = (2, 16),
+                  stride: Tuple[int, int] = (2, 16),
+                  kernel_dec: Tuple[int, int] = (31, 31),
+-                 quantization_enabled: bool = True):
++                 quantization_enabled: bool = True,
++                 weight_bit_width: int = 8,
++                 activation_bit_width: int = 8,
++                 weight_quant_scheme: str = "uniform",
++                 activation_quant_scheme: str = "uniform"):
++        precision = quantization_config(weight_bit_width, activation_bit_width,
++                                        weight_quant_scheme, activation_quant_scheme)
+         # Hydra 传进来的是 ListConfig，QuantPatchEmbed 用 isinstance(..., tuple) 判断，必须先转成 tuple
+         patch_size = tuple(patch_size)
+         stride = tuple(stride)
+@@ -91,6 +98,7 @@
+             d_state=d_state,
+             d_conv=d_conv,
+             num_blocks=num_blocks,
++            **precision,
+         )
+
+         # 预训练不需要分类头，删掉，避免出现不参与训练的参数
+@@ -105,6 +113,7 @@
+             patch_size=patch_size,
+             stride=stride,
+         )
++        self.quantization_config = precision
+         set_quantization_enabled(self, quantization_enabled)
+
+     def forward_features(self, x):
+@@ -238,12 +247,18 @@
+                  stride: Tuple[int, int] = (2, 16),
+                  num_classes: int = 2,
+                  classification_type: str = "bc",
+-                 quantization_enabled: bool = True):
++                 quantization_enabled: bool = True,
++                 weight_bit_width: int = 8,
++                 activation_bit_width: int = 8,
++                 weight_quant_scheme: str = "uniform",
++                 activation_quant_scheme: str = "uniform"):
+         if classification_type not in self.SUPPORTED_CLASSIFICATION_TYPES:
+             raise NotImplementedError(
+                 f"classification_type={classification_type!r} is not supported by the INT8 head; "
+                 f"use one of {self.SUPPORTED_CLASSIFICATION_TYPES}"
+             )
++        precision = quantization_config(weight_bit_width, activation_bit_width,
++                                        weight_quant_scheme, activation_quant_scheme)
+         # Hydra 传进来的是 ListConfig，QuantPatchEmbed 用 isinstance(..., tuple) 判断，必须先转成 tuple
+         patch_size = tuple(patch_size)
+         stride = tuple(stride)
+@@ -258,9 +273,11 @@
+             d_state=d_state,
+             d_conv=d_conv,
+             num_blocks=num_blocks,
++            **precision,
+             num_classes=num_classes,
+         )
+         self.classification_type = classification_type
++        self.quantization_config = precision
+         set_quantization_enabled(self, quantization_enabled)
+
+     def forward(self, x: torch.Tensor, mask: Optional[torch.Tensor] = None):
+diff --git a/models/femba_ptq.py b/models/femba_ptq.py
+--- a/models/femba_ptq.py
++++ b/models/femba_ptq.py
+@@ -14,9 +14,9 @@
+ #* See the License for the specific language governing permissions and        *
+ #* limitations under the License.                                             *
+ #*----------------------------------------------------------------------------*
+-"""FP32 training and native Brevitas INT8 calibration for the same ARES graph."""
+-
+-from collections.abc import Iterable
++"""FP32 handoff and configurable Brevitas calibration for the same ARES graph."""
++
++from collections.abc import Iterable, Mapping
+
+ import torch
+ from torch import nn
+@@ -27,25 +27,75 @@
+ from brevitas.proxy.quant_proxy import QuantProxyFromInjector
+ from brevitas.proxy.runtime_quant import ActQuantProxyFromInjectorBase
+
++from models.femba_quantization import config_from_mapping, model_quantization_config
++
++
++def _runtime_observers(model: nn.Module) -> dict[str, nn.Module]:
++    return {name: module for name, module in model.named_modules()
++            if isinstance(module, ParameterFromRuntimeStatsScaling)}
++
+
+ def _save_unobserved_scales(
+     model: nn.Module, state_dict: dict, prefix: str, local_metadata: dict
+ ) -> None:
++    observers = _runtime_observers(model)
++    local_metadata["femba_quantization"] = {
++        **model_quantization_config(model), "enabled": model.quantization_enabled,
++        "observer_names": sorted(observers),
++    }
+     if model.quantization_enabled:
+         return
+     unobserved = []
+-    for name, module in model.named_modules():
+-        if isinstance(module, ParameterFromRuntimeStatsScaling) and module.counter == 0:
++    for name, module in observers.items():
++        if module.counter == 0:
+             # Brevitas normally omits these parameters, which breaks strict FP32 reload.
+             state_dict[prefix + name + ".value"] = module.value.detach()
+             unobserved.append(name)
+     local_metadata["femba_unobserved_scales"] = unobserved
+
+
++def _validate_checkpoint_configuration(
++    model: nn.Module, state_dict: dict, prefix: str, local_metadata: dict
++) -> None:
++    saved = local_metadata.get("femba_quantization")
++    fresh = local_metadata.get("femba_unobserved_scales", [])
++    if not isinstance(fresh, list) or not all(isinstance(name, str) for name in fresh):
++        raise ValueError("Invalid fresh-observer checkpoint metadata")
++    available = {name for name in _runtime_observers(model)
++                 if prefix + name + ".value" in state_dict}
++    if len(fresh) != len(set(fresh)) or not set(fresh).issubset(available):
++        raise ValueError("Fresh-observer metadata does not match checkpoint scale tensors")
++    if "femba_quantization" not in local_metadata:
++        source = config_from_mapping({})
++        enabled = not bool(fresh)
++        observer_names = available
++    else:
++        if not isinstance(saved, Mapping) or not isinstance(saved.get("enabled"), bool):
++            raise ValueError("Invalid quantization checkpoint metadata")
++        source = config_from_mapping(saved)
++        enabled = saved["enabled"]
++        names = saved.get("observer_names")
++        if (not isinstance(names, list) or not all(isinstance(name, str) for name in names)
++                or len(names) != len(set(names))):
++            raise ValueError("Invalid observer inventory in quantization checkpoint")
++        observer_names = set(names)
++        if not set(fresh).issubset(observer_names):
++            raise ValueError("Fresh observers are absent from the checkpoint inventory")
++    is_fresh_fp32 = (not enabled and bool(observer_names)
++                     and observer_names == available == set(fresh))
++    target = model_quantization_config(model)
++    if source != target and not is_fresh_fp32:
++        raise ValueError(f"Quantized checkpoint configuration {source} differs from model {target}; "
++                         "use the matching configuration or a fresh FP32 checkpoint")
++
++
+ def _remember_unobserved_scales(
+     model: nn.Module, state_dict: dict, prefix: str, local_metadata: dict,
+     strict: bool, missing_keys: list, unexpected_keys: list, error_msgs: list,
+ ) -> None:
++    # Validate before any child loads tensors, including with strict=False or quant disabled.
++    model._ptq_unobserved_scales = []
++    _validate_checkpoint_configuration(model, state_dict, prefix, local_metadata)
+     model._ptq_unobserved_scales = local_metadata.get("femba_unobserved_scales", [])
+
+
+@@ -82,14 +132,31 @@
+     model.quantization_enabled = enabled
+
+
++def _proxy_bit_widths(proxies: dict[str, nn.Module], config: dict) -> dict[str, int]:
++    widths = {}
++    for name, proxy in proxies.items():
++        if isinstance(proxy, WeightQuantProxyFromInjectorBase):
++            role = "weight"
++        elif isinstance(proxy, ActQuantProxyFromInjectorBase):
++            role = "activation"
++        else:
++            raise ValueError(f"Unsupported enabled quantizer role: {name}")
++        width = proxy.bit_width()
++        expected = config[f"{role}_bit_width"]
++        if width is None or width.numel() != 1 or width.item() != expected:
++            raise ValueError(f"Expected {role} quantizer at {expected} bits: {name}")
++        widths[name] = expected
++    return widths
++
++
+ def _quantizer_scales(proxies: dict[str, nn.Module]) -> dict[str, float]:
+     scales = {}
+     for name, proxy in proxies.items():
+         scale = proxy.scale()
+         if scale is None or not torch.isfinite(scale).all() or not (scale > 0).all():
+             raise ValueError(f"Invalid quantization scale: {name}")
+-        if scale.numel() != 1 or proxy.bit_width().item() != 8:
+-            raise ValueError(f"Expected the original per-tensor INT8 quantizer: {name}")
++        if scale.numel() != 1:
++            raise ValueError(f"Expected the original per-tensor quantizer: {name}")
+         scales[name] = scale.item()
+     return scales
+
+@@ -109,7 +176,7 @@
+     return proxies
+
+
+-def calibrate_int8(
++def calibrate_quantized(
+     model: nn.Module, calibration_batches: Iterable[torch.Tensor]
+ ) -> dict:
+     """Calibrate fresh FP32 weights using normalized train tensors [B,C,T].
+@@ -121,6 +188,8 @@
+     set_quantization_enabled(model, True)
+     model.eval()
+     proxies = _fresh_quantizers(model)
++    config = model_quantization_config(model)
++    widths = _proxy_bit_widths(proxies, config)
+     visits = dict.fromkeys(proxies, 0)
+
+     def record_visit(module: nn.Module, inputs: tuple, name: str) -> None:
+@@ -141,6 +210,8 @@
+     if unvisited:
+         raise ValueError(f"Calibration did not visit quantizers: {unvisited}")
+     return {
++        "quantization_config": config,
++        "bit_widths": widths,
+         "num_batches": batches,
+         "activation_quantizers": sum(
+             isinstance(proxy, ActQuantProxyFromInjectorBase) for proxy in proxies.values()
+@@ -150,6 +221,11 @@
+         ),
+         "scales": _quantizer_scales(proxies),
+     }
++
++
++def calibrate_int8(model: nn.Module, calibration_batches: Iterable[torch.Tensor]) -> dict:
++    """Compatibility entry point; calibration follows the model's W/A configuration."""
++    return calibrate_quantized(model, calibration_batches)
+
+
+ def _collect_calibration_batches(model: nn.Module, batches: Iterable[torch.Tensor]) -> int:
+diff --git a/models/femba_quantization.py b/models/femba_quantization.py
+new file mode 100644
+--- /dev/null
++++ b/models/femba_quantization.py
+@@ -0,0 +1,70 @@
++#*----------------------------------------------------------------------------*
++#* Copyright (C) 2026.                                                        *
++#* SPDX-License-Identifier: Apache-2.0                                        *
++#*                                                                            *
++#* Licensed under the Apache License, Version 2.0 (the "License");              *
++#* you may not use this file except in compliance with the License.             *
++#* You may obtain a copy of the License at                                      *
++#*                                                                            *
++#* http://www.apache.org/licenses/LICENSE-2.0                                   *
++#*                                                                            *
++#* Unless required by applicable law or agreed to in writing, software          *
++#* distributed under the License is distributed on an "AS IS" BASIS,            *
++#* WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.    *
++#* See the License for the specific language governing permissions and         *
++#* limitations under the License.                                              *
++#*----------------------------------------------------------------------------*
++"""Validated, serializable precision settings for the existing FEMBA graph.
++
++Only uniform fake quantization is integrated into the model. Full-range two-bit
++quantization has four codes; narrow-range weights can have three codes, but
++neither implies the explicit threshold/scale/STE ternary mapping contract.
++"""
++
++from collections.abc import Mapping
++from typing import Any
++
++
++CONFIG_FIELDS = ("weight_bit_width", "activation_bit_width",
++                 "weight_quant_scheme", "activation_quant_scheme")
++
++
++def quantization_config(
++    weight_bit_width: int = 8,
++    activation_bit_width: int = 8,
++    weight_quant_scheme: str = "uniform",
++    activation_quant_scheme: str = "uniform",
++) -> dict[str, int | str]:
++    """Return canonical settings, rejecting unsupported widths and mappings."""
++    for name, value in (("weight_bit_width", weight_bit_width),
++                        ("activation_bit_width", activation_bit_width)):
++        if type(value) is not int:
++            raise TypeError(f"{name} must be an integer, not a boolean or coerced value")
++        if not 2 <= value <= 16:
++            raise ValueError(f"{name} must be between 2 and 16")
++    for name, value in (("weight_quant_scheme", weight_quant_scheme),
++                        ("activation_quant_scheme", activation_quant_scheme)):
++        if not isinstance(value, str):
++            raise TypeError(f"{name} must be a string")
++        if value != "uniform":
++            raise ValueError(
++                f"{name}={value!r} is not integrated into the FEMBA model; "
++                "use 'uniform'. Ternary requires its explicit three-level mapping "
++                "interface and is not uniform two-bit quantization."
++            )
++    return {"weight_bit_width": weight_bit_width,
++            "activation_bit_width": activation_bit_width,
++            "weight_quant_scheme": weight_quant_scheme,
++            "activation_quant_scheme": activation_quant_scheme}
++
++
++def config_from_mapping(mapping: Mapping[str, Any]) -> dict[str, int | str]:
++    """Read model hyperparameters; missing legacy fields mean uniform W8A8."""
++    if not isinstance(mapping, Mapping):
++        raise TypeError("Quantization settings must be a mapping")
++    return quantization_config(**{name: mapping[name] for name in CONFIG_FIELDS if name in mapping})
++
++
++def model_quantization_config(model: Any) -> dict[str, int | str]:
++    """Return a validated copy; old models without settings use uniform W8A8."""
++    return config_from_mapping(getattr(model, "quantization_config", {}))
+diff --git a/models/femba_ternary.py b/models/femba_ternary.py
+new file mode 100644
+--- /dev/null
++++ b/models/femba_ternary.py
+@@ -0,0 +1,125 @@
++#*----------------------------------------------------------------------------*
++#* Copyright (C) 2026.                                                        *
++#* SPDX-License-Identifier: Apache-2.0                                        *
++#*                                                                            *
++#* Licensed under the Apache License, Version 2.0 (the "License");              *
++#* you may not use this file except in compliance with the License.             *
++#* You may obtain a copy of the License at                                      *
++#*                                                                            *
++#* http://www.apache.org/licenses/LICENSE-2.0                                   *
++#*                                                                            *
++#* Unless required by applicable law or agreed to in writing, software          *
++#* distributed under the License is distributed on an "AS IS" BASIS,            *
++#* WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.    *
++#* See the License for the specific language governing permissions and         *
++#* limitations under the License.                                              *
++#*----------------------------------------------------------------------------*
++"""Explicit three-level mapping contract, independent of the Brevitas model.
++
++For finite floating x, code is -1 when x < -threshold * scale, +1 when
++x > threshold * scale, and 0 otherwise (both boundaries map to 0).
++Reconstruction is code * scale, with a positive constant, nonlearned scale.
++Fake quantization has an identity straight-through gradient with respect to x.
++This interface neither packs codes nor configures model weight/activation proxies.
++"""
++
++from collections.abc import Mapping
++from dataclasses import dataclass
++import math
++from numbers import Real
++
++import torch
++
++
++MAPPING_ID = "symmetric_ternary"
++MAPPING_VERSION = 1
++
++
++def _finite_real(value: object, name: str) -> float:
++    if isinstance(value, bool) or not isinstance(value, Real):
++        raise TypeError(f"{name} must be a real number")
++    try:
++        result = float(value)
++    except OverflowError as error:
++        raise ValueError(f"{name} is outside the finite float range") from error
++    if not math.isfinite(result):
++        raise ValueError(f"{name} must be finite")
++    return result
++
++
++@dataclass(frozen=True, kw_only=True)
++class TernaryMapping:
++    """Versioned mapping with explicit scale and threshold; no inferred defaults."""
++
++    scale: float
++    threshold: float
++    ste: str = "identity"
++
++    def __post_init__(self) -> None:
++        scale = _finite_real(self.scale, "scale")
++        threshold = _finite_real(self.threshold, "threshold")
++        if scale <= 0 or threshold < 0:
++            raise ValueError("scale must be positive and threshold must be nonnegative")
++        if not math.isfinite(scale * threshold):
++            raise ValueError("threshold * scale must be finite")
++        if self.ste != "identity":
++            raise ValueError("This ternary mapping supports only the identity STE")
++        object.__setattr__(self, "scale", scale)
++        object.__setattr__(self, "threshold", threshold)
++
++    def to_dict(self) -> dict:
++        """Return portable JSON values, including all mapping/gradient semantics."""
++        return {"mapping": MAPPING_ID, "version": MAPPING_VERSION, "codes": [-1, 0, 1],
++                "scale": self.scale, "threshold": self.threshold, "threshold_units": "scale",
++                "zero_boundary": "inclusive", "ste": self.ste}
++
++    @classmethod
++    def from_dict(cls, config: Mapping) -> "TernaryMapping":
++        if not isinstance(config, Mapping):
++            raise TypeError("Ternary configuration must be a mapping")
++        required = {"mapping", "version", "codes", "scale", "threshold", "threshold_units",
++                    "zero_boundary", "ste"}
++        if set(config) != required:
++            raise ValueError("Ternary configuration fields are missing or unknown")
++        if (config["mapping"] != MAPPING_ID or type(config["version"]) is not int
++                or config["version"] != MAPPING_VERSION):
++            raise ValueError("Unknown ternary mapping or version")
++        if (config["codes"] != [-1, 0, 1] or any(type(code) is not int for code in config["codes"])
++                or config["threshold_units"] != "scale"
++                or config["zero_boundary"] != "inclusive"):
++            raise ValueError("Ternary codes or threshold semantics differ from the mapping contract")
++        return cls(scale=config["scale"], threshold=config["threshold"], ste=config["ste"])
++
++
++def _validate_tensor(values: torch.Tensor, mapping: TernaryMapping) -> tuple[torch.Tensor, torch.Tensor]:
++    if not isinstance(values, torch.Tensor) or not torch.is_floating_point(values):
++        raise TypeError("Ternary mapping requires a floating-point tensor")
++    if not isinstance(mapping, TernaryMapping):
++        raise TypeError("mapping must be a TernaryMapping")
++    if not torch.isfinite(values).all():
++        raise ValueError("Ternary input contains nonfinite values")
++    scale = values.new_tensor(mapping.scale)
++    boundary = values.new_tensor(mapping.scale * mapping.threshold)
++    if not torch.isfinite(scale) or scale <= 0 or not torch.isfinite(boundary):
++        raise ValueError("Ternary scale and boundary must be representable in the input dtype")
++    if mapping.threshold > 0 and boundary == 0:
++        raise ValueError("Ternary boundary underflows in the input dtype")
++    return scale, boundary
++
++
++def _codes(values: torch.Tensor, boundary: torch.Tensor) -> torch.Tensor:
++    return (values > boundary).to(torch.int8) - (values < -boundary).to(torch.int8)
++
++
++def ternary_codes(values: torch.Tensor, mapping: TernaryMapping) -> torch.Tensor:
++    """Map to signed int8 codes with exactly the allowed set {-1, 0, 1}."""
++    _, boundary = _validate_tensor(values, mapping)
++    return _codes(values, boundary)
++
++
++def ternary_fake_quantize(values: torch.Tensor, mapping: TernaryMapping) -> torch.Tensor:
++    """Return code * scale in the input dtype/device, with identity STE; never mutate x."""
++    scale, boundary = _validate_tensor(values, mapping)
++    mapped = _codes(values, boundary).to(values.dtype) * scale
++    # This order preserves mapped values even when x is much larger than scale.
++    return mapped + (values - values.detach())

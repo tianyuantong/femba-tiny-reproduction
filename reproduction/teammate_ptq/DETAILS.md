@@ -73,16 +73,17 @@ C43/44 新增两次 5 轮微调，与上图九个阶段合计 75 轮。新队列
 | 输入 | 22×1,280；`(x+20)/(40+1e-8)`；HDF5 样本缓存关闭 |
 | 推理 | RTX 5060 Ti；batch 32；TF32 开启；INT8 使用原生 Brevitas 伪量化 |
 
-补丁增加量化开关和原生 PTQ 校准函数，保留模型结构；FP32 存档中的未统计激活状态在加载进量化模型后会重新统计。
+历史 `source.patch` 增加量化开关和原生 PTQ 校准函数；当前入口另用 `quantization-config.patch` 配置 W/A 位宽，默认保持 W8A8。两者依次应用于新副本，历史实验源码与结果的哈希不变。FP32 存档中的未统计激活状态在加载进量化模型后会重新统计。
 
 ```bash
 git clone https://github.com/berumottovv00/BioFoundation.git teammate-source
 git -C teammate-source checkout a2a4d441485efd8423c44b35d7448a30ccd44437
 git -C teammate-source apply /path/to/this-repo/reproduction/teammate_ptq/source.patch
+git -C teammate-source apply /path/to/this-repo/reproduction/teammate_ptq/quantization-config.patch
 ```
 
 [训练与评估命令](TRAINING.md) 包含 FP32、QAP B、C 和七档 PTQ 的入口。`export_curves.py` 从 TensorBoard 导出标量 CSV/SVG；`summarize_seeds.py` 保留上一轮三种子统计，`summarize_c_followup.py` 增量合并 C43/44，生成当前四组统计和图表。
 
 `seed-results.json` 记录上一轮实际执行文件和私有驱动哈希；`c-seed-results.json` 单独记录 C43/44 的冻结源码、运行入口及原件哈希，并引用上一轮结果。实际执行源码为固定 base 加未提交补丁，保留 `dirty=true`；源文件、重建补丁与公开汇总脚本的哈希分别记录。数据集、权重、逐样本输出和原始日志留在仓库外。
 
-测试命令见 [训练文档](TRAINING.md#验证)。
+测试命令见 [训练文档](TRAINING.md#验证)；INT4 / 混合位宽命令、三值映射接口与共用结果规范见 [位宽配置](QUANTIZATION.md)。

@@ -1,6 +1,6 @@
 # 训练、校准与评估
 
-环境与版本见 [seed-results.json](seed-results.json) 的 `runtime`。使用已应用 `source.patch` 的上游仓库（berumottovv00/BioFoundation）代码，运行目录与输出目录分开。
+环境与版本见 [seed-results.json](seed-results.json) 的 `runtime`。当前入口使用在全新副本中依次应用 `source.patch`、`quantization-config.patch` 的上游仓库（berumottovv00/BioFoundation）代码，准备步骤见 [位宽配置](QUANTIZATION.md#独立准备源码)。运行目录与输出目录分开；省略 W/A 参数时仍为 W8A8。
 
 ```bash
 study=/path/to/this-repo/reproduction/teammate_ptq

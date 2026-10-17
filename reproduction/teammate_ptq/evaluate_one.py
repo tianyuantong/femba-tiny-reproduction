@@ -42,7 +42,8 @@ def replay_split(args, split, inputs):
     from datasets.hdf5_dataset import HDF5Loader
 
     # Reload independently for each split; replay() checks every parameter/buffer/counter.
-    task, contract = capture.load_task(args.checkpoint, args.model_kind)
+    task, contract = capture.load_task(args.checkpoint, args.model_kind,
+                                     expected_config=getattr(args, "expected_quantization_config", None))
     dataset = HDF5Loader(str(args.data / f"{split}.h5"), use_cache=False)
     try:
         native, arrays = capture.replay(task, dataset)
@@ -61,6 +62,8 @@ def run(args):
     checkpoint = capture.safe_load_checkpoint(args.checkpoint)
     if checkpoint["hyper_parameters"].get("seed") != args.seed:
         raise ValueError("Checkpoint training seed differs from requested seed")
+    args.expected_quantization_config = capture.checkpoint_quantization_config(
+        checkpoint, capture.argument_quantization_config(args, infer=True))
     del checkpoint
     source_record = capture.source_record(args.source)
     runtime = capture.configure_runtime()
@@ -70,6 +73,7 @@ def run(args):
     capture.write_json(args.output / "protocol.json", {
         "time_utc": timestamp(), "model": args.model_kind, "training_seed": args.seed,
         "threshold_protocol": PROTOCOL, "source": source_record, "runtime": runtime,
+        "quantization_config": args.expected_quantization_config,
         "inputs_before_selection": inputs, "runner_sha256": capture.sha256(Path(__file__))})
     validation, labels, margin = replay_split(args, "val", inputs)
     selected = {"time_utc": timestamp(), "model": args.model_kind, "seed": args.seed,
@@ -86,6 +90,7 @@ def run(args):
     verify_inputs(args, source_record, checkpoint_sha, inputs["data"])
     assert capture.sha256(selection_path) == selection_sha, "Validation selection changed during test"
     result = {"model": args.model_kind, "seed": args.seed, "windows": len(labels),
+              "quantization_config": args.expected_quantization_config,
               "checkpoint_sha256": checkpoint_sha, "selection_sha256": selection_sha,
               **ranking_metrics(labels, margin), "default": binary_metrics(labels, margin, 0.0),
               "validation_selected": binary_metrics(labels, margin, selected["threshold"]),
@@ -110,6 +115,7 @@ def arguments(argv=None):
                         help="SHA256 recorded by the completed fine-tuning stage")
     parser.add_argument("--model-kind", choices=("fp32", "qap_b", "c"), required=True)
     parser.add_argument("--seed", type=int, choices=(42, 43, 44), required=True)
+    capture.add_quantization_arguments(parser, infer=True)
     args = parser.parse_args(argv)
     for name in ("source", "data", "checkpoint", "output"):
         setattr(args, name, getattr(args, name).expanduser().resolve())

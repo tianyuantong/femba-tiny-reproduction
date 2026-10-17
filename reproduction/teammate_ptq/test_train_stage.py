@@ -18,17 +18,15 @@
 
 Native model fixtures additionally use FEMBA_SOURCE (pinned teammate checkout)
 and FEMBA_DATA_ROOT (verified HDF5 directory); no training or GPU work is run.
-The published source.patch is loaded into temporary model modules for these fixtures.
+Both published source patches are loaded into an isolated temporary source tree.
 """
 
 import contextlib
 import importlib
-import importlib.util
 import io
 import json
 import os
 from pathlib import Path
-import subprocess
 import sys
 from tempfile import TemporaryDirectory
 from types import SimpleNamespace
@@ -39,6 +37,7 @@ import numpy as np
 
 import evaluate_one
 import train_stage
+from source_fixture import activated_precision_module
 
 
 class ArgumentContracts(unittest.TestCase):
@@ -105,6 +104,10 @@ class ArgumentContracts(unittest.TestCase):
 
 
 class PretrainedMetadataContracts(unittest.TestCase):
+    @classmethod
+    def setUpClass(cls):
+        cls.enterClassContext(activated_precision_module())
+
     def metadata(self, seed=43, enabled=False, target="FEMBATinyInt8Pretrain"):
         return {"seed": seed, "model": {"_target_": "models.FEMBA_int8." + target,
                                       "quantization_enabled": enabled}}
@@ -135,6 +138,16 @@ class PretrainedMetadataContracts(unittest.TestCase):
                 train_stage.validate_pretrained_metadata(self.metadata(seed, enabled),
                                                         SimpleNamespace(group=group, seed=seed))
 
+    def test_quantized_parent_requires_same_precision_but_fp32_can_convert(self):
+        args = SimpleNamespace(group="qap_b", seed=43, weight_bit_width=4, activation_bit_width=8)
+        with self.assertRaisesRegex(ValueError, "configuration differs"):
+            train_stage.validate_pretrained_metadata(self.metadata(enabled=True), args)
+        metadata = self.metadata(enabled=True)
+        metadata["model"].update(weight_bit_width=4, activation_bit_width=8)
+        train_stage.validate_pretrained_metadata(metadata, args)
+        args.group = "c"
+        train_stage.validate_pretrained_metadata(self.metadata(enabled=False), args)
+
     def test_missing_metadata_and_non_boolean_quantization_are_rejected(self):
         args = SimpleNamespace(group="fp32", seed=43)
         with self.assertRaisesRegex(ValueError, "hyper_parameters"):
@@ -146,6 +159,10 @@ class PretrainedMetadataContracts(unittest.TestCase):
 
 
 class ReplaySelectionContract(unittest.TestCase):
+    @classmethod
+    def setUpClass(cls):
+        cls.enterClassContext(activated_precision_module())
+
     def test_threshold_is_locked_before_test_is_opened(self):
         labels = np.array([0, 0, 1, 1])
         validation_margin = np.array([-2., 0., 1., 2.])
@@ -200,42 +217,11 @@ class TrainingAuditFixtures(unittest.TestCase):
         cls.data_root = Path(os.environ["FEMBA_DATA_ROOT"]).expanduser().resolve()
         cls.temporary = TemporaryDirectory()
         cls.addClassCleanup(cls.temporary.cleanup)
-        patch_root = Path(cls.temporary.name)
-        (patch_root / "models").mkdir()
-        original = subprocess.check_output(["git", "-C", str(cls.source), "show",
-                                             f"{train_stage.BASE_COMMIT}:models/FEMBA_int8.py"])
-        (patch_root / "models/FEMBA_int8.py").write_bytes(original)
-        subprocess.run(["git", "apply", str(Path(__file__).with_name("source.patch"))],
-                       cwd=patch_root, check=True, capture_output=True)
-        before = list(sys.path)
-        sys.path.insert(0, str(cls.source))
-        cls.addClassCleanup(lambda: sys.path.__setitem__(slice(None), before))
-        package = importlib.import_module("models")
-        saved = {name: sys.modules.get(name) for name in ("models.femba_ptq", "models.FEMBA_int8")}
-        attributes = {name.rsplit(".", 1)[1]: getattr(package, name.rsplit(".", 1)[1], None)
-                      for name in saved}
-        cls.addClassCleanup(cls.restore_modules, saved, package, attributes)
-        for name in saved:
-            path = patch_root / (name.replace(".", "/") + ".py")
-            spec = importlib.util.spec_from_file_location(name, path)
-            module = importlib.util.module_from_spec(spec)
-            sys.modules[name] = module
-            spec.loader.exec_module(module)
-            setattr(package, name.rsplit(".", 1)[1], module)
-        cls.helper = sys.modules["models.femba_ptq"]
+        from source_fixture import activated_source, reconstruct_source
 
-    @staticmethod
-    def restore_modules(saved, package, attributes):
-        for name, module in saved.items():
-            if module is None:
-                sys.modules.pop(name, None)
-            else:
-                sys.modules[name] = module
-        for name, module in attributes.items():
-            if module is None:
-                delattr(package, name)
-            else:
-                setattr(package, name, module)
+        cls.source = reconstruct_source(cls.source, Path(cls.temporary.name) / "source")
+        cls.enterClassContext(activated_source(cls.source))
+        cls.helper = importlib.import_module("models.femba_ptq")
 
     def arguments(self, root, group, stage, seed=43):
         return SimpleNamespace(source=self.source, data_root=self.data_root, output=Path(root),

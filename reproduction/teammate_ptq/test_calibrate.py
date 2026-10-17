@@ -52,6 +52,20 @@ class CalibrationContracts(unittest.TestCase):
         with self.assertRaises(ValueError):
             calibrate.calibration_indices(511)
 
+    def test_batch_iterator_keeps_all_512_indices_in_manifest_order(self):
+        import torch
+        from types import SimpleNamespace
+
+        indices = calibrate.calibration_indices(55524)
+        dataset = torch.utils.data.TensorDataset(torch.arange(55524, dtype=torch.float32).unsqueeze(1),
+                                                torch.zeros(55524))
+        parameter = torch.nn.Parameter(torch.zeros(1))
+        task = SimpleNamespace(parameters=lambda: iter([parameter]), normalize_fct=lambda signals: signals)
+        batches = list(calibrate.batches(task, dataset, indices))
+        self.assertEqual(len(batches), 16)
+        self.assertTrue(all(batch.shape == (32, 1) for batch in batches))
+        self.assertEqual(torch.cat(batches).flatten().to(torch.int64).tolist(), indices)
+
     @unittest.skipUnless(os.environ.get("FEMBA_SOURCE"), "Set FEMBA_SOURCE for the native graph fixture")
     def test_native_observers_change_only_percentile(self):
         import torch

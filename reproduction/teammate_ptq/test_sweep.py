@@ -21,6 +21,9 @@ from pathlib import Path
 import tempfile
 from types import SimpleNamespace
 import unittest
+from unittest.mock import patch
+
+from source_fixture import activated_precision_module
 
 import numpy as np
 
@@ -45,6 +48,22 @@ class SweepContracts(unittest.TestCase):
             incomplete = {name: path for name, path in paths.items() if name != missing}
             with self.assertRaises(ValueError):
                 sweep.existing_checkpoints(SimpleNamespace(**incomplete))
+
+    def test_reused_original_cannot_hide_an_explicit_different_percentile(self):
+        record = {"parent_sha256": "a" * 64,
+                  "hyper_parameters": {"model": {"quantization_enabled": True}}, "ptq_recipe": {}}
+        with activated_precision_module(), patch.object(sweep.capture, "safe_load_checkpoint", return_value=record):
+            sweep.check_parent(Path("legacy.ckpt"), "a" * 64, 99.999)
+            record["ptq_recipe"]["activation_percentile"] = 99.0
+            with self.assertRaisesRegex(ValueError, "preset percentile"):
+                sweep.check_parent(Path("new.ckpt"), "a" * 64, 99.999)
+            sweep.check_parent(Path("new.ckpt"), "a" * 64, 99.0)
+            record["hyper_parameters"]["model"].update(weight_bit_width=4, activation_bit_width=8)
+            with self.assertRaisesRegex(ValueError, "configuration mismatch"):
+                sweep.check_parent(Path("new.ckpt"), "a" * 64, 99.0, {"weight_bit_width": 8})
+            record["ptq_recipe"].clear()
+            with self.assertRaisesRegex(ValueError, "preset percentile"):
+                sweep.check_parent(Path("new.ckpt"), "a" * 64, 99.999)
 
     def test_candidate_and_metric_order_are_fixed(self):
         rows = validation_rows()

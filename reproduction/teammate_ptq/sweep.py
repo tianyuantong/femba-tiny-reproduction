@@ -97,12 +97,21 @@ def record_inputs(args, checkpoints: dict) -> dict:
             "data": {split: capture.sha256(args.data / f"{split}.h5") for split in ("train", "val")}}
 
 
-def check_parent(path: Path, parent_sha: str, percentile: float) -> None:
+def check_parent(path: Path, parent_sha: str, percentile: float, expected_config=None) -> None:
     record = capture.safe_load_checkpoint(path)
+    config = capture.checkpoint_quantization_config(record, expected_config)
+    if record["hyper_parameters"]["model"].get("quantization_enabled", True) is not True:
+        raise ValueError("Reused PTQ checkpoint must have quantization enabled")
     if record.get("parent_sha256") != parent_sha:
         raise ValueError("PTQ checkpoint does not identify the fixed FP32 parent")
     recipe = record.get("ptq_recipe", {})
-    if percentile != 99.999 and recipe.get("activation_percentile") != percentile:
+    if recipe.get("quantization_config", config) != config:
+        raise ValueError("PTQ checkpoint recipe and model configurations differ")
+    model_config = record["hyper_parameters"]["model"]
+    legacy_original = (percentile == 99.999 and "activation_percentile" not in recipe
+                       and "quantization_config" not in recipe
+                       and not any(field in model_config for field in capture.QUANTIZATION_FIELDS))
+    if not legacy_original and recipe.get("activation_percentile") != percentile:
         raise ValueError("PTQ checkpoint recipe differs from its preset percentile")
 
 
@@ -137,8 +146,9 @@ def calibrate_new(args, checkpoints: dict) -> dict:
         directory = args.output / name
         print(f"CALIBRATE {name}", flush=True)
         result = calibrate.run(SimpleNamespace(source=args.source, data=args.data,
-            checkpoint=args.fp32, output=directory, percentile=percentile))
-        checkpoints[name] = directory / "ptq_int8.ckpt"
+            checkpoint=args.fp32, output=directory, percentile=percentile,
+            **capture.argument_quantization_config(args)))
+        checkpoints[name] = directory / result["checkpoint_file"]
         manifests.append(result["recipe"]["indices_sha256"])
     assert len(set(manifests)) == 1, "Calibration subsets or order changed across percentiles"
     # Same seed42 manifest used by the original four frozen checkpoints.
@@ -154,8 +164,9 @@ def validate_candidates(args, checkpoints: dict, inputs: dict, expected_float: d
     try:
         for name, percentile in CANDIDATES:
             print(f"VALIDATE {name}", flush=True)
-            check_parent(checkpoints[name], inputs["checkpoints"]["fp32"], percentile)
-            task, contract = capture.load_task(checkpoints[name], "ptq_original")
+            config = capture.argument_quantization_config(args)
+            check_parent(checkpoints[name], inputs["checkpoints"]["fp32"], percentile, config)
+            task, contract = capture.load_task(checkpoints[name], "ptq_original", expected_config=config)
             assert_same_tensors(calibrate.floating_parameters(task.model), expected_float)
             actual_weights = weight_scales(task.model)
             if expected_weights is None:
@@ -167,6 +178,7 @@ def validate_candidates(args, checkpoints: dict, inputs: dict, expected_float: d
             expected_labels = arrays["labels"].copy()
             metadata = capture.save_capture(args.output, name, "val", arrays, native, inputs, contract)
             rows.append({"candidate": name, "percentile": percentile, "split": "val",
+                         "quantization_config": config,
                          "checkpoint_sha256": inputs["checkpoints"][name],
                          "array_sha256": metadata["array_sha256"],
                          "labels_sha256": metadata["labels_sha256"],
@@ -184,7 +196,8 @@ def test_candidate(args, checkpoints: dict, inputs: dict, selected: dict) -> dic
     name = selected["candidate"]
     assert capture.sha256(checkpoints[name]) == selected["checkpoint_sha256"]
     inputs["data"]["test"] = capture.sha256(args.data / "test.h5")
-    task, contract = capture.load_task(checkpoints[name], "ptq_original")
+    task, contract = capture.load_task(checkpoints[name], "ptq_original",
+                                      expected_config=capture.argument_quantization_config(args))
     dataset = HDF5Loader(str(args.data / "test.h5"), use_cache=False)
     try:
         native, arrays = capture.replay(task, dataset)
@@ -216,11 +229,17 @@ def test_and_verify(args, checkpoints: dict, inputs: dict, calibration: dict, se
 def run(args) -> dict:
     checkpoints = {"fp32": args.fp32, **existing_checkpoints(args)}
     args.source, args.data, args.output = args.source.resolve(), args.data.resolve(), args.output.resolve()
-    args.output.mkdir(parents=True, exist_ok=False)
     sys.path.insert(0, str(args.source))
+    config = capture.argument_quantization_config(args)
+    parent_sha = capture.sha256(args.fp32)
+    for name, percentile in CANDIDATES:
+        if name in checkpoints:
+            check_parent(checkpoints[name], parent_sha, percentile, config)
+    args.output.mkdir(parents=True, exist_ok=False)
     inputs, runtime = record_inputs(args, checkpoints), capture.configure_runtime()
     capture.write_json(args.output / "protocol.json", {
-        "time_utc": timestamp(), **PROTOCOL, "inputs": inputs, "runtime": runtime})
+        "time_utc": timestamp(), **PROTOCOL, "inputs": inputs, "runtime": runtime,
+        "quantization_config": config})
     parent, _ = capture.load_task(args.fp32, "fp32")
     expected_float = calibrate.floating_parameters(parent.model)
     del parent
@@ -238,6 +257,7 @@ def main() -> None:
     for name in REUSE_OPTIONS:
         parser.add_argument("--" + name.replace("_", "-"), type=Path,
                             help="Supply all four existing PTQ checkpoints, or none")
+    capture.add_quantization_arguments(parser)
     result = run(parser.parse_args())
     print(json.dumps({"status": "complete", "selected": result["selected"]["candidate"],
                       "auroc": result["test"]["auroc"]}, allow_nan=False))

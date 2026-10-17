@@ -17,4 +17,4 @@
 
 **来源与口径：** QAP42 是队友检查点的完整 WSL 复测，严格同初始化配对只有 43/44。C 各自复用同 seed 的 FP32 预训练父模型，仅量化微调 5 轮、8,675 步；所有训练按原生 `val_loss` 选检查点。AUROC/AP 统一使用 `float64(z1)-float64(z0)`；PTQ 档位与 BAcc 阈值只在验证集选择，再锁定后评估完整测试集。
 
-[逐种子结果、配对差值及来源哈希](c-seed-results.json) · [详细设置与曲线](DETAILS.md) · [复现命令](TRAINING.md)
+[逐种子结果、配对差值及来源哈希](c-seed-results.json) · [详细设置与曲线](DETAILS.md) · [复现命令](TRAINING.md) · [INT4 / 三值共用接口](QUANTIZATION.md)
