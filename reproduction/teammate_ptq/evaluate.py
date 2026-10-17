@@ -18,6 +18,7 @@
 
 import argparse
 from collections import defaultdict
+from collections.abc import Mapping
 import hashlib
 import importlib.metadata
 import json
@@ -36,10 +37,60 @@ MODEL_IDS = ("fp32", "ptq_original", "ptq_p99", "qap_b")
 SPLITS = {"val": (6426, [2927, 3499]), "test": (7211, [3304, 3907])}
 SOURCE_FILES = (
     "models/FEMBA_int8.py", "models/femba_ptq.py", "tasks/finetune_task.py",
+    "models/femba_quantization.py", "models/femba_ternary.py",
     "datasets/hdf5_dataset.py", "data_module/finetune_data_module.py",
     "ARES/tests/test_networks/test_25_femba_tiny_int8.py",
     "ARES/tests/test_networks/brevitas_custom_layers.py", "util/train_utils.py",
 )
+QUANTIZATION_FIELDS = ("weight_bit_width", "activation_bit_width",
+                       "weight_quant_scheme", "activation_quant_scheme")
+
+
+def add_quantization_arguments(parser, *, infer: bool = False) -> None:
+    """Evaluation infers omitted fields; new training/calibration defaults to W8A8."""
+    for role in ("weight", "activation"):
+        parser.add_argument(f"--{role}-bit-width", type=int, default=None if infer else 8)
+        parser.add_argument(f"--{role}-quant-scheme", default=None if infer else "uniform")
+
+
+def argument_quantization_config(args, *, infer: bool = False) -> dict | None:
+    # Source-specific imports must follow insertion of the requested --source path.
+    from models.femba_quantization import quantization_config
+
+    supplied = {key: getattr(args, key, None) for key in QUANTIZATION_FIELDS
+                if getattr(args, key, None) is not None}
+    canonical = quantization_config(**supplied)
+    return ({key: canonical[key] for key in supplied} or None) if infer else canonical
+
+
+def checkpoint_quantization_config(checkpoint: Mapping, expected_config=None) -> dict:
+    from models.femba_quantization import config_from_mapping, quantization_config
+
+    if not isinstance(checkpoint, Mapping):
+        raise TypeError("Checkpoint must be a mapping")
+    hyperparameters = checkpoint.get("hyper_parameters")
+    if not isinstance(hyperparameters, Mapping):
+        raise ValueError("Checkpoint must contain hyper_parameters")
+    model_config = hyperparameters.get("model", {})
+    actual = config_from_mapping(model_config)
+    metadata = getattr(checkpoint.get("state_dict"), "_metadata", {}).get("model", {})
+    if "femba_quantization" in metadata:
+        saved = metadata["femba_quantization"]
+        if (config_from_mapping(saved) != actual or not isinstance(saved.get("enabled"), bool)
+                or saved["enabled"] != model_config.get("quantization_enabled", True)):
+            raise ValueError("Checkpoint hyperparameters and state_dict quantization metadata differ")
+    if expected_config is not None:
+        if not isinstance(expected_config, Mapping):
+            raise TypeError("Expected quantization configuration must be a mapping")
+        unknown = set(expected_config) - set(QUANTIZATION_FIELDS)
+        if unknown:
+            raise ValueError(f"Unknown quantization configuration fields: {sorted(unknown)}")
+        validated = quantization_config(**expected_config)
+        for key in expected_config:
+            if validated[key] != actual[key]:
+                raise ValueError(f"Checkpoint quantization configuration mismatch: {key} "
+                                 f"is {actual[key]!r}, requested {validated[key]!r}")
+    return actual
 
 
 def sha256(path: Path) -> str:
@@ -111,12 +162,25 @@ def safe_load_checkpoint(path: Path) -> dict:
         return torch.load(path, map_location="cpu", weights_only=True)
 
 
-def load_task(path: Path, model_id: str):
+def load_task(path: Path, model_id: str, *, expected_config=None, device="cuda",
+              target_config=None):
+    """Strictly reload; only an FP32 checkpoint may adopt an explicit PTQ target."""
     from omegaconf import OmegaConf
+    from models.femba_quantization import quantization_config
     from tasks.finetune_task import FinetuneTask
 
     checkpoint = safe_load_checkpoint(path)
     cfg = OmegaConf.create(checkpoint["hyper_parameters"])
+    config = checkpoint_quantization_config(checkpoint, expected_config)
+    is_enabled = cfg.model.get("quantization_enabled", True)
+    if not isinstance(is_enabled, bool) or is_enabled != (model_id != "fp32"):
+        raise ValueError("Checkpoint quantization mode differs from requested model kind")
+    if target_config is not None:
+        if model_id != "fp32" or is_enabled:
+            raise ValueError("Only FP32 weights may be converted to a target quantization configuration")
+        config = quantization_config(**target_config)
+    for key, value in config.items():
+        cfg.model[key] = value
     if cfg.model._target_ != "models.FEMBA_int8.FEMBATinyInt8Classifier":
         raise ValueError("Expected the teammate ARES binary classifier")
     if cfg.model.num_classes != 2 or cfg.model.classification_type != "bc":
@@ -129,7 +193,7 @@ def load_task(path: Path, model_id: str):
     task.load_state_dict(checkpoint["state_dict"], strict=True)
     task.eval()
     contract = quantization_contract(task.model, enabled=model_id != "fp32")
-    return task.to("cuda").eval(), contract
+    return task.to(device).eval(), contract
 
 
 def quantization_contract(model, enabled: bool) -> dict:
@@ -137,7 +201,9 @@ def quantization_contract(model, enabled: bool) -> dict:
     from brevitas.proxy.parameter_quant import WeightQuantProxyFromInjectorBase
     from brevitas.proxy.quant_proxy import QuantProxyFromInjector
     from brevitas.proxy.runtime_quant import ActQuantProxyFromInjectorBase
+    from models.femba_quantization import model_quantization_config
 
+    config = model_quantization_config(model)
     ranks = [list(parameter.shape) for name, parameter in model.named_parameters()
              if name.endswith(".dt_proj.weight")]
     assert ranks == [[1540, 96]] * 4
@@ -145,21 +211,32 @@ def quantization_contract(model, enabled: bool) -> dict:
                if isinstance(proxy, QuantProxyFromInjector) and proxy.is_quant_enabled}
     if not enabled:
         assert not proxies and model.quantization_enabled is False
-        return {"enabled": False, "dt_proj_shapes": ranks}
+        return {"enabled": False, "dt_proj_shapes": ranks, "configuration": config}
     acts = {name: proxy for name, proxy in proxies.items()
             if isinstance(proxy, ActQuantProxyFromInjectorBase)}
     weights = {name: proxy for name, proxy in proxies.items()
                if isinstance(proxy, WeightQuantProxyFromInjectorBase)}
     assert len(proxies) == 53 and len(acts) == 35 and len(weights) == 18
-    for proxy in proxies.values():
-        scale = proxy.scale()
-        assert scale.numel() == 1 and proxy.bit_width().item() == 8
-        assert torch.isfinite(scale).all() and (scale > 0).all()
+    actual_widths = {}
+    for role, selected in (("activation", acts), ("weight", weights)):
+        actual_widths[role] = {name: int(proxy.bit_width().item()) for name, proxy in selected.items()}
+        assert set(actual_widths[role].values()) == {config[f"{role}_bit_width"]}
+        for proxy in selected.values():
+            scale = proxy.scale()
+            assert scale.numel() == 1
+            assert torch.isfinite(scale).all() and (scale > 0).all()
+    depthwise = [name for name, module in model.named_modules()
+                 if isinstance(module, torch.nn.Conv1d) and module.groups == module.in_channels
+                 and module.in_channels > 1]
+    assert len(depthwise) == 4
+    assert all(not any(name.startswith(layer + ".") for name in weights) for layer in depthwise)
     for proxy in acts.values():
         scaling = proxy.fused_activation_quant_proxy.tensor_quant.scaling_impl
         assert not scaling.training and scaling.counter > scaling.collect_stats_steps
     return {"enabled": True, "activation_quantizers": 35, "weight_quantizers": 18,
-            "dt_proj_shapes": ranks, "initialized_frozen_scales": True}
+            "dt_proj_shapes": ranks, "initialized_frozen_scales": True,
+            "configuration": config, "actual_proxy_bit_widths": actual_widths,
+            "fp32_depthwise_weights": depthwise}
 
 
 def frozen_snapshot(model) -> tuple:
@@ -262,12 +339,16 @@ def run(args) -> None:
     from contextlib import ExitStack
 
     source, data, output = args.source.resolve(), args.data.resolve(), args.output.resolve()
+    sys.path.insert(0, str(source))
+    expected_config = argument_quantization_config(args, infer=True)
     provenance = source_record(source)
     checkpoints = {name: getattr(args, name).resolve() for name in MODEL_IDS}
     inputs = {"checkpoints": {name: sha256(path) for name, path in checkpoints.items()},
               "data": {split: sha256(data / f"{split}.h5") for split in SPLITS}}
+    for model_id, path in checkpoints.items():
+        checkpoint_quantization_config(safe_load_checkpoint(path),
+                                       expected_config if model_id != "fp32" else None)
     output.mkdir(parents=True, exist_ok=False)
-    sys.path.insert(0, str(source))
     runtime = configure_runtime()
     write_json(output / "provenance.json", {"source": provenance, "inputs": inputs, "runtime": runtime})
     from datasets.hdf5_dataset import HDF5Loader
@@ -280,7 +361,8 @@ def run(args) -> None:
             resources.callback(dataset.data.close)
             for model_id in MODEL_IDS:
                 print(f"REPLAY {split} {model_id}", flush=True)
-                task, contract = load_task(checkpoints[model_id], model_id)
+                task, contract = load_task(checkpoints[model_id], model_id,
+                                           expected_config=expected_config if model_id != "fp32" else None)
                 native, arrays = replay(task, dataset)
                 if split in labels:
                     assert np.array_equal(labels[split], arrays["labels"])
@@ -300,4 +382,5 @@ if __name__ == "__main__":
     parser = argparse.ArgumentParser(description=__doc__)
     for option in ("source", "data", "fp32", "ptq-original", "ptq-p99", "qap-b", "output"):
         parser.add_argument("--" + option, type=Path, required=True)
+    add_quantization_arguments(parser, infer=True)
     run(parser.parse_args())

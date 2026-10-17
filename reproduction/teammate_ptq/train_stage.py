@@ -36,6 +36,8 @@ import subprocess
 import sys
 from types import MethodType
 
+from evaluate import add_quantization_arguments, argument_quantization_config
+
 BASE_COMMIT = "a2a4d441485efd8423c44b35d7448a30ccd44437"
 SPLITS = {
     "train": (55524, 12508987552, "9fb802613f4256e6fb15ba1bd5c0853a22b983567ae48b0c8b88ac64c123d8b5"),
@@ -44,6 +46,7 @@ SPLITS = {
 }
 SOURCE_FILES = (
     "run_train.py", "models/FEMBA_int8.py", "models/femba_ptq.py", "models/femba_decoder.py",
+    "models/femba_quantization.py", "models/femba_ternary.py",
     "tasks/pretrain_task.py", "tasks/finetune_task.py", "datasets/hdf5_dataset.py",
     "data_module/pretrain_data_module.py", "data_module/finetune_data_module.py",
     "ARES/tests/test_networks/test_25_femba_tiny_int8.py",
@@ -115,10 +118,13 @@ def observer_state(model):
 
 
 def model_contract(model, pretrain, enabled):
+    import torch
     from brevitas.proxy.parameter_quant import WeightQuantProxyFromInjectorBase
     from brevitas.proxy.quant_proxy import QuantProxyFromInjector
     from brevitas.proxy.runtime_quant import ActQuantProxyFromInjectorBase
+    from models.femba_quantization import model_quantization_config
 
+    config = model_quantization_config(model)
     ranks = [list(parameter.shape) for name, parameter in model.named_parameters()
              if name.endswith(".dt_proj.weight")]
     assert ranks == [[1540, 96]] * 4, ranks
@@ -129,6 +135,21 @@ def model_contract(model, pretrain, enabled):
     weights = [proxy for proxy in proxies if isinstance(proxy, WeightQuantProxyFromInjectorBase)]
     assert (len(acts), len(weights)) == ((34, 17) if pretrain else (35, 18))
     assert all(proxy.is_quant_enabled == enabled for proxy in proxies)
+    actual_widths = {}
+    for role, selected in (("activation", acts), ("weight", weights)):
+        widths = []
+        for proxy in selected:
+            tensor_quant = (proxy.fused_activation_quant_proxy.tensor_quant if role == "activation"
+                            else proxy.tensor_quant)
+            widths.append(int(tensor_quant.msb_clamp_bit_width_impl().item()))
+        assert set(widths) == {config[f"{role}_bit_width"]}
+        actual_widths[role] = widths
+    depthwise = [name for name, module in model.named_modules()
+                 if isinstance(module, torch.nn.Conv1d) and module.groups == module.in_channels
+                 and module.in_channels > 1]
+    assert len(depthwise) == 4
+    assert all(not getattr(module, "weight_quant", None) for name, module in model.named_modules()
+               if name in depthwise)
     fixed = [name for name, parameter in model.named_parameters() if not parameter.requires_grad]
     assert fixed == [f"mamba_blocks.{block}.mamba_{branch}.conv1d.weight_scale"
                      for block in range(2) for branch in ("fwd", "rev")]
@@ -137,7 +158,9 @@ def model_contract(model, pretrain, enabled):
         assert count == 8670626
     return {"parameters": count, "dt_proj_shapes": ranks, "quantization_enabled": enabled,
             "activation_quantizers": len(acts), "weight_quantizers": len(weights),
-            "native_fixed_parameters_at_construction": fixed}
+            "native_fixed_parameters_at_construction": fixed,
+            "configuration": config, "actual_proxy_bit_widths": actual_widths,
+            "fp32_depthwise_weights": depthwise}
 
 
 def data_manifest(args):
@@ -171,6 +194,7 @@ def compose_config(args):
                  f"io.base_output_path={json.dumps(str(args.output / 'tb_logs'))}",
                  f"io.checkpoint_dirpath={json.dumps(str(args.output / 'checkpoints'))}",
                  "final_test=false"]
+    overrides.extend(f"+model.{key}={value}" for key, value in argument_quantization_config(args).items())
     if pretrain:
         overrides.extend(["+data_module.datasets.tuar_train.use_cache=false",
                           f"data_module.datasets.tuar_train.hdf5_file={json.dumps(str(args.data_root / 'train.h5'))}"])
@@ -187,6 +211,10 @@ def compose_config(args):
 
 
 def validate_config(cfg, args):
+    from models.femba_quantization import config_from_mapping
+
+    if config_from_mapping(cfg.model) != argument_quantization_config(args):
+        raise ValueError("Resolved model quantization configuration differs from requested configuration")
     pretrain = args.stage == "pretrain"
     assert cfg.seed == args.seed and cfg.resume is False and cfg.training is True
     assert cfg.batch_size == 32 and cfg.num_workers == 4 and cfg.gpus == 1
@@ -227,8 +255,11 @@ def validate_pretrained_metadata(hyperparameters: Mapping, args) -> None:
     enabled = model.get("quantization_enabled", True)
     if not isinstance(enabled, bool) or enabled != (args.group == "qap_b"):
         raise ValueError("Pretrained checkpoint quantization group differs from the requested handoff")
-    if args.group == "c" and args.seed != 42:
-        raise ValueError("Group C requires the seed42 FP32 pretraining checkpoint")
+    from models.femba_quantization import config_from_mapping
+
+    parent_config = config_from_mapping(model)
+    if enabled and parent_config != argument_quantization_config(args):
+        raise ValueError("Quantized pretraining checkpoint configuration differs from fine-tuning configuration")
 
 
 class StageAudit:
@@ -391,7 +422,7 @@ def run_native(native, cfg, audit):
 def arguments(argv=None):
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--source", type=Path, required=True,
-                        help="Pinned teammate checkout with source.patch applied")
+                        help="Pinned teammate checkout with source.patch and quantization-config.patch applied")
     parser.add_argument("--data-root", type=Path, required=True,
                         help="Directory containing the verified train.h5, val.h5 and test.h5")
     parser.add_argument("--data-manifest", type=Path, required=True,
@@ -408,6 +439,7 @@ def arguments(argv=None):
     parser.add_argument("--pretrained-sha256", help="SHA256 of --pretrained")
     parser.add_argument("--plan-only", action="store_true",
                         help="Resolve and validate the fixed Hydra recipe, without training or creating outputs")
+    add_quantization_arguments(parser)
     args = parser.parse_args(argv)
     for name in ("source", "data_root", "data_manifest", "output"):
         setattr(args, name, getattr(args, name).expanduser().resolve())
@@ -417,8 +449,8 @@ def arguments(argv=None):
         raise ValueError("Source must contain the pinned teammate config/defaults.yaml and run_train.py")
     if args.output.exists() and not args.plan_only:
         raise ValueError("Output already exists; choose a new directory instead of resuming a stage")
-    if args.group == "c" and (args.stage != "finetune" or args.seed != 42):
-        raise ValueError("This protocol defines C as seed42 FP32-pretrained quantized fine-tuning")
+    if args.group == "c" and args.stage != "finetune":
+        raise ValueError("This protocol defines C as FP32-pretrained quantized fine-tuning")
     if args.stage == "finetune":
         if args.pretrained is None or not args.pretrained_sha256:
             raise ValueError("Fine-tuning requires an explicit pretrained checkpoint and SHA256")
