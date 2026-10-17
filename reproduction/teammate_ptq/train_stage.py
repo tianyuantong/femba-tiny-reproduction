@@ -227,8 +227,6 @@ def validate_pretrained_metadata(hyperparameters: Mapping, args) -> None:
     enabled = model.get("quantization_enabled", True)
     if not isinstance(enabled, bool) or enabled != (args.group == "qap_b"):
         raise ValueError("Pretrained checkpoint quantization group differs from the requested handoff")
-    if args.group == "c" and args.seed != 42:
-        raise ValueError("Group C requires the seed42 FP32 pretraining checkpoint")
 
 
 class StageAudit:
@@ -417,8 +415,8 @@ def arguments(argv=None):
         raise ValueError("Source must contain the pinned teammate config/defaults.yaml and run_train.py")
     if args.output.exists() and not args.plan_only:
         raise ValueError("Output already exists; choose a new directory instead of resuming a stage")
-    if args.group == "c" and (args.stage != "finetune" or args.seed != 42):
-        raise ValueError("This protocol defines C as seed42 FP32-pretrained quantized fine-tuning")
+    if args.group == "c" and args.stage != "finetune":
+        raise ValueError("This protocol defines C as FP32-pretrained quantized fine-tuning")
     if args.stage == "finetune":
         if args.pretrained is None or not args.pretrained_sha256:
             raise ValueError("Fine-tuning requires an explicit pretrained checkpoint and SHA256")

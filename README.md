@@ -43,7 +43,7 @@ H128 将五处输出投影输入的校准峰值缩小 4.3–11.1 倍，Rot-A8 �
 
 使用上游仓库 [berumottovv00/BioFoundation](https://github.com/berumottovv00/BioFoundation) 的 ARES 模型与 7,211 个测试窗口，比较 FP32、INT8 PTQ 和 QAP。
 三个训练种子（42/43/44）的平均 AUROC：FP32 **0.9045**、七档验证校准的 PTQ **0.8707**、QAP B **0.9021**。
-FP32 预训练后量化微调的 C42 为 **0.8749**；结果页包含逐种子统计、分类阈值对照和训练曲线。
+FP32 预训练后量化微调的 C 组三种子 AUROC 为 **0.8940 ± 0.0168**；严格配对的 seed43/44 中 QAP B−C 为 **−0.0013 ± 0.0036**，未观察到量化预训练的一致收益。结果页包含逐种子统计、分类阈值对照和训练曲线。
 
 [结果、配置与运行命令](reproduction/teammate_ptq/README.md)
 

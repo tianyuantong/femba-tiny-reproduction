@@ -54,18 +54,18 @@ python "$study/train_stage.py" --source "$teammate_source" --data-root "$data" \
 
 将 `group=qap_b` 跑 QAP 预训练与量化微调；分别设置 `seed=43`、`seed=44`。同种子的 FP32/QAP 保留相同随机初始化与数据划分。`--plan-only` 可先打印解析后的 Hydra 配置，不启动训练。
 
-## C42
+## C：复用同 seed FP32 预训练父模型
 
-使用 seed42 的 **FP32 预训练**检查点，开启量化微调 5 轮。`pretrained` 和 `pretrained_sha` 从对应预训练 `complete.json` 读取；入口检查父模型的任务、种子和量化状态。
-先按上节设置 `seed=42`、`group=fp32` 完成预训练，或将 `parent` 指向已有的对应 `complete.json`。
+使用同 seed 的 **FP32 预训练**检查点，开启量化微调 5 轮。支持 seeds 42/43/44；`pretrained` 和 `pretrained_sha` 从对应预训练 `complete.json` 读取，入口检查父模型的任务、种子和量化状态。已有父检查点时直接复用，不再运行预训练。
 
 ```bash
-parent="$artifacts/seeds/42/fp32/pretrain/complete.json"
+seed=43
+parent="$artifacts/seeds/$seed/fp32/pretrain/complete.json"
 pretrained=$(python -c 'import json,sys; print(json.load(open(sys.argv[1]))["best_checkpoint"])' "$parent")
 pretrained_sha=$(python -c 'import json,sys; print(json.load(open(sys.argv[1]))["best_checkpoint_sha256"])' "$parent")
 python "$study/train_stage.py" --source "$teammate_source" --data-root "$data" \
-  --data-manifest "$artifacts/data-manifest.json" --output "$artifacts/seeds/42/c/finetune" \
-  --group c --stage finetune --seed 42 \
+  --data-manifest "$artifacts/data-manifest.json" --output "$artifacts/seeds/$seed/c/finetune" \
+  --group c --stage finetune --seed "$seed" \
   --pretrained "$pretrained" --pretrained-sha256 "$pretrained_sha"
 ```
 
@@ -86,7 +86,7 @@ python "$study/evaluate_one.py" --source "$teammate_source" --data-root "$data" 
   --model-kind "$group" --seed "$seed" --output "$run/evaluation"
 ```
 
-评估 QAP B 时设置 `group=qap_b`，C42 设置 `seed=42`、`group=c`，再重设 `run`。每个种子的 PTQ 从该种子 FP32 微调检查点校准，始终固定同一批 512 个训练窗口：
+评估 QAP B 时设置 `group=qap_b`，C 设置相应 `seed`、`group=c`，再重设 `run`。每个种子的 PTQ 从该种子 FP32 微调检查点校准，始终固定同一批 512 个训练窗口：
 
 ```bash
 fp32_complete="$artifacts/seeds/$seed/fp32/finetune/complete.json"
@@ -113,6 +113,14 @@ python "$study/summarize_seeds.py" --raw /path/to/retained-stage-records \
 ```
 
 汇总输入包含本次队列的完整阶段记录、配对和独立指标核验；输出只提取可共享字段。CSV、数据集、权重及逐样本预测保存在实验目录。公开训练入口补充了父检查点参数保护；实际运行驱动哈希仍按原件记录。
+
+补齐 C43/44 后，增量汇总保留上一轮 `seed-results.json` 的来源，新增两组记录，输出四方法、三种子统计及 QAP B−C 全三种子和严格配对 43/44 差值：
+
+```bash
+python "$study/summarize_c_followup.py" --raw /path/to/c-followup-records \
+  --previous "$study/seed-results.json" --output "$artifacts/c-seed-results.json" \
+  --figures "$artifacts/c-figures"
+```
 
 ## 验证
 

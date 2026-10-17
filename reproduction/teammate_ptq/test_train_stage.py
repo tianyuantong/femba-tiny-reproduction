@@ -69,15 +69,16 @@ class ArgumentContracts(unittest.TestCase):
         parsed = train_stage.arguments([*args, "--pretrained", "parent.ckpt", "--pretrained-sha256", "a" * 64])
         self.assertTrue(parsed.pretrained.is_absolute())
 
-    def test_group_c_is_only_seed42_finetuning(self):
+    def test_group_c_accepts_each_seed_but_only_finetuning(self):
         args = [*self.training[:-4], "--group", "c", "--stage", "finetune",
                 "--pretrained", "parent.ckpt", "--pretrained-sha256", "a" * 64]
-        with self.assertRaisesRegex(ValueError, "seed42"):
-            train_stage.arguments(args)
-        args[args.index("--seed") + 1] = "42"
-        self.assertEqual(train_stage.arguments(args).group, "c")
+        for seed in (42, 43, 44):
+            with self.subTest(seed=seed):
+                args[args.index("--seed") + 1] = str(seed)
+                parsed = train_stage.arguments(args)
+                self.assertEqual((parsed.group, parsed.seed), ("c", seed))
         args[args.index("--stage") + 1] = "pretrain"
-        with self.assertRaisesRegex(ValueError, "seed42"):
+        with self.assertRaisesRegex(ValueError, "FP32-pretrained quantized fine-tuning"):
             train_stage.arguments(args)
 
     def test_source_checkout_and_previous_outputs_are_protected(self):
@@ -90,13 +91,14 @@ class ArgumentContracts(unittest.TestCase):
             train_stage.arguments(self.training)
         self.assertTrue(train_stage.arguments([*self.training, "--plan-only"]).plan_only)
 
-    def test_evaluation_rejects_overwriting_selection_and_wrong_c_seed(self):
+    def test_evaluation_accepts_each_c_seed_and_rejects_overwriting_selection(self):
         args = [*self.common, "--checkpoint", "classifier.ckpt", "--checkpoint-sha256", "a" * 64,
                 "--model-kind", "c"]
-        with self.assertRaisesRegex(ValueError, "seed42"):
-            evaluate_one.arguments(args)
-        args[args.index("--seed") + 1] = "42"
-        self.assertEqual(evaluate_one.arguments(args).model_kind, "c")
+        for seed in (42, 43, 44):
+            with self.subTest(seed=seed):
+                args[args.index("--seed") + 1] = str(seed)
+                parsed = evaluate_one.arguments(args)
+                self.assertEqual((parsed.model_kind, parsed.seed), ("c", seed))
         (self.root / "output").mkdir()
         with self.assertRaisesRegex(ValueError, "already exists"):
             evaluate_one.arguments(args)
@@ -108,8 +110,9 @@ class PretrainedMetadataContracts(unittest.TestCase):
                                       "quantization_enabled": enabled}}
 
     def test_matching_seed_and_pretraining_group_are_accepted(self):
-        for group, seed, enabled in (("fp32", 43, False), ("qap_b", 44, True), ("c", 42, False)):
-            with self.subTest(group=group):
+        for group, seed, enabled in (("fp32", 43, False), ("qap_b", 44, True),
+                                     ("c", 42, False), ("c", 43, False), ("c", 44, False)):
+            with self.subTest(group=group, seed=seed):
                 train_stage.validate_pretrained_metadata(self.metadata(seed, enabled),
                                                         SimpleNamespace(group=group, seed=seed))
         native_qap = self.metadata(enabled=True)
@@ -117,20 +120,20 @@ class PretrainedMetadataContracts(unittest.TestCase):
         train_stage.validate_pretrained_metadata(native_qap, SimpleNamespace(group="qap_b", seed=43))
 
     def test_other_seed_and_classifier_checkpoints_are_rejected(self):
-        args = SimpleNamespace(group="fp32", seed=43)
-        with self.assertRaisesRegex(ValueError, "seed must match"):
-            train_stage.validate_pretrained_metadata(self.metadata(seed=42), args)
-        with self.assertRaisesRegex(ValueError, "not a classifier"):
-            train_stage.validate_pretrained_metadata(self.metadata(target="FEMBATinyInt8Classifier"), args)
+        for group in ("fp32", "c"):
+            with self.subTest(group=group):
+                args = SimpleNamespace(group=group, seed=43)
+                with self.assertRaisesRegex(ValueError, "seed must match"):
+                    train_stage.validate_pretrained_metadata(self.metadata(seed=42), args)
+                with self.assertRaisesRegex(ValueError, "not a classifier"):
+                    train_stage.validate_pretrained_metadata(self.metadata(target="FEMBATinyInt8Classifier"), args)
 
     def test_cross_group_pretraining_is_rejected(self):
-        for group, seed, enabled in (("fp32", 43, True), ("qap_b", 43, False), ("c", 42, True)):
-            with self.subTest(group=group), self.assertRaisesRegex(ValueError, "quantization group"):
+        for group, seed, enabled in (("fp32", 43, True), ("qap_b", 43, False),
+                                     ("c", 42, True), ("c", 43, True), ("c", 44, True)):
+            with self.subTest(group=group, seed=seed), self.assertRaisesRegex(ValueError, "quantization group"):
                 train_stage.validate_pretrained_metadata(self.metadata(seed, enabled),
                                                         SimpleNamespace(group=group, seed=seed))
-        with self.assertRaisesRegex(ValueError, "seed42 FP32"):
-            train_stage.validate_pretrained_metadata(self.metadata(seed=43),
-                                                    SimpleNamespace(group="c", seed=43))
 
     def test_missing_metadata_and_non_boolean_quantization_are_rejected(self):
         args = SimpleNamespace(group="fp32", seed=43)
@@ -277,8 +280,13 @@ class TrainingAuditFixtures(unittest.TestCase):
             self.assertEqual(left_split, right_split)
 
     def test_all_native_finetune_handoffs(self):
+        for seed in (42, 43, 44):
+            with self.subTest(seed=seed):
+                self._check_native_finetune_handoffs(seed)
+
+    def _check_native_finetune_handoffs(self, seed):
         with TemporaryDirectory() as pretrain_root:
-            parent_args = self.arguments(pretrain_root, "fp32", "pretrain", seed=42)
+            parent_args = self.arguments(pretrain_root, "fp32", "pretrain", seed=seed)
             _, parent, _ = self.instantiate(self.config(parent_args), parent_args)
             for group in ("fp32", "qap_b", "c"):
                 if group == "qap_b":
@@ -295,7 +303,7 @@ class TrainingAuditFixtures(unittest.TestCase):
                             module.buffer.fill_(1.0)
                             module.value.data.fill_(1.0)
                 with self.subTest(group=group), TemporaryDirectory() as root:
-                    args = self.arguments(root, group, "finetune", seed=42)
+                    args = self.arguments(root, group, "finetune", seed=seed)
                     _, task, audit = self.instantiate(self.config(args), args)
                     before = train_stage.rng_digest()
                     task.load_state_dict(parent.state_dict(), strict=False)

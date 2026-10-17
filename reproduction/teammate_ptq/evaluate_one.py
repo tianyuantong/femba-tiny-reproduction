@@ -117,8 +117,6 @@ def arguments(argv=None):
         raise ValueError("Evaluation artifacts must stay outside the source checkout")
     if args.output.exists():
         raise ValueError("Output already exists; evaluation must not overwrite a prior selection")
-    if args.model_kind == "c" and args.seed != 42:
-        raise ValueError("This protocol defines group C only for seed42")
     digest = args.checkpoint_sha256
     if len(digest) != 64 or any(character not in "0123456789abcdef" for character in digest):
         raise ValueError("Checkpoint SHA256 must contain 64 lowercase hexadecimal characters")
