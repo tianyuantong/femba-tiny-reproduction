@@ -228,6 +228,7 @@ class TrainingAuditFixtures(unittest.TestCase):
                                group=group, stage=stage, seed=seed,
                                pretrained=Path(root) / "pretrain.ckpt", pretrained_sha256="a" * 64,
                                max_epochs=10 if stage == "pretrain" else 5, save_every_epoch=False,
+                               num_classes=2, classification_type="bc",
                                split_table={s: {"windows": w, "bytes": b, "sha256": d}
                                             for s, (w, b, d) in train_stage.SPLITS.items()})
 

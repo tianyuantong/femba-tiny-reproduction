@@ -180,7 +180,7 @@ def safe_load_checkpoint(path: Path) -> dict:
 
 
 def load_task(path: Path, model_id: str, *, expected_config=None, device="cuda",
-              target_config=None):
+              target_config=None, num_classes=2, classification_type="bc"):
     """Strictly reload; only an FP32 checkpoint may adopt an explicit PTQ target."""
     from omegaconf import OmegaConf
     from models.femba_quantization import quantization_config
@@ -200,8 +200,8 @@ def load_task(path: Path, model_id: str, *, expected_config=None, device="cuda",
         cfg.model[key] = value
     if cfg.model._target_ != "models.FEMBA_int8.FEMBATinyInt8Classifier":
         raise ValueError("Expected the teammate ARES binary classifier")
-    if cfg.model.num_classes != 2 or cfg.model.classification_type != "bc":
-        raise ValueError("Expected two-class CE classification")
+    if cfg.model.num_classes != num_classes or cfg.model.classification_type != classification_type:
+        raise ValueError(f"Expected {num_classes}-class {classification_type} classification")
     norm = cfg.input_normalization
     if not norm.normalize or (norm.quartile_normalization_lower_val,
                              norm.quartile_normalization_upper_val) != (-20, 20):

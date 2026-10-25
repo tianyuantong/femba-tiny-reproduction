@@ -154,8 +154,8 @@ def model_contract(model, pretrain, enabled):
     assert fixed == [f"mamba_blocks.{block}.mamba_{branch}.conv1d.weight_scale"
                      for block in range(2) for branch in ("fwd", "rev")]
     count = sum(parameter.numel() for parameter in model.parameters())
-    if not pretrain:
-        assert count == 8670626
+    if not pretrain:  # 8,670,626 for the two-class head; each extra class adds d_model + 1
+        assert count == 8670626 + (model.classifier.out_features - 2) * (model.d_model + 1)
     return {"parameters": count, "dt_proj_shapes": ranks, "quantization_enabled": enabled,
             "activation_quantizers": len(acts), "weight_quantizers": len(weights),
             "native_fixed_parameters_at_construction": fixed,
@@ -206,7 +206,8 @@ def compose_config(args):
     else:
         overrides.extend(["data_module=finetune_data_module_tuar", "gpus=1", "trainer.strategy=auto",
                           "batch_size=32", "num_workers=4", "scheduler.warmup_epochs=1",
-                          f"pretrained_checkpoint_path={json.dumps(str(args.pretrained))}"])
+                          f"pretrained_checkpoint_path={json.dumps(str(args.pretrained))}",
+                          f"model.num_classes={args.num_classes}", f"model.classification_type={args.classification_type}"])
         for split in SPLITS:
             overrides.extend([f"+data_module.{split}.use_cache=false",
                               f"data_module.{split}.hdf5_file={json.dumps(str(args.data_root / (split + '.h5')))}"])
@@ -244,7 +245,7 @@ def validate_config(cfg, args):
         assert cfg.optimizer.weight_decay == 0.5 and cfg.layerwise_lr_decay == 0.75
         assert cfg.finetuning.freeze_layers is True
         assert cfg.scheduler.warmup_epochs == 1 and cfg.scheduler.min_lr == 1e-6
-        assert cfg.model.num_classes == 2 and cfg.model.classification_type == "bc"
+        assert cfg.model.num_classes == args.num_classes and cfg.model.classification_type == args.classification_type
 
 
 def validate_pretrained_metadata(hyperparameters: Mapping, args) -> None:
@@ -461,6 +462,9 @@ def arguments(argv=None):
     args.split_table = {split: {"windows": w, "bytes": b, "sha256": d} for split, (w, b, d) in SPLITS.items()}
     for name in ("source", "data_root", "data_manifest", "output"):
         setattr(args, name, getattr(args, name).expanduser().resolve())
+    manifest = json.loads(args.data_manifest.read_text()) if args.data_manifest.is_file() else {}
+    args.num_classes = int(manifest.get("num_classes", 2))
+    args.classification_type = str(manifest.get("classification_type", "bc"))
     if args.output == args.source or args.source in args.output.parents:
         raise ValueError("Store stage artifacts outside the source checkout")
     if not (args.source / "config/defaults.yaml").is_file() or not (args.source / "run_train.py").is_file():

@@ -35,12 +35,12 @@ def validate_percentile(percentile: float) -> float:
     return percentile
 
 
-def calibration_indices(windows: int) -> list[int]:
+def calibration_indices(windows: int, count: int = 512) -> list[int]:
     import torch
 
-    if isinstance(windows, bool) or not isinstance(windows, int) or windows < 512:
-        raise ValueError("The training split must contain at least 512 windows")
-    return torch.randperm(windows, generator=torch.Generator().manual_seed(42))[:512].tolist()
+    if isinstance(windows, bool) or not isinstance(windows, int) or windows < count:
+        raise ValueError(f"The training split must contain at least {count} windows")
+    return torch.randperm(windows, generator=torch.Generator().manual_seed(42))[:count].tolist()
 
 
 def set_percentile(model, percentile: float) -> None:
@@ -114,7 +114,9 @@ def save_reload(task, output: Path, parent_sha: str, recipe: dict, probe) -> dic
         torch.save({"state_dict": task.state_dict(), "hyper_parameters": cfg,
                     "parent_sha256": parent_sha, "ptq_recipe": recipe,
                     "pytorch-lightning_version": pl.__version__}, stream)
-    restored, contract = load_task(checkpoint, "ptq_original", expected_config=config, device=probe.device)
+    restored, contract = load_task(checkpoint, "ptq_original", expected_config=config, device=probe.device,
+                                   num_classes=task.hparams.model.num_classes,
+                                   classification_type=task.hparams.model.classification_type)
     quantization_contract(task.model, enabled=True)
     def scales(model):
         return {name: proxy.scale().detach().cpu().clone() for name, proxy in model.named_modules()
@@ -148,20 +150,21 @@ def run(args) -> dict:
     args.output.mkdir(parents=True, exist_ok=False)
     runtime, provenance = configure_runtime(), source_record(source)
     parent_sha, train_sha = sha256(args.checkpoint), sha256(args.data / "train.h5")
-    task, _ = load_task(args.checkpoint, "fp32", target_config=config)
+    task, _ = load_task(args.checkpoint, "fp32", target_config=config,
+                        num_classes=args.num_classes, classification_type=args.classification_type)
     initial = floating_parameters(task.model)
     dataset = HDF5Loader(str(args.data / "train.h5"), use_cache=False)
     try:
-        indices = calibration_indices(len(dataset))
+        indices = calibration_indices(len(dataset), args.calibration_windows)
         manifest = {"split": "train.h5", "seed": 42, "indices": indices, "train_sha256": train_sha}
         manifest_path = args.output / "calibration_indices.json"
         write_json(manifest_path, manifest)
         recipe = {"activation_percentile": percentile, "seed": 42, "batch_size": 32,
-                  "windows": 512, "indices_sha256": sha256(manifest_path),
+                  "windows": args.calibration_windows, "indices_sha256": sha256(manifest_path),
                   "quantization_config": config}
         set_percentile(task.model, percentile)
         report = calibrate_quantized(task.model, batches(task, dataset, indices))
-        assert report["num_batches"] == 16
+        assert report["num_batches"] == -(-args.calibration_windows // 32)
         current = floating_parameters(task.model)
         assert current.keys() == initial.keys()
         assert all(torch.equal(value, current[name]) for name, value in initial.items())
@@ -183,6 +186,10 @@ def main() -> None:
     for name in ("source", "data", "checkpoint", "output"):
         parser.add_argument("--" + name, required=True, type=Path)
     parser.add_argument("--percentile", type=float, default=99.999)
+    parser.add_argument("--calibration-windows", type=int, default=512,
+                        help="Fixed number of seed-42 training windows used for calibration (default 512)")
+    parser.add_argument("--num-classes", type=int, default=2)
+    parser.add_argument("--classification-type", default="bc")
     add_quantization_arguments(parser)
     args = parser.parse_args()
     run(args)
