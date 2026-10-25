@@ -1,0 +1,1485 @@
+{
+  "study": "TUAR FP32, validation-selected INT8 PTQ, QAP B and C",
+  "dataset_scope": "One TUAR dataset; recording-level split",
+  "score": "float64(z1)-float64(z0)",
+  "decision": "positive iff margin > threshold; ties are class 0",
+  "data": {
+    "train": {
+      "bytes": 12508987552,
+      "sha256": "9fb802613f4256e6fb15ba1bd5c0853a22b983567ae48b0c8b88ac64c123d8b5",
+      "windows": 55524
+    },
+    "val": {
+      "bytes": 1447713360,
+      "sha256": "e293d3a96ee12be7673fd67485b5ea3cc179ca8b86a102f684aa93e72fe78711",
+      "windows": 6426
+    },
+    "test": {
+      "bytes": 1624566488,
+      "sha256": "fb9950063c5d877f01d93d096af7a09208b12e4241a6cc6946ed1f905a03cd97",
+      "windows": 7211
+    }
+  },
+  "training": {
+    "pretrain_epochs": 10,
+    "finetune_epochs": 5,
+    "batch_size": 32,
+    "workers": 4,
+    "dt_rank": 96,
+    "checkpoint_selection": "minimum val_loss"
+  },
+  "calibration": {
+    "windows": 512,
+    "indices_seed": 42,
+    "percentiles": [
+      99.999,
+      99.99,
+      99.9,
+      99.0,
+      98.0,
+      95.0,
+      90.0
+    ],
+    "selection": "val margin AUROC, AP, CE loss, candidate order; threshold by val BAcc",
+    "activation_quantizers": 35,
+    "weight_quantizers": 18
+  },
+  "per_seed": [
+    {
+      "seed": 42,
+      "model": "fp32",
+      "origin": "local FP32 training, historical patch",
+      "auroc": 0.9140095755367996,
+      "ap": 0.9293508764406799,
+      "checkpoint_sha256": "e2e54fff5d123053870bd7f7866daef011ccf81d6a7e813334e8d2942692fa39",
+      "default": {
+        "threshold": 0.0,
+        "confusion_matrix": [
+          [
+            2844,
+            460
+          ],
+          [
+            763,
+            3144
+          ]
+        ],
+        "accuracy": 0.8303980030508945,
+        "balanced_accuracy": 0.8327421570893739,
+        "predicted_positive_rate": 0.49979198446817363
+      },
+      "validation_threshold": {
+        "threshold": 0.026097774505615234,
+        "confusion_matrix": [
+          [
+            2857,
+            447
+          ],
+          [
+            766,
+            3141
+          ]
+        ],
+        "accuracy": 0.8317847732630703,
+        "balanced_accuracy": 0.8343255431518892,
+        "predicted_positive_rate": 0.4975731521286923
+      },
+      "source_id": "historical_seed42"
+    },
+    {
+      "seed": 42,
+      "model": "ptq",
+      "origin": "historical FP32 parent, extended sweep",
+      "auroc": 0.8658854691182586,
+      "ap": 0.8841710044174202,
+      "checkpoint_sha256": "2c746ead448878a599efdd8826b7d92aef3042f0d4bcd29402cdca4cd6b0aa0c",
+      "selected_percentile": 95.0,
+      "default": {
+        "threshold": 0.0,
+        "confusion_matrix": [
+          [
+            1304,
+            2000
+          ],
+          [
+            98,
+            3809
+          ]
+        ],
+        "accuracy": 0.7090556094855083,
+        "balanced_accuracy": 0.6847949697290081,
+        "predicted_positive_rate": 0.8055748162529469
+      },
+      "validation_threshold": {
+        "threshold": 1.270548939704895,
+        "confusion_matrix": [
+          [
+            2205,
+            1099
+          ],
+          [
+            543,
+            3364
+          ]
+        ],
+        "accuracy": 0.7722923311607267,
+        "balanced_accuracy": 0.7641957828842625,
+        "predicted_positive_rate": 0.6189155456940785
+      },
+      "source_id": "historical_seed42"
+    },
+    {
+      "seed": 42,
+      "model": "qap_b",
+      "origin": "teammate checkpoint, full WSL replay",
+      "auroc": 0.9017215716374224,
+      "ap": 0.9184462543918532,
+      "checkpoint_sha256": "8c005d5524760a30cdd7c0452e1b18cbe6588b8b638856d89b77ab1430bb26eb",
+      "default": {
+        "threshold": 0.0,
+        "confusion_matrix": [
+          [
+            2854,
+            450
+          ],
+          [
+            876,
+            3031
+          ]
+        ],
+        "accuracy": 0.8161142698654833,
+        "balanced_accuracy": 0.8197942508355587,
+        "predicted_positive_rate": 0.48273471085841074
+      },
+      "validation_threshold": {
+        "threshold": -0.20967578887939453,
+        "confusion_matrix": [
+          [
+            2810,
+            494
+          ],
+          [
+            808,
+            3099
+          ]
+        ],
+        "accuracy": 0.8194425183747053,
+        "balanced_accuracy": 0.821837984346715,
+        "predicted_positive_rate": 0.4982665372347802
+      },
+      "source_id": "historical_seed42"
+    },
+    {
+      "seed": 42,
+      "model": "c",
+      "origin": "local original-recipe training",
+      "auroc": 0.874903631093629,
+      "ap": 0.8976462106716648,
+      "checkpoint_sha256": "2acc22bec2e2bbeafb71ceb24309448858d8ccc8575eb6332282c9c7ddc30755",
+      "default": {
+        "threshold": 0.0,
+        "confusion_matrix": [
+          [
+            2752,
+            552
+          ],
+          [
+            922,
+            2985
+          ]
+        ],
+        "accuracy": 0.7955900707252809,
+        "balanced_accuracy": 0.7984715457634556,
+        "predicted_positive_rate": 0.4905006240465955
+      },
+      "validation_threshold": {
+        "threshold": 0.0024298056960105896,
+        "confusion_matrix": [
+          [
+            2753,
+            551
+          ],
+          [
+            922,
+            2985
+          ]
+        ],
+        "accuracy": 0.7957287477464984,
+        "balanced_accuracy": 0.7986228774825839,
+        "predicted_positive_rate": 0.4903619470253779
+      },
+      "handoff": {
+        "pretrained_checkpoint_sha256": "317a23319bba92acff4f86f42370316678cfad3b37b4dd7a580f792386fb5f0a",
+        "fresh_shared_observers_after_load": 34,
+        "fresh_total_observers_after_load": 35,
+        "first_batch_observers_updated": 35,
+        "first_batch_loss": 0.6678540110588074
+      },
+      "source_id": "previous_seed_runs"
+    },
+    {
+      "seed": 43,
+      "model": "fp32",
+      "origin": "local original-recipe training",
+      "auroc": 0.8949736178498765,
+      "ap": 0.9172164566393439,
+      "checkpoint_sha256": "622e32b49a544a069e79d4f20bf385a1aae897b5a49c121999226e5bdc226fd4",
+      "default": {
+        "threshold": 0.0,
+        "confusion_matrix": [
+          [
+            2895,
+            409
+          ],
+          [
+            853,
+            3054
+          ]
+        ],
+        "accuracy": 0.8249895992234086,
+        "balanced_accuracy": 0.8289422861803271,
+        "predicted_positive_rate": 0.48023852447649423
+      },
+      "validation_threshold": {
+        "threshold": -0.27279217541217804,
+        "confusion_matrix": [
+          [
+            2814,
+            490
+          ],
+          [
+            782,
+            3125
+          ]
+        ],
+        "accuracy": 0.8236028290112328,
+        "balanced_accuracy": 0.825770672369888,
+        "predicted_positive_rate": 0.5013174317015671
+      },
+      "source_id": "previous_seed_runs"
+    },
+    {
+      "seed": 43,
+      "model": "ptq",
+      "origin": "PTQ from same-seed FP32 parent",
+      "auroc": 0.8659824577603619,
+      "ap": 0.8821976425853381,
+      "checkpoint_sha256": "6e43478d8ddef04a5063636b79a1ef6d262cf6731c89674e70341ad1a732d675",
+      "default": {
+        "threshold": 0.0,
+        "confusion_matrix": [
+          [
+            1,
+            3303
+          ],
+          [
+            3,
+            3904
+          ]
+        ],
+        "accuracy": 0.5415337678546664,
+        "balanced_accuracy": 0.49976740543297526,
+        "predicted_positive_rate": 0.9994452919151297
+      },
+      "validation_threshold": {
+        "threshold": 1.085174024105072,
+        "confusion_matrix": [
+          [
+            2153,
+            1151
+          ],
+          [
+            530,
+            3377
+          ]
+        ],
+        "accuracy": 0.7668839273332408,
+        "balanced_accuracy": 0.7579902140629193,
+        "predicted_positive_rate": 0.6279295520732214
+      },
+      "selected_percentile": 99.9,
+      "source_id": "previous_seed_runs"
+    },
+    {
+      "seed": 43,
+      "model": "qap_b",
+      "origin": "local original-recipe training",
+      "auroc": 0.8967751896236407,
+      "ap": 0.9157868543034691,
+      "checkpoint_sha256": "79b6d977734654436633ec4f074e491ae9eea29075c7c17dc353c2d0dd947771",
+      "default": {
+        "threshold": 0.0,
+        "confusion_matrix": [
+          [
+            2885,
+            419
+          ],
+          [
+            984,
+            2923
+          ]
+        ],
+        "accuracy": 0.8054361392317293,
+        "balanced_accuracy": 0.8106641878270269,
+        "predicted_positive_rate": 0.46345860490916657
+      },
+      "validation_threshold": {
+        "threshold": -0.47612136602401733,
+        "confusion_matrix": [
+          [
+            2753,
+            551
+          ],
+          [
+            804,
+            3103
+          ]
+        ],
+        "accuracy": 0.8120926362501734,
+        "balanced_accuracy": 0.8137239780712708,
+        "predicted_positive_rate": 0.5067258355290528
+      },
+      "source_id": "previous_seed_runs"
+    },
+    {
+      "seed": 43,
+      "model": "c",
+      "origin": "same-seed FP32 pretrain, quantized fine-tuning",
+      "source_id": "c_followup",
+      "checkpoint_sha256": "79d8c519cfe1a3d12a50b54019f7095b112e9250f1b8e3d130ac9067a9f997d6",
+      "auroc": 0.9005741696625725,
+      "ap": 0.9199996680746796,
+      "default": {
+        "threshold": 0.0,
+        "confusion_matrix": [
+          [
+            2979,
+            325
+          ],
+          [
+            968,
+            2939
+          ]
+        ],
+        "accuracy": 0.8206906115656636,
+        "balanced_accuracy": 0.8269369762845726,
+        "predicted_positive_rate": 0.45264179725419496
+      },
+      "validation_threshold": {
+        "threshold": -0.3053278774023056,
+        "confusion_matrix": [
+          [
+            2912,
+            392
+          ],
+          [
+            872,
+            3035
+          ]
+        ],
+        "accuracy": 0.8247122451809735,
+        "balanced_accuracy": 0.8290833922598726,
+        "predicted_positive_rate": 0.4752461517126612
+      },
+      "handoff": {
+        "seed": 43,
+        "pretrained_checkpoint_sha256": "968076ab629961f2f14efe29e07e3c7b7e253663d3de209865ed1305ad71f859",
+        "fresh_shared_observers_after_load": 34,
+        "fresh_total_observers_after_load": 35,
+        "first_batch_observers_updated": 35,
+        "first_batch_loss": 0.7987431883811951,
+        "classifier_initialization_sha256": "273936748188d0d23b269bec375ee9910769dd0714e460313ca9c87a357631f7",
+        "loaded_encoder_sha256": "e9d8e3f890a89bed4aa1cbd7d1a684de14704644e3d0cacbfb28919199295868",
+        "fp32_qap_initial_encoder_sha256": "2317b8c32179f4f76d6d2f20a56a657b4740563fbf7fcca2641c71d8ecb2b9a7",
+        "classifier_matches_fp32_qap": true,
+        "loaded_encoder_matches_fp32": true,
+        "fp32_qap_pretraining_split_equal": true
+      }
+    },
+    {
+      "seed": 44,
+      "model": "fp32",
+      "origin": "local original-recipe training",
+      "auroc": 0.9044370599488966,
+      "ap": 0.9231927735271178,
+      "checkpoint_sha256": "55afd1ed8730dfd4627f60c71ce822fc4cc384e723159751a1763f1840300a8c",
+      "default": {
+        "threshold": 0.0,
+        "confusion_matrix": [
+          [
+            2870,
+            434
+          ],
+          [
+            810,
+            3097
+          ]
+        ],
+        "accuracy": 0.8274857856053252,
+        "balanced_accuracy": 0.8306619366369793,
+        "predicted_positive_rate": 0.48966856191929
+      },
+      "validation_threshold": {
+        "threshold": -0.440993994474411,
+        "confusion_matrix": [
+          [
+            2686,
+            618
+          ],
+          [
+            655,
+            3252
+          ]
+        ],
+        "accuracy": 0.8234641519900152,
+        "balanced_accuracy": 0.822653091768608,
+        "predicted_positive_rate": 0.536680072112051
+      },
+      "source_id": "previous_seed_runs"
+    },
+    {
+      "seed": 44,
+      "model": "ptq",
+      "origin": "PTQ from same-seed FP32 parent",
+      "auroc": 0.8801252919729968,
+      "ap": 0.8949034099001418,
+      "checkpoint_sha256": "fd65fe4438b6f165d17f7198f72da64577b7cd0999bc61a3f386b7838c020b42",
+      "default": {
+        "threshold": 0.0,
+        "confusion_matrix": [
+          [
+            1386,
+            1918
+          ],
+          [
+            95,
+            3812
+          ]
+        ],
+        "accuracy": 0.7208431562890029,
+        "balanced_accuracy": 0.6975880969836843,
+        "predicted_positive_rate": 0.7946193315767577
+      },
+      "validation_threshold": {
+        "threshold": 0.6856276988983154,
+        "confusion_matrix": [
+          [
+            2293,
+            1011
+          ],
+          [
+            448,
+            3459
+          ]
+        ],
+        "accuracy": 0.7976702260435445,
+        "balanced_accuracy": 0.7896706398957356,
+        "predicted_positive_rate": 0.6198862848426016
+      },
+      "selected_percentile": 95.0,
+      "source_id": "previous_seed_runs"
+    },
+    {
+      "seed": 44,
+      "model": "qap_b",
+      "origin": "local original-recipe training",
+      "auroc": 0.9077395541992983,
+      "ap": 0.9238656972501404,
+      "checkpoint_sha256": "3ce37a17d06f2ec78e6dab7037cb5ec2167f72a4c45dd0bf3812386445af554b",
+      "default": {
+        "threshold": 0.0,
+        "confusion_matrix": [
+          [
+            2911,
+            393
+          ],
+          [
+            907,
+            3000
+          ]
+        ],
+        "accuracy": 0.8197198724171405,
+        "balanced_accuracy": 0.8244529205356252,
+        "predicted_positive_rate": 0.47053113299126337
+      },
+      "validation_threshold": {
+        "threshold": -0.12030531466007233,
+        "confusion_matrix": [
+          [
+            2887,
+            417
+          ],
+          [
+            851,
+            3056
+          ]
+        ],
+        "accuracy": 0.8241575370961032,
+        "balanced_accuracy": 0.8279875832847357,
+        "predicted_positive_rate": 0.4816252946886701
+      },
+      "source_id": "previous_seed_runs"
+    },
+    {
+      "seed": 44,
+      "model": "c",
+      "origin": "same-seed FP32 pretrain, quantized fine-tuning",
+      "source_id": "c_followup",
+      "checkpoint_sha256": "5e282fad6d0b26235df6991985dc0254ad97698cae2980bbc7cba64f6ed8ebb3",
+      "auroc": 0.9064710326222692,
+      "ap": 0.9265600871638413,
+      "default": {
+        "threshold": 0.0,
+        "confusion_matrix": [
+          [
+            2946,
+            358
+          ],
+          [
+            922,
+            2985
+          ]
+        ],
+        "accuracy": 0.8224934128414921,
+        "balanced_accuracy": 0.8278298992743515,
+        "predicted_positive_rate": 0.46359728193038413
+      },
+      "validation_threshold": {
+        "threshold": -0.8209458291530609,
+        "confusion_matrix": [
+          [
+            2718,
+            586
+          ],
+          [
+            665,
+            3242
+          ]
+        ],
+        "accuracy": 0.8265150464568021,
+        "balanced_accuracy": 0.8262159524935377,
+        "predicted_positive_rate": 0.5308556372209124
+      },
+      "handoff": {
+        "seed": 44,
+        "pretrained_checkpoint_sha256": "ea831e22d3772d5bc68b6ed6b033102b58ed82e1902cff050610f4d4fc9099c7",
+        "fresh_shared_observers_after_load": 34,
+        "fresh_total_observers_after_load": 35,
+        "first_batch_observers_updated": 35,
+        "first_batch_loss": 0.7018477916717529,
+        "classifier_initialization_sha256": "92ce12d49934168f0a4bc64ed655c439b3f177bafb5ed101f6708a8ecd3841de",
+        "loaded_encoder_sha256": "7e5999aaf5c0ca5036deb262a222e01f43327e0e669d69588bd31fa3d9b33ad0",
+        "fp32_qap_initial_encoder_sha256": "312b42f1ae06fa8f5196fa6483a9f5ad453710e45455e50d136d913c7ae076bf",
+        "classifier_matches_fp32_qap": true,
+        "loaded_encoder_matches_fp32": true,
+        "fp32_qap_pretraining_split_equal": true
+      }
+    }
+  ],
+  "three_seed_aggregate": {
+    "fp32": {
+      "n": 3,
+      "seeds": [
+        42,
+        43,
+        44
+      ],
+      "metrics": {
+        "auroc": {
+          "mean": 0.9044734177785242,
+          "sample_std": 0.009518030924693053
+        },
+        "ap": {
+          "mean": 0.9232533688690472,
+          "sample_std": 0.006067436841481046
+        },
+        "accuracy": {
+          "mean": 0.8276244626265428,
+          "sample_std": 0.0027068674658082686
+        },
+        "balanced_accuracy": {
+          "mean": 0.8307821266355601,
+          "sample_std": 0.001902784527521265
+        },
+        "validation_threshold_accuracy": {
+          "mean": 0.8262839180881061,
+          "sample_std": 0.004764384910038362
+        },
+        "validation_threshold_balanced_accuracy": {
+          "mean": 0.8275831024301284,
+          "sample_std": 0.0060436088032079964
+        }
+      }
+    },
+    "ptq": {
+      "n": 3,
+      "seeds": [
+        42,
+        43,
+        44
+      ],
+      "metrics": {
+        "auroc": {
+          "mean": 0.8706644062838724,
+          "sample_std": 0.008193510860198051
+        },
+        "ap": {
+          "mean": 0.8870906856343,
+          "sample_std": 0.0068375825092377865
+        },
+        "accuracy": {
+          "mean": 0.6571441778763926,
+          "sample_std": 0.10029487396649372
+        },
+        "balanced_accuracy": {
+          "mean": 0.6273834907152226,
+          "sample_std": 0.11070372596851899
+        },
+        "validation_threshold_accuracy": {
+          "mean": 0.7789488281791707,
+          "sample_std": 0.016437176201751533
+        },
+        "validation_threshold_balanced_accuracy": {
+          "mean": 0.7706188789476391,
+          "sample_std": 0.016788521897911877
+        }
+      }
+    },
+    "qap_b": {
+      "n": 3,
+      "seeds": [
+        42,
+        43,
+        44
+      ],
+      "metrics": {
+        "auroc": {
+          "mean": 0.9020787718201204,
+          "sample_std": 0.005490903078262597
+        },
+        "ap": {
+          "mean": 0.9193662686484876,
+          "sample_std": 0.004117249751175332
+        },
+        "accuracy": {
+          "mean": 0.8137567605047844,
+          "sample_std": 0.007427963800217504
+        },
+        "balanced_accuracy": {
+          "mean": 0.8183037863994036,
+          "sample_std": 0.0070141571556299595
+        },
+        "validation_threshold_accuracy": {
+          "mean": 0.8185642305736606,
+          "sample_std": 0.0060802138286105865
+        },
+        "validation_threshold_balanced_accuracy": {
+          "mean": 0.8211831819009071,
+          "sample_std": 0.007154312203396779
+        }
+      }
+    },
+    "c": {
+      "n": 3,
+      "seeds": [
+        42,
+        43,
+        44
+      ],
+      "metrics": {
+        "auroc": {
+          "mean": 0.8939829444594902,
+          "sample_std": 0.016784171027367116
+        },
+        "ap": {
+          "mean": 0.9147353219700619,
+          "sample_std": 0.015158762099297927
+        },
+        "accuracy": {
+          "mean": 0.8129246983774788,
+          "sample_std": 0.015039265606747315
+        },
+        "balanced_accuracy": {
+          "mean": 0.8177461404407932,
+          "sample_std": 0.01669825822797571
+        },
+        "validation_threshold_accuracy": {
+          "mean": 0.8156520131280913,
+          "sample_std": 0.017277583763624683
+        },
+        "validation_threshold_balanced_accuracy": {
+          "mean": 0.8179740740786647,
+          "sample_std": 0.016819844231696034
+        }
+      }
+    }
+  },
+  "qap_b_minus_c": {
+    "42_43_44": {
+      "seeds": [
+        42,
+        43,
+        44
+      ],
+      "metrics": {
+        "auroc": {
+          "by_seed": {
+            "42": 0.026817940543793384,
+            "43": -0.003798980038931865,
+            "44": 0.001268521577029058
+          },
+          "mean": 0.008095827360630192,
+          "sample_std": 0.016410607383315262
+        },
+        "ap": {
+          "by_seed": {
+            "42": 0.0208000437201884,
+            "43": -0.004212813771210522,
+            "44": -0.0026943899137008565
+          },
+          "mean": 0.004630946678425674,
+          "sample_std": 0.014023415315543455
+        },
+        "accuracy": {
+          "by_seed": {
+            "42": 0.020524199140202426,
+            "43": -0.015254472333934288,
+            "44": -0.002773540424351628
+          },
+          "mean": 0.0008320621273055032,
+          "sample_std": 0.01815980755498082
+        },
+        "balanced_accuracy": {
+          "by_seed": {
+            "42": 0.0213227050721031,
+            "43": -0.01627278845754576,
+            "44": -0.003376978738726222
+          },
+          "mean": 0.0005576459586103718,
+          "sample_std": 0.019104089537743892
+        },
+        "validation_threshold_accuracy": {
+          "by_seed": {
+            "42": 0.0237137706282069,
+            "43": -0.012619608930800164,
+            "44": -0.002357509360698895
+          },
+          "mean": 0.0029122174455692798,
+          "sample_std": 0.01873115407561008
+        },
+        "validation_threshold_balanced_accuracy": {
+          "by_seed": {
+            "42": 0.023215106864131085,
+            "43": -0.015359414188601761,
+            "44": 0.001771630791197909
+          },
+          "mean": 0.003209107822242411,
+          "sample_std": 0.019327394386544135
+        }
+      }
+    },
+    "43_44": {
+      "seeds": [
+        43,
+        44
+      ],
+      "metrics": {
+        "auroc": {
+          "by_seed": {
+            "43": -0.003798980038931865,
+            "44": 0.001268521577029058
+          },
+          "mean": -0.0012652292309514035,
+          "sample_std": 0.0035832647563197565
+        },
+        "ap": {
+          "by_seed": {
+            "43": -0.004212813771210522,
+            "44": -0.0026943899137008565
+          },
+          "mean": -0.003453601842455689,
+          "sample_std": 0.0010736878063605203
+        },
+        "accuracy": {
+          "by_seed": {
+            "43": -0.015254472333934288,
+            "44": -0.002773540424351628
+          },
+          "mean": -0.009014006379142958,
+          "sample_std": 0.008825351588793464
+        },
+        "balanced_accuracy": {
+          "by_seed": {
+            "43": -0.01627278845754576,
+            "44": -0.003376978738726222
+          },
+          "mean": -0.009824883598135992,
+          "sample_std": 0.009118714501068681
+        },
+        "validation_threshold_accuracy": {
+          "by_seed": {
+            "43": -0.012619608930800164,
+            "44": -0.002357509360698895
+          },
+          "mean": -0.007488559145749529,
+          "sample_std": 0.007256400195230161
+        },
+        "validation_threshold_balanced_accuracy": {
+          "by_seed": {
+            "43": -0.015359414188601761,
+            "44": 0.001771630791197909
+          },
+          "mean": -0.006793891698701926,
+          "sample_std": 0.012113478074028109
+        }
+      }
+    }
+  },
+  "pairing_scope": "Seed42 QAP B is a teammate-checkpoint full WSL replay; only seeds43/44 have verified matched initialization.",
+  "matched_seed43_44": {
+    "checks": [
+      {
+        "seed": 43,
+        "pretrained_checkpoint_sha256": "968076ab629961f2f14efe29e07e3c7b7e253663d3de209865ed1305ad71f859",
+        "fresh_shared_observers_after_load": 34,
+        "fresh_total_observers_after_load": 35,
+        "first_batch_observers_updated": 35,
+        "first_batch_loss": 0.7987431883811951,
+        "classifier_initialization_sha256": "273936748188d0d23b269bec375ee9910769dd0714e460313ca9c87a357631f7",
+        "loaded_encoder_sha256": "e9d8e3f890a89bed4aa1cbd7d1a684de14704644e3d0cacbfb28919199295868",
+        "fp32_qap_initial_encoder_sha256": "2317b8c32179f4f76d6d2f20a56a657b4740563fbf7fcca2641c71d8ecb2b9a7",
+        "classifier_matches_fp32_qap": true,
+        "loaded_encoder_matches_fp32": true,
+        "fp32_qap_pretraining_split_equal": true
+      },
+      {
+        "seed": 44,
+        "pretrained_checkpoint_sha256": "ea831e22d3772d5bc68b6ed6b033102b58ed82e1902cff050610f4d4fc9099c7",
+        "fresh_shared_observers_after_load": 34,
+        "fresh_total_observers_after_load": 35,
+        "first_batch_observers_updated": 35,
+        "first_batch_loss": 0.7018477916717529,
+        "classifier_initialization_sha256": "92ce12d49934168f0a4bc64ed655c439b3f177bafb5ed101f6708a8ecd3841de",
+        "loaded_encoder_sha256": "7e5999aaf5c0ca5036deb262a222e01f43327e0e669d69588bd31fa3d9b33ad0",
+        "fp32_qap_initial_encoder_sha256": "312b42f1ae06fa8f5196fa6483a9f5ad453710e45455e50d136d913c7ae076bf",
+        "classifier_matches_fp32_qap": true,
+        "loaded_encoder_matches_fp32": true,
+        "fp32_qap_pretraining_split_equal": true
+      }
+    ],
+    "aggregate": {
+      "fp32": {
+        "n": 2,
+        "seeds": [
+          43,
+          44
+        ],
+        "metrics": {
+          "auroc": {
+            "mean": 0.8997053388993865,
+            "sample_std": 0.006691664081583338
+          },
+          "ap": {
+            "mean": 0.9202046150832308,
+            "sample_std": 0.0042258941978646014
+          },
+          "accuracy": {
+            "mean": 0.8262376924143668,
+            "sample_std": 0.0017650703177586773
+          },
+          "balanced_accuracy": {
+            "mean": 0.8298021114086531,
+            "sample_std": 0.001215976499169337
+          },
+          "validation_threshold_accuracy": {
+            "mean": 0.823533490500624,
+            "sample_std": 9.80594620977261e-05
+          },
+          "validation_threshold_balanced_accuracy": {
+            "mean": 0.824211882069248,
+            "sample_std": 0.002204462384060707
+          }
+        }
+      },
+      "ptq": {
+        "n": 2,
+        "seeds": [
+          43,
+          44
+        ],
+        "metrics": {
+          "auroc": {
+            "mean": 0.8730538748666794,
+            "sample_std": 0.010000493976951285
+          },
+          "ap": {
+            "mean": 0.88855052624274,
+            "sample_std": 0.008984334228476139
+          },
+          "accuracy": {
+            "mean": 0.6311884620718347,
+            "sample_std": 0.12679088449233197
+          },
+          "balanced_accuracy": {
+            "mean": 0.5986777512083298,
+            "sample_std": 0.1398803524545187
+          },
+          "validation_threshold_accuracy": {
+            "mean": 0.7822770766883926,
+            "sample_std": 0.021769200585690405
+          },
+          "validation_threshold_balanced_accuracy": {
+            "mean": 0.7738304269793275,
+            "sample_std": 0.022401443937261862
+          }
+        }
+      },
+      "qap_b": {
+        "n": 2,
+        "seeds": [
+          43,
+          44
+        ],
+        "metrics": {
+          "auroc": {
+            "mean": 0.9022573719114695,
+            "sample_std": 0.007752976542849077
+          },
+          "ap": {
+            "mean": 0.9198262757768048,
+            "sample_std": 0.005712604631732445
+          },
+          "accuracy": {
+            "mean": 0.812578005824435,
+            "sample_std": 0.01010012459606359
+          },
+          "balanced_accuracy": {
+            "mean": 0.8175585541813261,
+            "sample_std": 0.00975010640221866
+          },
+          "validation_threshold_accuracy": {
+            "mean": 0.8181250866731382,
+            "sample_std": 0.008531173202500287
+          },
+          "validation_threshold_balanced_accuracy": {
+            "mean": 0.8208557806780032,
+            "sample_std": 0.010085891970608763
+          }
+        }
+      },
+      "c": {
+        "n": 2,
+        "seeds": [
+          43,
+          44
+        ],
+        "metrics": {
+          "auroc": {
+            "mean": 0.9035226011424209,
+            "sample_std": 0.004169711786529321
+          },
+          "ap": {
+            "mean": 0.9232798776192604,
+            "sample_std": 0.004638916825371924
+          },
+          "accuracy": {
+            "mean": 0.8215920122035778,
+            "sample_std": 0.0012747730072701251
+          },
+          "balanced_accuracy": {
+            "mean": 0.827383437779462,
+            "sample_std": 0.0006313919011499789
+          },
+          "validation_threshold_accuracy": {
+            "mean": 0.8256136458188879,
+            "sample_std": 0.0012747730072701251
+          },
+          "validation_threshold_balanced_accuracy": {
+            "mean": 0.8276496723767052,
+            "sample_std": 0.002027586103419346
+          }
+        }
+      }
+    }
+  },
+  "c_training_runs": [
+    {
+      "seed": 42,
+      "model": "c",
+      "stage": "finetune",
+      "epochs": 5,
+      "global_step": 8675,
+      "best_checkpoint_sha256": "2acc22bec2e2bbeafb71ceb24309448858d8ccc8575eb6332282c9c7ddc30755",
+      "best_validation_loss": 0.4047476649284363,
+      "optimizer": {
+        "optim": "AdamW",
+        "lr": 5e-05,
+        "betas": [
+          0.9,
+          0.999
+        ],
+        "weight_decay": 0.5
+      },
+      "curve_scalar_events": 16155,
+      "loss": [
+        {
+          "epoch": 1,
+          "train": 0.480815589427948,
+          "val": 0.43235576152801514
+        },
+        {
+          "epoch": 2,
+          "train": 0.3302959203720093,
+          "val": 0.43998122215270996
+        },
+        {
+          "epoch": 3,
+          "train": 0.3065185546875,
+          "val": 0.4047476649284363
+        },
+        {
+          "epoch": 4,
+          "train": 0.29446643590927124,
+          "val": 0.4199107885360718
+        },
+        {
+          "epoch": 5,
+          "train": 0.2906130254268646,
+          "val": 0.4158388078212738
+        }
+      ],
+      "source_id": "previous_seed_runs"
+    },
+    {
+      "seed": 43,
+      "model": "c",
+      "stage": "finetune",
+      "source_id": "c_followup",
+      "epochs": 5,
+      "global_step": 8675,
+      "best_checkpoint_sha256": "79d8c519cfe1a3d12a50b54019f7095b112e9250f1b8e3d130ac9067a9f997d6",
+      "best_validation_loss": 0.40636736154556274,
+      "best_epoch": 2,
+      "parent": {
+        "model": "fp32",
+        "seed": 43,
+        "stage": "pretrain",
+        "epochs": 10,
+        "global_step": 15610,
+        "checkpoint_sha256": "968076ab629961f2f14efe29e07e3c7b7e253663d3de209865ed1305ad71f859"
+      },
+      "optimizer": {
+        "optim": "AdamW",
+        "lr": 5e-05,
+        "betas": [
+          0.9,
+          0.999
+        ],
+        "weight_decay": 0.5
+      },
+      "curve_scalar_events": 16155,
+      "loss": [
+        {
+          "epoch": 1,
+          "train": 0.4642813801765442,
+          "val": 0.4215063154697418
+        },
+        {
+          "epoch": 2,
+          "train": 0.3165442645549774,
+          "val": 0.40636736154556274
+        },
+        {
+          "epoch": 3,
+          "train": 0.2929701507091522,
+          "val": 0.4372445046901703
+        },
+        {
+          "epoch": 4,
+          "train": 0.43531233072280884,
+          "val": 0.5088125467300415
+        },
+        {
+          "epoch": 5,
+          "train": 0.44131046533584595,
+          "val": 0.49938324093818665
+        }
+      ]
+    },
+    {
+      "seed": 44,
+      "model": "c",
+      "stage": "finetune",
+      "source_id": "c_followup",
+      "epochs": 5,
+      "global_step": 8675,
+      "best_checkpoint_sha256": "5e282fad6d0b26235df6991985dc0254ad97698cae2980bbc7cba64f6ed8ebb3",
+      "best_validation_loss": 0.4091430902481079,
+      "best_epoch": 2,
+      "parent": {
+        "model": "fp32",
+        "seed": 44,
+        "stage": "pretrain",
+        "epochs": 10,
+        "global_step": 15610,
+        "checkpoint_sha256": "ea831e22d3772d5bc68b6ed6b033102b58ed82e1902cff050610f4d4fc9099c7"
+      },
+      "optimizer": {
+        "optim": "AdamW",
+        "lr": 5e-05,
+        "betas": [
+          0.9,
+          0.999
+        ],
+        "weight_decay": 0.5
+      },
+      "curve_scalar_events": 16155,
+      "loss": [
+        {
+          "epoch": 1,
+          "train": 0.4396120309829712,
+          "val": 0.4130387008190155
+        },
+        {
+          "epoch": 2,
+          "train": 0.3000354468822479,
+          "val": 0.4091430902481079
+        },
+        {
+          "epoch": 3,
+          "train": 0.2818842828273773,
+          "val": 0.4139809012413025
+        },
+        {
+          "epoch": 4,
+          "train": 0.27244001626968384,
+          "val": 0.4171870946884155
+        },
+        {
+          "epoch": 5,
+          "train": 0.26742395758628845,
+          "val": 0.4148504436016083
+        }
+      ]
+    }
+  ],
+  "runtime": {
+    "gpu": "NVIDIA GeForce RTX 5060 Ti",
+    "matmul_precision": "high",
+    "tf32_matmul": true,
+    "tf32_cudnn": true,
+    "cudnn_benchmark": true,
+    "packages": {
+      "torch": "2.7.1+cu128",
+      "pytorch-lightning": "2.6.5",
+      "torchmetrics": "1.9.0",
+      "brevitas": "0.12.1",
+      "numpy": "1.26.4",
+      "h5py": "3.16.0"
+    }
+  },
+  "evaluation": {
+    "threshold_protocol": {
+      "score": "float64(logit_1) - float64(logit_0)",
+      "decision": "positive iff score > threshold; ties are class 0",
+      "default_threshold": 0.0,
+      "selection_split": "val",
+      "objective": "maximum validation balanced accuracy",
+      "candidates": "unique validation scores, 0, and nextafter(minimum score, -inf)",
+      "tie_break": [
+        "smallest absolute threshold",
+        "lowest threshold"
+      ],
+      "execution": "save all selections exclusively before reading any test capture"
+    },
+    "runtime": {
+      "seed": 42,
+      "batch_size": 32,
+      "workers": 4,
+      "precision": "32-true",
+      "matmul_precision": "high",
+      "tf32_matmul": true,
+      "tf32_cudnn": true,
+      "cudnn_benchmark": true,
+      "gpu": "NVIDIA GeForce RTX 5060 Ti",
+      "packages": {
+        "torch": "2.7.1+cu128",
+        "pytorch-lightning": "2.6.5",
+        "torchmetrics": "1.9.0",
+        "brevitas": "0.12.1",
+        "numpy": "1.26.4",
+        "h5py": "3.16.0"
+      }
+    }
+  },
+  "sources": {
+    "historical_seed42": {
+      "training": "results.json#/source",
+      "ptq": "results.json#/expanded_calibration/source",
+      "qap_b": "results.json: teammate checkpoint full WSL replay",
+      "results_sha256": "ed59ebcb2a1eafc9780d7e541c502981ab2d118753c838d392494a2cd910a1ac"
+    },
+    "previous_seed_runs": {
+      "repository": "https://github.com/berumottovv00/BioFoundation",
+      "scope": "New seed43/44 and C42 runs; historical seed42 provenance is in results.json",
+      "base_commit": "a2a4d441485efd8423c44b35d7448a30ccd44437",
+      "dirty": true,
+      "tracked_diff_sha256": "e119d55113d46eba13c61712ab9c5e5f8d7e52fc94594b476f3ecad2a4ed6161",
+      "reconstruction_patch": "source.patch",
+      "reconstruction_patch_sha256": "d9b844c3b982ba4392f2005ab3ddd170950616bf43ab63b22d8991017fe4d513",
+      "executed_files_sha256": {
+        "run_train.py": "a6fd5637001af987180126ef362b0005cdb2396730fff6b05c20f702e8e24aae",
+        "models/FEMBA_int8.py": "bd1cb7d988f59e7a48059677d4c7f9d0bdc0cd68f5e5374b7fb1aa881a92fbaf",
+        "models/femba_ptq.py": "5c286b4763abcd0a416b8cc3f54c4b76f24d5239e3b483b0343a70a7c9006847",
+        "models/femba_decoder.py": "87071914bc557816f309b4ed8db7c3c6e8ab6b2b0445339892f51a6fd5ef4363",
+        "tasks/pretrain_task.py": "42e6bb4b2c0b231e4debc87d55e1fbf4b0aaa3895e1bcd70f48bffde6eb1af2d",
+        "tasks/finetune_task.py": "3547367acf92ffbddabe2d60610e88207e527db8815940d985909e681f02b573",
+        "datasets/hdf5_dataset.py": "f0461d1d4a20fe9930d3fc5d35df791899ec33d2b401ab547d01c2cd8cf92c98",
+        "data_module/pretrain_data_module.py": "3e907ebde7ac71fadee4daeccbe8d74399972057aa9ec808e5fff97fd1dda155",
+        "data_module/finetune_data_module.py": "f5e15802a45ebc8af98165320cfb2daba4b62b742b1cf8f9cbbfba565672474a",
+        "ARES/tests/test_networks/test_25_femba_tiny_int8.py": "8c41e693f861515a2de15b7b5ca87fb864fb654d86dd63e625078701ba444cac",
+        "ARES/tests/test_networks/brevitas_custom_layers.py": "6d9202f4417817e741dc02a40e683d6bbbc74e89f966203f0335b0bf80b9d9e5",
+        "util/train_utils.py": "13eba63f611af0cf8d6b58efe28eb1e7be7909735e25f2ae460b74703aab9e9b"
+      },
+      "runners_sha256": {
+        "seed_queue.py": "bb0786c26025852aa9d960a51c8272af08c41d524f9a6b076d21c5462b303d94",
+        "train_stage.py": "04a3898f063fcdf36b987e80e04573e6fcd530a5189c9eee9bb288f7c55739b9",
+        "evaluate_one.py": "1f04e599a0b7ddf86d8ab76b67f163190626bb665201bf748a6e5180ad569f02",
+        "tools/calibrate.py": "66ee81ad3af7570a09ffeb351f129e6a34d9fb4abe6a5fbc7725b924ae466104",
+        "tools/evaluate.py": "c496449791d4d1f64c4fdbe73c5e02dfdecdcbd65c8efe0bb90032c19bf0169f",
+        "tools/export_curves.py": "ad5da9e50f325d0705891f56f6b7abb564fe0bbc7ee9c7973781a07b45eb6ffc",
+        "tools/sweep.py": "3483e9039485ed4d8acf3121a43629e0c466381aa6f2972866b67bce20c2624c",
+        "tools/test_calibrate.py": "64d04f507fa1156bdd0a69316bad339a45d23d32af5480698a817ccb4e1f705d",
+        "tools/test_evaluate.py": "8b1e2bfa6fc741f72519cd5ecba244c65c2dfc52b7b3f4198f36c0510ee30dd3",
+        "tools/test_export_curves.py": "2e7de84aad237c769e1958868be9634d5327854b22bba3f5643ac506957d2ade",
+        "tools/test_source_patch.py": "e0a1c1426a5b16a5949645e78768bf67d808377e2f40a0741572ae1a141df575",
+        "tools/test_sweep.py": "34c6192e15835eb9c30d2f990363be9f72875f56498f64cbdcc624456dfc5f8f",
+        "tools/test_threshold_control.py": "e412c5094036c44406f616ac879b87fb0d7783aa79303d7787ba5af64bbd4915",
+        "tools/threshold_control.py": "0de32020f9ce7f06446aa464721fd71b0f2ab7961d80f96179f99a73b88fdc4a"
+      }
+    },
+    "c_followup": {
+      "repository": "https://github.com/berumottovv00/BioFoundation",
+      "base_commit": "a2a4d441485efd8423c44b35d7448a30ccd44437",
+      "dirty": true,
+      "source_inventory_files": 319,
+      "source_inventory_sha256": "09fdc187f33b7448c007615929b6d657678ab4006f6a4be3a01667a14fb6419b",
+      "source_inventory_hash_encoding": "UTF-8 JSON, sorted keys, compact separators",
+      "reconstruction_patch": "source.patch",
+      "reconstruction_patch_sha256": "d9b844c3b982ba4392f2005ab3ddd170950616bf43ab63b22d8991017fe4d513",
+      "executed_files_sha256": {
+        "run_train.py": "a6fd5637001af987180126ef362b0005cdb2396730fff6b05c20f702e8e24aae",
+        "models/FEMBA_int8.py": "bd1cb7d988f59e7a48059677d4c7f9d0bdc0cd68f5e5374b7fb1aa881a92fbaf",
+        "models/femba_ptq.py": "5c286b4763abcd0a416b8cc3f54c4b76f24d5239e3b483b0343a70a7c9006847",
+        "models/femba_decoder.py": "87071914bc557816f309b4ed8db7c3c6e8ab6b2b0445339892f51a6fd5ef4363",
+        "tasks/pretrain_task.py": "42e6bb4b2c0b231e4debc87d55e1fbf4b0aaa3895e1bcd70f48bffde6eb1af2d",
+        "tasks/finetune_task.py": "3547367acf92ffbddabe2d60610e88207e527db8815940d985909e681f02b573",
+        "datasets/hdf5_dataset.py": "f0461d1d4a20fe9930d3fc5d35df791899ec33d2b401ab547d01c2cd8cf92c98",
+        "data_module/pretrain_data_module.py": "3e907ebde7ac71fadee4daeccbe8d74399972057aa9ec808e5fff97fd1dda155",
+        "data_module/finetune_data_module.py": "f5e15802a45ebc8af98165320cfb2daba4b62b742b1cf8f9cbbfba565672474a",
+        "ARES/tests/test_networks/test_25_femba_tiny_int8.py": "8c41e693f861515a2de15b7b5ca87fb864fb654d86dd63e625078701ba444cac",
+        "ARES/tests/test_networks/brevitas_custom_layers.py": "6d9202f4417817e741dc02a40e683d6bbbc74e89f966203f0335b0bf80b9d9e5",
+        "util/train_utils.py": "13eba63f611af0cf8d6b58efe28eb1e7be7909735e25f2ae460b74703aab9e9b"
+      },
+      "runners_sha256": {
+        "runners/calibrate.py": "66ee81ad3af7570a09ffeb351f129e6a34d9fb4abe6a5fbc7725b924ae466104",
+        "runners/evaluate.py": "c496449791d4d1f64c4fdbe73c5e02dfdecdcbd65c8efe0bb90032c19bf0169f",
+        "runners/evaluate_one.py": "afc8f056e4d58f6c26e87f3201c1edf04210bebd216b9ce5414ac66efe705f49",
+        "runners/export_curves.py": "ad5da9e50f325d0705891f56f6b7abb564fe0bbc7ee9c7973781a07b45eb6ffc",
+        "runners/source.patch": "d9b844c3b982ba4392f2005ab3ddd170950616bf43ab63b22d8991017fe4d513",
+        "runners/summarize_seeds.py": "274e34701c9e8587cf0bcb2fede24e92d980020770617239857e6d28c1e5d145",
+        "runners/sweep.py": "3483e9039485ed4d8acf3121a43629e0c466381aa6f2972866b67bce20c2624c",
+        "runners/test_calibrate.py": "64d04f507fa1156bdd0a69316bad339a45d23d32af5480698a817ccb4e1f705d",
+        "runners/test_evaluate.py": "8b1e2bfa6fc741f72519cd5ecba244c65c2dfc52b7b3f4198f36c0510ee30dd3",
+        "runners/test_export_curves.py": "2e7de84aad237c769e1958868be9634d5327854b22bba3f5643ac506957d2ade",
+        "runners/test_source_patch.py": "e0a1c1426a5b16a5949645e78768bf67d808377e2f40a0741572ae1a141df575",
+        "runners/test_summarize_seeds.py": "7f647bc3fbca2c7697abdf2af038a075cc1b8ce2d2b1a93b337b678e006d6bf1",
+        "runners/test_sweep.py": "34c6192e15835eb9c30d2f990363be9f72875f56498f64cbdcc624456dfc5f8f",
+        "runners/test_threshold_control.py": "e412c5094036c44406f616ac879b87fb0d7783aa79303d7787ba5af64bbd4915",
+        "runners/test_train_stage.py": "ea98f983e532f2d9c887b1eadcd9f5670a187c1876a79a771275ee91a5e17bbd",
+        "runners/threshold_control.py": "0de32020f9ce7f06446aa464721fd71b0f2ab7961d80f96179f99a73b88fdc4a",
+        "runners/train_stage.py": "0b43ec237a793c74988ddb22616c697b7584e7918ed6eb0e286240a0e0954893",
+        "c_followup_queue.py": "e27a9d383985848aaca9050f19330b52ba0888f564d630a710f8cb164b45ce4d",
+        "baseline-results.json": "ed59ebcb2a1eafc9780d7e541c502981ab2d118753c838d392494a2cd910a1ac",
+        "entrypoint-changes.patch": "65666978b4d3ee2d5b10301c46e2b0d287678c489a81d39daa9116cca0759309",
+        "deployment-manifest.json": "d78690d991a21dddd6c80c204ae14fab365ce34be97b7cfc7721fcd568ad745d"
+      },
+      "entrypoint_deployment": {
+        "base_commit": "c6ea48f12022bfbf42bd566cbf13383afb2b148d",
+        "dirty": true,
+        "patch_sha256": "65666978b4d3ee2d5b10301c46e2b0d287678c489a81d39daa9116cca0759309"
+      }
+    }
+  },
+  "verification": {
+    "completed_at": "2026-10-16T16:01:35.696056+00:00",
+    "stages": [
+      {
+        "stage": "seed43-c-finetune",
+        "started_at": "2026-10-16T14:11:57.753765+00:00",
+        "ended_at": "2026-10-16T15:05:36.297159+00:00",
+        "returncode": 0
+      },
+      {
+        "stage": "seed43-c-evaluation",
+        "started_at": "2026-10-16T15:05:37.123560+00:00",
+        "ended_at": "2026-10-16T15:06:23.030825+00:00",
+        "returncode": 0
+      },
+      {
+        "stage": "seed43-c-curves",
+        "started_at": "2026-10-16T15:06:27.026427+00:00",
+        "ended_at": "2026-10-16T15:06:27.835718+00:00",
+        "returncode": 0
+      },
+      {
+        "stage": "seed44-c-finetune",
+        "started_at": "2026-10-16T15:06:28.618562+00:00",
+        "ended_at": "2026-10-16T16:00:37.456749+00:00",
+        "returncode": 0
+      },
+      {
+        "stage": "seed44-c-evaluation",
+        "started_at": "2026-10-16T16:00:38.231006+00:00",
+        "ended_at": "2026-10-16T16:01:24.158765+00:00",
+        "returncode": 0
+      },
+      {
+        "stage": "seed44-c-curves",
+        "started_at": "2026-10-16T16:01:24.690856+00:00",
+        "ended_at": "2026-10-16T16:01:25.579507+00:00",
+        "returncode": 0
+      }
+    ],
+    "new_training_epochs": 10,
+    "new_pretraining_epochs": 0,
+    "new_training_steps": 17350,
+    "new_curve_scalar_events": 32310,
+    "nonfinite_curve_events": 0,
+    "independent_metrics": {
+      "captures": [
+        {
+          "seed": 43,
+          "split": "val",
+          "windows": 6426,
+          "npz_sha256": "df768b29a02c43561ae59a410479991f801fa0f02148f1707e9130bb541ee0e6",
+          "labels_sha256": "62418793cf4413a716f2fb80804405e5e28a3739bc8c93e2d4045fafa0b85138",
+          "auroc": 0.9034606305105671,
+          "ap": 0.9163499936725632,
+          "confusion_matrices_match": true
+        },
+        {
+          "seed": 43,
+          "split": "test",
+          "windows": 7211,
+          "npz_sha256": "ba2aa126a084c6ab2f74de67d723f3e1f07ae11be973251889eecddf737c764b",
+          "labels_sha256": "cc58b2cb9a7d2e63e60c93e8df3527b78c8f0907c98021679d3a0402be9eb177",
+          "auroc": 0.9005741696625725,
+          "ap": 0.9199996680746796,
+          "confusion_matrices_match": true
+        },
+        {
+          "seed": 44,
+          "split": "val",
+          "windows": 6426,
+          "npz_sha256": "0db1184312ff715e4080abcc3ffcad2e990371617b08369c594b6e5cc5b2b596",
+          "labels_sha256": "62418793cf4413a716f2fb80804405e5e28a3739bc8c93e2d4045fafa0b85138",
+          "auroc": 0.9010165723566096,
+          "ap": 0.9144463093906838,
+          "confusion_matrices_match": true
+        },
+        {
+          "seed": 44,
+          "split": "test",
+          "windows": 7211,
+          "npz_sha256": "47041bc40e2bdee4dc1d59eb3bbbc0b1fdb306fe1c1a80f0c2029cdee95d03ff",
+          "labels_sha256": "cc58b2cb9a7d2e63e60c93e8df3527b78c8f0907c98021679d3a0402be9eb177",
+          "auroc": 0.9064710326222694,
+          "ap": 0.9265600871638414,
+          "confusion_matrices_match": true
+        }
+      ],
+      "count": 4,
+      "sklearn_verified": true
+    },
+    "closeout": {
+      "time_utc": "2026-10-16T16:01:35.695881+00:00",
+      "gpu_utilization_percent": 0,
+      "gpu_used_mib": 53,
+      "gpu_free_mib": 15998
+    },
+    "training_and_evaluation_exited": true
+  },
+  "provenance": {
+    "normalization": "Selected fields only; raw bytes remain outside the repository. All original names are relative to the retained follow-up bundle.",
+    "previous_results_file": "seed-results.json",
+    "previous_results_sha256": "ec6a998f732625fd6ab140329249684ec9bb880ef82509e2d975c25d9e066b1f",
+    "summary_script_sha256": "a242b18f5df8b85a5b83ad18dab1b28fbe51357310db93c935ea54abf8dc3516",
+    "summary_dependency_sha256": "274e34701c9e8587cf0bcb2fede24e92d980020770617239857e6d28c1e5d145",
+    "original_records_sha256": {
+      "baseline-results.json": "ed59ebcb2a1eafc9780d7e541c502981ab2d118753c838d392494a2cd910a1ac",
+      "c-data-after.json": "2fdf17e3a9ed1879a5325238b22f710250931362087808b5452190c23c9d9516",
+      "c-data-before.json": "2fdf17e3a9ed1879a5325238b22f710250931362087808b5452190c23c9d9516",
+      "c-gpu-exit.json": "3ee048b8e54844723971bff79b0fe9c95e7bcaf5d5dd5dcfbf90ce6b4f3ed56b",
+      "c-protocol.json": "f7221ed4cc42abd16ae93395c02e9c7f5670c29bcd43b61af4c8fd2547a96d7c",
+      "c-results.json": "5cb271cee4bd434fa9f829b125884d96cd06da94348cfd985f29eee26c89f0ec",
+      "c-stages.jsonl": "12c2adc29b3f6b5fdbf4bad2bb7b4e8906ec89240a79a1c7de08b87a718546bb",
+      "c-status.json": "9089fcf8c149223b22213bcf590abc4631c6c57896a16817dd8ba5b913c0499d",
+      "c_followup_queue.py": "e27a9d383985848aaca9050f19330b52ba0888f564d630a710f8cb164b45ce4d",
+      "deployment-manifest.json": "d78690d991a21dddd6c80c204ae14fab365ce34be97b7cfc7721fcd568ad745d",
+      "entrypoint-changes.patch": "65666978b4d3ee2d5b10301c46e2b0d287678c489a81d39daa9116cca0759309",
+      "independent-metrics.json": "d94a65e587a6a1d02b2714c0cdd41c8440f4ad0c9a0ee77661969f6b96cce7bf",
+      "runners/calibrate.py": "66ee81ad3af7570a09ffeb351f129e6a34d9fb4abe6a5fbc7725b924ae466104",
+      "runners/evaluate.py": "c496449791d4d1f64c4fdbe73c5e02dfdecdcbd65c8efe0bb90032c19bf0169f",
+      "runners/evaluate_one.py": "afc8f056e4d58f6c26e87f3201c1edf04210bebd216b9ce5414ac66efe705f49",
+      "runners/export_curves.py": "ad5da9e50f325d0705891f56f6b7abb564fe0bbc7ee9c7973781a07b45eb6ffc",
+      "runners/source.patch": "d9b844c3b982ba4392f2005ab3ddd170950616bf43ab63b22d8991017fe4d513",
+      "runners/summarize_seeds.py": "274e34701c9e8587cf0bcb2fede24e92d980020770617239857e6d28c1e5d145",
+      "runners/sweep.py": "3483e9039485ed4d8acf3121a43629e0c466381aa6f2972866b67bce20c2624c",
+      "runners/test_calibrate.py": "64d04f507fa1156bdd0a69316bad339a45d23d32af5480698a817ccb4e1f705d",
+      "runners/test_evaluate.py": "8b1e2bfa6fc741f72519cd5ecba244c65c2dfc52b7b3f4198f36c0510ee30dd3",
+      "runners/test_export_curves.py": "2e7de84aad237c769e1958868be9634d5327854b22bba3f5643ac506957d2ade",
+      "runners/test_source_patch.py": "e0a1c1426a5b16a5949645e78768bf67d808377e2f40a0741572ae1a141df575",
+      "runners/test_summarize_seeds.py": "7f647bc3fbca2c7697abdf2af038a075cc1b8ce2d2b1a93b337b678e006d6bf1",
+      "runners/test_sweep.py": "34c6192e15835eb9c30d2f990363be9f72875f56498f64cbdcc624456dfc5f8f",
+      "runners/test_threshold_control.py": "e412c5094036c44406f616ac879b87fb0d7783aa79303d7787ba5af64bbd4915",
+      "runners/test_train_stage.py": "ea98f983e532f2d9c887b1eadcd9f5670a187c1876a79a771275ee91a5e17bbd",
+      "runners/threshold_control.py": "0de32020f9ce7f06446aa464721fd71b0f2ab7961d80f96179f99a73b88fdc4a",
+      "runners/train_stage.py": "0b43ec237a793c74988ddb22616c697b7584e7918ed6eb0e286240a0e0954893",
+      "seeds/43/c/evaluation/c_test.json": "033143a7561bc40e45c296a9c66213e4f3717c833b417e16fb711e27cd35d6e3",
+      "seeds/43/c/evaluation/c_test_logits.npz": "ba2aa126a084c6ab2f74de67d723f3e1f07ae11be973251889eecddf737c764b",
+      "seeds/43/c/evaluation/c_val.json": "b8960a1042247f16b1f18932599ba93708383e6f2299829faa073ff50a80b40c",
+      "seeds/43/c/evaluation/c_val_logits.npz": "df768b29a02c43561ae59a410479991f801fa0f02148f1707e9130bb541ee0e6",
+      "seeds/43/c/evaluation/protocol.json": "0c705dbaeafd64d036ce102479a79d3a77fd349655f8ac8216d80484cdd91668",
+      "seeds/43/c/evaluation/results.json": "c05f017b78e8ca3ba3d35864ed779370bffad1c2e4a69484b2a53b2cbd477ef1",
+      "seeds/43/c/evaluation/selection.json": "d1d4a0abc64e43e9fbdf47c10260411bae98fd0c89ad5c457d8cf28d0791bf2d",
+      "seeds/43/c/evaluation/test_started.json": "b1db617626c571cc9e9447cad58a6ce73d2c5ff748c61788cbb6b501ae998b03",
+      "seeds/43/c/finetune/complete.json": "04366300b6024f605e129af5eae6dc5f08c61d4a1cbc1f7da53568ddc3b33a39",
+      "seeds/43/c/finetune/curves/summary.json": "d8ceece9299f1c04e21d8774774772bf4412f3d0080145dc6ec6b097f07a5aef",
+      "seeds/43/c/finetune/epochs.jsonl": "cfb203858b7af9d2c24775fa512427654b9714a9ce322c4a8a1f61339835f8ab",
+      "seeds/43/c/finetune/first_training_batch.json": "a51d1452a5391e35f65edf0a5c9735ed4a6d611f8e5ab50907957bda5c6e7aaa",
+      "seeds/43/c/finetune/fit_summary.json": "134c519cb61771685289715972987434db479c1a89627bbe46601d578e3a2de7",
+      "seeds/43/c/finetune/initialization.json": "f54b55649313e721d0294203219aa2a67c3dcfc0352f437097ad2e7180ea1236",
+      "seeds/43/c/finetune/paired-c-handoff.json": "d749fddf5927643b161677c36aa84d2288d2c33268afa2c38de3c09bcfbac71f",
+      "seeds/43/c/finetune/pretrained_handoff.json": "196647c7256a7d5b49de3e978e63ef22ebab9e0263bed109ba78e724ec1547f0",
+      "seeds/43/c/finetune/run_manifest.json": "6e8c7ad2a6cd50f54ebe62966c3eac1fdbb3d642112b21dde82c59860139676e",
+      "seeds/44/c/evaluation/c_test.json": "5e572862a49b065f68ceca1cc638b0990694b0fe2caad9baa257ac63fdcf3935",
+      "seeds/44/c/evaluation/c_test_logits.npz": "47041bc40e2bdee4dc1d59eb3bbbc0b1fdb306fe1c1a80f0c2029cdee95d03ff",
+      "seeds/44/c/evaluation/c_val.json": "430abc8d5e74f1d906509358ca1d1f3bbcdad8456efa6d31c43802c2cdde3060",
+      "seeds/44/c/evaluation/c_val_logits.npz": "0db1184312ff715e4080abcc3ffcad2e990371617b08369c594b6e5cc5b2b596",
+      "seeds/44/c/evaluation/protocol.json": "cde5785145dda1259713d7512872066fabf813156314efb33b4ccabda875631b",
+      "seeds/44/c/evaluation/results.json": "07f7cbda351db775c1cac66fc928b6f09f723d54d4b5259815a5cee774d7d653",
+      "seeds/44/c/evaluation/selection.json": "d77d0f3d86e51d8104f2ea614e8a122d4425e3d04bf0803fbdd3355e8f47ddcd",
+      "seeds/44/c/evaluation/test_started.json": "0c170b6ed34d26a79b61dee56b311da5f908b11bdb02884b5f5641aca0967047",
+      "seeds/44/c/finetune/complete.json": "84a1c5b6a37c4d56241434834a3324ecf8b5500414b1ba2c30e0997863b939e5",
+      "seeds/44/c/finetune/curves/summary.json": "a3c355433638e078c1d4a87a20d031ee34b6d711d51b308d78375b1fbb777d9b",
+      "seeds/44/c/finetune/epochs.jsonl": "938e136f9defd0d0311897ee9c522277bf834fe181ba392582fe3a5240c96498",
+      "seeds/44/c/finetune/first_training_batch.json": "2995f6a0d8c024f53c228999ae397f580a23a695eef762b9967ff2f9f66fac2e",
+      "seeds/44/c/finetune/fit_summary.json": "63534b3545b9aa10e0ab9a407e87cdcaeae80adc80e396d10d11fcf9a5ed9f57",
+      "seeds/44/c/finetune/initialization.json": "61f4b610778259647b861fc07772b229a4826ede3db6d6853c59f3deb0b203d1",
+      "seeds/44/c/finetune/paired-c-handoff.json": "ab51ffc1de50a1ee34ddb23957238d72e3b65c930ff36f689d7e757b3fc5a18e",
+      "seeds/44/c/finetune/pretrained_handoff.json": "f20ff0c19b5890ad5fed4426fb74415d21cbf75eb209b63448a70b26062f92d6",
+      "seeds/44/c/finetune/run_manifest.json": "685803d83f79faac9583d525c9226b7684893855796f8905be498044a1ce6b7c"
+    }
+  }
+}

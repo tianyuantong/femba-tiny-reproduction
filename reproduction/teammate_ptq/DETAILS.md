@@ -1,4 +1,4 @@
-# 详细说明：上游仓库模型的 FP32、PTQ 与 QAP 对照
+# 详细说明：上游仓库模型的 FP32、PTQ、QAP B 与 C 对照
 
 [返回概览](README.md)
 
@@ -13,8 +13,9 @@
 | FP32 | 0.9045 ± 0.0095 | 0.9233 ± 0.0061 | 83.08 ± 0.19% | 82.76 ± 0.60% |
 | PTQ INT8 | 0.8707 ± 0.0082 | 0.8871 ± 0.0068 | 62.74 ± 11.07% | 77.06 ± 1.68% |
 | QAP B | 0.9021 ± 0.0055 | 0.9194 ± 0.0041 | 81.83 ± 0.70% | 82.12 ± 0.72% |
+| C | 0.8940 ± 0.0168 | 0.9147 ± 0.0152 | 81.77 ± 1.67% | 81.80 ± 1.68% |
 
-![逐种子 AUROC 与均值、样本标准差](curves/seed-auroc.svg)
+![四组逐种子 AUROC 与均值、样本标准差](curves/c-seed-auroc.svg)
 
 QAP B 在三个种子上都高于 PTQ，AUROC 同种子差值为 **0.0314 ± 0.0041**；PTQ 相对 FP32 为 **−0.0338 ± 0.0126**。QAP B 与 FP32 的平均 AUROC 相差 −0.0024。
 
@@ -23,13 +24,13 @@ seed42 的 QAP B 使用上游仓库作者提供的检查点在 WSL 复测；43/4
 <details>
 <summary>逐种子 AUROC 与 PTQ 档位</summary>
 
-| 种子 | FP32 | PTQ INT8 | QAP B | 验证集所选百分位 |
-| --- | ---: | ---: | ---: | ---: |
-| 42 | 0.914010 | 0.865885 | 0.901722 | 95 |
-| 43 | 0.894974 | 0.865982 | 0.896775 | 99.9 |
-| 44 | 0.904437 | 0.880125 | 0.907740 | 95 |
+| 种子 | FP32 | PTQ INT8 | QAP B | C | QAP B−C | PTQ 所选百分位 |
+| --- | ---: | ---: | ---: | ---: | ---: | ---: |
+| 42 | 0.914010 | 0.865885 | 0.901722 | 0.874904 | +0.026818 | 95 |
+| 43 | 0.894974 | 0.865982 | 0.896775 | 0.900574 | −0.003799 | 99.9 |
+| 44 | 0.904437 | 0.880125 | 0.907740 | 0.906471 | +0.001269 | 95 |
 
-[完整结果](seed-results.json) 包含 Accuracy、混淆矩阵、判正类比例、阈值、检查点哈希和配对差值。上游仓库原报告的 `z1` 指标保留在 [历史结果](results.json) 的 `teammate_report` 中。
+[完整结果](c-seed-results.json) 包含 Accuracy、混淆矩阵、判正类比例、阈值、检查点哈希和配对差值。[上一轮结果](seed-results.json) 保留原来的九个训练阶段和来源。上游仓库原报告的 `z1` 指标保留在 [历史结果](results.json) 的 `teammate_report` 中。
 
 </details>
 
@@ -45,15 +46,21 @@ seed42 扩展到七档后选出 P95：验证 AUROC 0.8479，测试 0.8659。此�
 
 ## C 组：FP32 预训练后量化微调
 
-C42 从原 FP32 预训练检查点开始，开启量化微调 5 轮。测试 AUROC **0.8749**，AP **0.8976**，Accuracy **79.56%**，默认 BAcc **79.85%**，验证阈值 BAcc **79.86%**。
+C42/43/44 各从已有同 seed 的 FP32 预训练检查点开始，仅开启量化微调 5 轮、8,675 步，batch 32。父预训练均已完成 10 轮、15,610 步；本次 C43/44 没有重跑预训练。
 
-34 个共享激活 observer 加载后保持未统计状态；加上新分类头共 35 个，首批均重新统计。输入 observer 的 buffer 从 1 更新为 88.9251。检查点仍按最低验证 loss 选出，第 3 轮最佳。C 目前保留 seed42 单独结果。
+三组均核对 34 个共享激活 observer 加载后保持未统计状态；加上新分类头共 35 个，首批均重新统计。43/44 分类头初值与各自 FP32/QAP B 相同，加载的 encoder 与同 seed FP32 父模型一致。最低原生验证 loss 选出的最佳轮次分别为第 3、2、2 轮。
+
+QAP B−C 的 AUROC 全三种子为 **+0.008096 ± 0.016411**；严格配对 43/44 为 **−0.001265 ± 0.003583**。对应验证阈值 BAcc 差为 **+0.321 ± 1.933** 和 **−0.679 ± 1.211** 个百分点。C43/44 补齐后，不支持此前仅依据 C42 将性能差距归因于量化预训练的判断。
 
 ## 训练曲线
 
 ![新增九个训练阶段的 loss](curves/seed-training-loss.svg)
 
 预训练为重建 loss，微调为分类交叉熵，各子图独立纵轴。43/44 的 FP32 与 QAP 均完成预训练 10 轮、微调 5 轮；C42 完成微调 5 轮，共 65 轮。微调 loss 的最优轮次随种子变化，所有组都按验证 loss 选检查点。
+
+![C42/43/44 的微调 loss](curves/c-training-loss.svg)
+
+C43/44 新增两次 5 轮微调，与上图九个阶段合计 75 轮。新队列六个 train/eval/curves 阶段均退出 0；完整验证/测试 logits 的独立复算及源码、数据、父检查点哈希验收通过，GPU 已释放。
 
 [seed42 预训练 loss/学习率](curves/pretrain-loss-lr.svg) · [seed42 微调 loss/学习率](curves/finetune-loss-lr.svg) · [原生 `z1` 验证 AUROC](curves/native-positive-logit-auroc.svg)。原生曲线保留训练时的指标口径；主表统一用 margin。
 
@@ -66,16 +73,17 @@ C42 从原 FP32 预训练检查点开始，开启量化微调 5 轮。测试 AUR
 | 输入 | 22×1,280；`(x+20)/(40+1e-8)`；HDF5 样本缓存关闭 |
 | 推理 | RTX 5060 Ti；batch 32；TF32 开启；INT8 使用原生 Brevitas 伪量化 |
 
-补丁增加量化开关和原生 PTQ 校准函数，保留模型结构；FP32 存档中的未统计激活状态在加载进量化模型后会重新统计。
+历史 `source.patch` 增加量化开关和原生 PTQ 校准函数；当前入口另用 `quantization-config.patch` 配置 W/A 位宽，默认保持 W8A8。两者依次应用于新副本，历史实验源码与结果的哈希不变。FP32 存档中的未统计激活状态在加载进量化模型后会重新统计。
 
 ```bash
 git clone https://github.com/berumottovv00/BioFoundation.git teammate-source
 git -C teammate-source checkout a2a4d441485efd8423c44b35d7448a30ccd44437
 git -C teammate-source apply /path/to/this-repo/reproduction/teammate_ptq/source.patch
+git -C teammate-source apply /path/to/this-repo/reproduction/teammate_ptq/quantization-config.patch
 ```
 
-[训练与评估命令](TRAINING.md) 包含 FP32、QAP B、C 和七档 PTQ 的入口。`export_curves.py` 从 TensorBoard 导出标量 CSV/SVG；`summarize_seeds.py` 从保留的阶段记录生成三种子统计及图表。
+[训练与评估命令](TRAINING.md) 包含 FP32、QAP B、C 和七档 PTQ 的入口。`export_curves.py` 从 TensorBoard 导出标量 CSV/SVG；`summarize_seeds.py` 保留上一轮三种子统计，`summarize_c_followup.py` 增量合并 C43/44，生成当前四组统计和图表。
 
-`seed-results.json` 记录实际执行文件和私有驱动哈希、重建补丁、严格重载与数据完整性检查。公开训练入口补充了参数保护，历史执行文件哈希单独保留。数据集、权重、逐样本输出和原始日志留在仓库外。
+`seed-results.json` 记录上一轮实际执行文件和私有驱动哈希；`c-seed-results.json` 单独记录 C43/44 的冻结源码、运行入口及原件哈希，并引用上一轮结果。实际执行源码为固定 base 加未提交补丁，保留 `dirty=true`；源文件、重建补丁与公开汇总脚本的哈希分别记录。数据集、权重、逐样本输出和原始日志留在仓库外。
 
-测试命令见 [训练文档](TRAINING.md#验证)。
+测试命令见 [训练文档](TRAINING.md#验证)；INT4 / 混合位宽命令、三值映射接口与共用结果规范见 [位宽配置](QUANTIZATION.md)。

@@ -14,7 +14,7 @@
 #* See the License for the specific language governing permissions and         *
 #* limitations under the License.                                              *
 #*----------------------------------------------------------------------------*
-"""Calibrate all native INT8 quantizers on 512 fixed training windows."""
+"""Calibrate native quantizers at independent W/A widths on 512 fixed windows."""
 
 import argparse
 import math
@@ -22,7 +22,8 @@ from numbers import Real
 from pathlib import Path
 import sys
 
-from evaluate import configure_runtime, load_task, quantization_contract, sha256, source_record, write_json
+from evaluate import (add_quantization_arguments, argument_quantization_config, configure_runtime,
+                      load_task, quantization_contract, sha256, source_record, write_json)
 
 
 def validate_percentile(percentile: float) -> float:
@@ -81,7 +82,16 @@ def batches(task, dataset, indices):
     from torch.utils.data import DataLoader, Subset
 
     for signals, _ in DataLoader(Subset(dataset, indices), batch_size=32, shuffle=False):
-        yield task.normalize_fct(signals.to("cuda"))
+        yield task.normalize_fct(signals.to(next(task.parameters()).device))
+
+
+def checkpoint_filename(config: dict) -> str:
+    from models.femba_quantization import quantization_config
+
+    config = quantization_config(**config)
+    if config["weight_bit_width"] == config["activation_bit_width"] == 8:
+        return "ptq_int8.ckpt"
+    return f"ptq_w{config['weight_bit_width']}a{config['activation_bit_width']}.ckpt"
 
 
 def save_reload(task, output: Path, parent_sha: str, recipe: dict, probe) -> dict:
@@ -89,15 +99,22 @@ def save_reload(task, output: Path, parent_sha: str, recipe: dict, probe) -> dic
     import torch
     from brevitas.proxy.quant_proxy import QuantProxyFromInjector
     from omegaconf import OmegaConf
+    from models.femba_quantization import model_quantization_config
 
     cfg = OmegaConf.create(dict(task.hparams))
+    config = model_quantization_config(task.model)
+    if recipe.get("quantization_config", config) != config:
+        raise ValueError("PTQ recipe configuration differs from the calibrated model")
+    recipe = {**recipe, "quantization_config": config}
     cfg.model.quantization_enabled = True
-    checkpoint = output / "ptq_int8.ckpt"
+    for key, value in config.items():
+        cfg.model[key] = value
+    checkpoint = output / checkpoint_filename(config)
     with checkpoint.open("xb") as stream:
         torch.save({"state_dict": task.state_dict(), "hyper_parameters": cfg,
                     "parent_sha256": parent_sha, "ptq_recipe": recipe,
                     "pytorch-lightning_version": pl.__version__}, stream)
-    restored, contract = load_task(checkpoint, "ptq_original")
+    restored, contract = load_task(checkpoint, "ptq_original", expected_config=config, device=probe.device)
     quantization_contract(task.model, enabled=True)
     def scales(model):
         return {name: proxy.scale().detach().cpu().clone() for name, proxy in model.named_modules()
@@ -105,12 +122,16 @@ def save_reload(task, output: Path, parent_sha: str, recipe: dict, probe) -> dic
     expected_scales, actual_scales = scales(task.model), scales(restored.model)
     assert len(expected_scales) == 53 and expected_scales.keys() == actual_scales.keys()
     assert all(torch.equal(value, actual_scales[name]) for name, value in expected_scales.items())
+    expected_float, restored_float = floating_parameters(task.model), floating_parameters(restored.model)
+    assert expected_float.keys() == restored_float.keys()
+    assert all(torch.equal(value, restored_float[name]) for name, value in expected_float.items())
     with torch.no_grad():
         mask = torch.zeros_like(probe, dtype=torch.bool)
         expected, actual = task.model(probe, mask)[0], restored.model(probe, mask)[0]
         assert torch.isfinite(expected).all() and torch.isfinite(actual).all()
         torch.testing.assert_close(actual, expected, rtol=0, atol=0)
-    return {"checkpoint_sha256": sha256(checkpoint), "strict_reload_exact": True,
+    return {"checkpoint_sha256": sha256(checkpoint), "checkpoint_file": checkpoint.name,
+            "strict_reload_exact": True, "floating_parameters_reload_exact": True,
             "all_53_scales_exact": True, "quantization": contract}
 
 
@@ -121,12 +142,13 @@ def run(args) -> dict:
     source = args.source.resolve()
     sys.path.insert(0, str(source))
     from datasets.hdf5_dataset import HDF5Loader
-    from models.femba_ptq import calibrate_int8
+    from models.femba_ptq import calibrate_quantized
 
+    config = argument_quantization_config(args)
     args.output.mkdir(parents=True, exist_ok=False)
     runtime, provenance = configure_runtime(), source_record(source)
     parent_sha, train_sha = sha256(args.checkpoint), sha256(args.data / "train.h5")
-    task, _ = load_task(args.checkpoint, "fp32")
+    task, _ = load_task(args.checkpoint, "fp32", target_config=config)
     initial = floating_parameters(task.model)
     dataset = HDF5Loader(str(args.data / "train.h5"), use_cache=False)
     try:
@@ -135,9 +157,10 @@ def run(args) -> dict:
         manifest_path = args.output / "calibration_indices.json"
         write_json(manifest_path, manifest)
         recipe = {"activation_percentile": percentile, "seed": 42, "batch_size": 32,
-                  "windows": 512, "indices_sha256": sha256(manifest_path)}
+                  "windows": 512, "indices_sha256": sha256(manifest_path),
+                  "quantization_config": config}
         set_percentile(task.model, percentile)
-        report = calibrate_int8(task.model, batches(task, dataset, indices))
+        report = calibrate_quantized(task.model, batches(task, dataset, indices))
         assert report["num_batches"] == 16
         current = floating_parameters(task.model)
         assert current.keys() == initial.keys()
@@ -160,6 +183,7 @@ def main() -> None:
     for name in ("source", "data", "checkpoint", "output"):
         parser.add_argument("--" + name, required=True, type=Path)
     parser.add_argument("--percentile", type=float, default=99.999)
+    add_quantization_arguments(parser)
     args = parser.parse_args()
     run(args)
     print("CALIBRATION_COMPLETE", args.output.name)

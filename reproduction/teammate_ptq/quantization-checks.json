@@ -1,0 +1,81 @@
+{
+  "schema_version": 1,
+  "status": "pass",
+  "scope": "CPU contracts; no new low-bit TUAR accuracy run",
+  "generated_utc": "2026-10-17T05:47:16.389809+00:00",
+  "command": "FEMBA_SOURCE=\"$teammate_source\" FEMBA_DATA_ROOT=\"$data\" python -m unittest discover -s \"$study\" -p \"test_*.py\" -v",
+  "suite": {
+    "run": 68,
+    "passed": 67,
+    "failures": 0,
+    "errors": 0,
+    "skipped": [
+      {
+        "test": "test_export_curves.FitCurveTest.test_real_tensorboard_export_preserves_duplicate_scalar_and_tensor_events",
+        "reason": "requires TensorBoard"
+      }
+    ]
+  },
+  "environment": {
+    "device": "cpu",
+    "python": "3.12.13",
+    "packages": {
+      "torch": "2.7.1",
+      "brevitas": "0.12.1",
+      "pytorch-lightning": "2.5.5",
+      "torchmetrics": "1.8.2",
+      "numpy": "1.26.4",
+      "hydra-core": "1.3.5",
+      "h5py": "3.16.0"
+    }
+  },
+  "source": {
+    "base_commit": "a2a4d441485efd8423c44b35d7448a30ccd44437",
+    "dirty": true,
+    "reconstruction": "base + source.patch + quantization-config.patch",
+    "patch_sha256": {
+      "source.patch": "d9b844c3b982ba4392f2005ab3ddd170950616bf43ab63b22d8991017fe4d513",
+      "quantization-config.patch": "1dbabfc2ceba0324d71c8193076379572626ba74e5a5ec1bf2899d977285af18"
+    },
+    "executed_source_sha256": {
+      "models/FEMBA_int8.py": "0be91c15c8532c1b35f6bef38382ff37a3c1d9646ce0164ac1bb330c77e338f4",
+      "models/femba_ptq.py": "609cf70ec2ba0dc01692531d7af1b40974acc53c3b706b4988eb01db6447ecf0",
+      "models/femba_quantization.py": "8503352735f2327ff6d40a62e6cb5ff9dd54ff00642c9b7af7866efb77cf5ed9",
+      "models/femba_ternary.py": "a011ffc503292decff0c3f0defb9d09fc463ad8053f0f89aef383d77998971ed",
+      "ARES/tests/test_networks/test_25_femba_tiny_int8.py": "9b634ff24aab47b8dd0e59c666ebe789fe14172b3e7b0ca6dd9d579cc36652c4",
+      "ARES/tests/test_networks/brevitas_custom_layers.py": "a32920e2c32edfb0fe685fd6dd843066fe63290e0ba049bbb449c5c308756392"
+    },
+    "published_patch_rebuild_exact": true
+  },
+  "runner_sha256": {
+    "evaluate.py": "a7cec7e4ca799ffacd4d360dc12f2a855a039dc5bce9d0d9657381b702859a17",
+    "evaluate_one.py": "ada45f9a5094b4213410d2cbc3ff6f864345dc028f5681a2d339f33d3ae7c32d",
+    "calibrate.py": "37e51b58b9a38be680470f4e8894ead8288f1e5cabe8f8f8e8bbd62e20f5b414",
+    "sweep.py": "e07ee9e44ada824c9ea09bf5e7a8b5cd4d4eb48427f8a8bdb6b3d5512bd9f375",
+    "train_stage.py": "d78de2134e2cd721da7c6cf3a02ae6a8fd9f320a9d27a1b9d4cba6019cbd179e",
+    "source_fixture.py": "2a85d8537c49f7d2e237725f933068c8524f04940e9d24a26517d6de728bc648"
+  },
+  "test_sha256": {
+    "test_calibrate.py": "5a7ebe19f3f9816efb66a73a07cd22058d9c992604cbb1d3ffc90f860da3662f",
+    "test_checkpoint_config.py": "de33455c6acb3316231fa9c8d46533954eb89eeb7df3576614e7ad134d0244cf",
+    "test_evaluate.py": "8b1e2bfa6fc741f72519cd5ecba244c65c2dfc52b7b3f4198f36c0510ee30dd3",
+    "test_export_curves.py": "2e7de84aad237c769e1958868be9634d5327854b22bba3f5643ac506957d2ade",
+    "test_quantization_config.py": "e2b953bbeae34ac6ef1aa383349f75e5b6c1a8331691fd8262a36c521e589f8d",
+    "test_source_patch.py": "e0a1c1426a5b16a5949645e78768bf67d808377e2f40a0741572ae1a141df575",
+    "test_summarize_c_followup.py": "033d590b65d4b411d29e865b8d0f6c3af243c2daec788de5597c07e4a938febd",
+    "test_summarize_seeds.py": "7f647bc3fbca2c7697abdf2af038a075cc1b8ce2d2b1a93b337b678e006d6bf1",
+    "test_sweep.py": "950d432fcfeb2d9fb86b0b1646f19c2dc6c4ed479994c3739fe7c5d3cdc482e6",
+    "test_threshold_control.py": "e412c5094036c44406f616ac879b87fb0d7783aa79303d7787ba5af64bbd4915",
+    "test_train_stage.py": "3692a45c7b6b7cd7d93dc1af4bdff459f848b34795816a892b8064cff73730bb"
+  },
+  "verified_contracts": [
+    "Historical versus default/explicit W8A8 classifier and pretrainer: exact tensor state, outputs and construction RNG.",
+    "W4A8/W8A4/W4A4 actual role bit widths; classifier 35A/18W; four FP32 depthwise weights and dt_rank 96 unchanged.",
+    "Disabled quantization preserves float parameters, RNG and outputs.",
+    "Legacy missing configuration defaults to W8A8; strict reload and mismatched configuration/metadata rejection.",
+    "Fresh FP32 pretrain handoff retains 34 shared observers plus fresh classifier observer; all 35 update on first batch.",
+    "PTQ fixed 512-index manifest and all 16 batch32 batches preserve order.",
+    "Synthetic shortened-sequence PTQ fixture preserves float parameters; all 53 scales and logits reload exactly.",
+    "Explicit ternary {-1,0,1} levels, inclusive zero boundary, positive constant scale, identity STE and JSON round trip."
+  ]
+}
