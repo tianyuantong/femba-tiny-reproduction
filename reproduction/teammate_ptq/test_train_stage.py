@@ -226,7 +226,10 @@ class TrainingAuditFixtures(unittest.TestCase):
     def arguments(self, root, group, stage, seed=43):
         return SimpleNamespace(source=self.source, data_root=self.data_root, output=Path(root),
                                group=group, stage=stage, seed=seed,
-                               pretrained=Path(root) / "pretrain.ckpt", pretrained_sha256="a" * 64)
+                               pretrained=Path(root) / "pretrain.ckpt", pretrained_sha256="a" * 64,
+                               max_epochs=10 if stage == "pretrain" else 5, save_every_epoch=False,
+                               split_table={s: {"windows": w, "bytes": b, "sha256": d}
+                                            for s, (w, b, d) in train_stage.SPLITS.items()})
 
     def config(self, args):
         cfg, _ = train_stage.compose_config(args)
