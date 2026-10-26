@@ -9,7 +9,7 @@ set -u
 STUDY=${STUDY:-/root/work/femba-formal-study}
 ART=${ART:-/root/work/femba-artifacts/formal-20261025}
 QUEUE=${QUEUE:-./finetune_queue.sh}
-TASKS="tuar tuab tusl0 tusl1 tusl2 tusl3"
+TASKS=${TASKS:-tuar tuab tusl0-v2 tusl1-v2 tusl2-v2 tusl3-v2}
 # seed:bits:scheme; ternary seed 42 follows seed 43 int8 so its QAP stages find the
 # ternary pretraining (queued after all uniform pretraining) already complete
 BATCHES="42:4:uniform 43:8:uniform 42:2:ternary 43:4:uniform 44:8:uniform 44:4:uniform 43:2:ternary 44:2:ternary"
@@ -25,6 +25,6 @@ for batch in $BATCHES; do
   echo "[$(date '+%F %T')] start seed$seed $setting"
   (cd "$STUDY" && SEED=$seed BITS=$bits SCHEME=$scheme TASKS="$TASKS" LOG_SUFFIX=-all \
       nohup "$QUEUE" > "$ART/logs/finetune-queue-seed$seed-$setting-all-v2.log" 2>&1 &)
-  previous=$ART/seed$seed/qap_$setting/finetune-tusl3/complete.json
+  previous=$ART/seed$seed/qap_$setting/finetune-${TASKS##* }/complete.json
 done
 echo "[$(date '+%F %T')] LAUNCH_BATCHES_DONE"

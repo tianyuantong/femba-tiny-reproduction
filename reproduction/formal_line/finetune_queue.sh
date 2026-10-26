@@ -3,9 +3,11 @@
 # on the formal line (TUAR, 1/5-subject TUAB and the four TUSL event folds; full
 # fine-tuning, 5 epochs; TUSL folds TUSL_EPOCHS=20, since 5 epochs over ~400
 # windows are 60-70 steps and leave the classifier near uniform).
-#   usage: SEED=42 BITS=8 SCHEME=uniform TASKS="tuar tuab tusl0 tusl1 tusl2 tusl3" ./finetune_queue.sh
-# TUSL folds (tusl<k>) are three-class: evaluation is event-level
-# (evaluate_events.py) and the PTQ percentile is chosen by validation macro AUROC.
+#   usage: SEED=42 BITS=8 SCHEME=uniform TASKS="tuar tuab tusl0-v2 tusl1-v2 tusl2-v2 tusl3-v2" ./finetune_queue.sh
+# TUSL folds follow protocol v2 (tusl<k>-v2, validation from resplit_validation.py;
+# protocol v1 tusl<k> results came from the previous revision of this script).
+# They are three-class: evaluation is event-level (evaluate_events.py), PTQ calibrates
+# on 384 training windows and its percentile is chosen by validation macro AUROC.
 # Waits for the seed's FP32 pretraining (and the matching QAP pretraining) to
 # complete, then runs: FP32 fine-tune, C fine-tune, QAP fine-tune, PTQ sweep on
 # the FP32 fine-tuned checkpoint, and evaluation of the three fine-tuned models.
@@ -14,7 +16,8 @@ PY=${PY:-/root/envs/femba/bin/python}
 STUDY=${STUDY:-/root/work/femba-formal-study}
 SRC=${SRC:-/root/work/femba-formal-source}
 DATA_ROOT=${DATA_ROOT:-/root/work/femba-artifacts/subject-data-20261025}
-TUSL_ROOT=${TUSL_ROOT:-/root/work/femba-artifacts/tusl-events-20261025}
+TUSL_ROOT=${TUSL_ROOT:-/root/work/femba-artifacts/tusl-events-20261026-v2}
+TUSL_CALIBRATION_WINDOWS=${TUSL_CALIBRATION_WINDOWS:-384}
 PERCENTILES="99.999 99.99 99.9 99 98 95 90"
 TUSL_EPOCHS=${TUSL_EPOCHS:-20}
 ART=${ART:-/root/work/femba-artifacts/formal-20261025}
@@ -42,11 +45,11 @@ wait_shared() {  # wait_shared <out> <marker>
 data_dir() {
   case "$1" in
     tuab) echo "$DATA_ROOT/tuab-ft" ;;
-    tusl[0-9]) echo "$TUSL_ROOT/fold${1#tusl}" ;;
+    tusl[0-9]-v2) local fold=${1#tusl}; echo "$TUSL_ROOT/fold${fold%-v2}" ;;
     *) echo "$DATA_ROOT/$1" ;;
   esac
 }
-is_tusl() { case "$1" in tusl[0-9]) return 0 ;; *) return 1 ;; esac; }
+is_tusl() { case "$1" in tusl[0-9]-v2) return 0 ;; *) return 1 ;; esac; }
 metric() { "$PY" -c 'import json,sys; print(json.load(open(sys.argv[1]))["splits"]["val"]["events"]["macro_auroc"])' "$1"; }
 stage() {  # stage <out> <group> <parent complete.json> <task> [quant args...]
   local out=$1 group=$2 parent=$3 task=$4; shift 4
@@ -85,7 +88,7 @@ ptq_tusl() {  # ptq_tusl <out> <task>: seven percentiles, validation macro AUROC
     if [ ! -f "$d/val/results.json" ]; then
       rm -rf "$d"; echo "[$(date '+%F %T')] ptq $task percentile $p"
       (cd "$STUDY" && "$PY" calibrate.py --source "$SRC" --data "$(data_dir "$task")" --checkpoint "$(field "$fp32" best_checkpoint)" \
-          --percentile "$p" --calibration-windows 400 --num-classes 3 --classification-type mcc --output "$d" "${quant[@]}" \
+          --percentile "$p" --calibration-windows "$TUSL_CALIBRATION_WINDOWS" --num-classes 3 --classification-type mcc --output "$d" "${quant[@]}" \
         && "$PY" evaluate_events.py --source "$SRC" --data "$(data_dir "$task")" --checkpoint "$(ls "$d"/ptq_*.ckpt | head -1)" \
           --checkpoint-sha256 "$(field "$d/results.json" checkpoint_sha256)" --output "$d/val" --model-kind ptq --splits val) >> "$log" 2>&1 || return 1
     fi
