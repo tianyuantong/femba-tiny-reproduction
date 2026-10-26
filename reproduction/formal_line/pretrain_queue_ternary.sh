@@ -1,13 +1,22 @@
 #!/bin/bash
-# Ternary-weight (TWN, A8) QAP pretraining for seeds 42/43/44, after the main queue.
+# Ternary-weight (TWN, A8) QAP pretraining for seeds 42/43/44, after the main queue and only
+# once ternary_smoke.sh has passed on tiny data; its verdict is $SMOKE/PASSED or $SMOKE/FAILED.
 set -u
 PY=${PY:-/root/envs/femba/bin/python}
 STUDY=${STUDY:-/root/work/femba-formal-study}
 SRC=${SRC:-/root/work/femba-formal-source}
 DATA=${DATA:-/root/work/femba-artifacts/subject-data-20261025/tuab}
 ART=${ART:-/root/work/femba-artifacts/formal-20261025}
+SMOKE=${SMOKE:-/root/work/femba-artifacts/ternary-smoke}
+SMOKE_QUEUE=${SMOKE_QUEUE:-./finetune_queue.sh}
 WAIT_PID=${WAIT_PID:-}
 [ -n "$WAIT_PID" ] && while kill -0 "$WAIT_PID" 2>/dev/null; do sleep 60; done
+if [ ! -f "$SMOKE/PASSED" ] && [ ! -f "$SMOKE/FAILED" ]; then
+  echo "[$(date '+%F %T')] ternary smoke test -> $SMOKE"
+  (cd "$STUDY" && OUT="$SMOKE" QUEUE="$SMOKE_QUEUE" ./ternary_smoke.sh) > "$ART/logs/ternary-smoke.log" 2>&1
+  [ -f "$SMOKE/PASSED" ] || [ -f "$SMOKE/FAILED" ] || { mkdir -p "$SMOKE"; echo '{"failed": "no verdict"}' > "$SMOKE/FAILED"; }
+fi
+[ -f "$SMOKE/PASSED" ] || { echo "[$(date '+%F %T')] ternary smoke test failed, see $SMOKE; QUEUE_STOPPED"; exit 1; }
 for seed in 42 43 44; do
   out=$ART/seed$seed/qap_ternary_a8/pretrain
   if [ -f "$out/complete.json" ]; then echo "[$(date '+%F %T')] skip ternary seed$seed"; continue; fi
