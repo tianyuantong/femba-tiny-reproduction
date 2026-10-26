@@ -19,7 +19,7 @@
 - 环境：[requirements-formal.txt](requirements-formal.txt)（Python 3.11.16，torch 2.7.1 + CUDA 12.8，Brevitas 0.12.1）。
 - 数据：TUAR、TUAB 用 [run_subject_data.sh](../subject_split/run_subject_data.sh) 生成；TUSL 用 [make_tusl_events.py](../tusl_events/make_tusl_events.py)（v1）再经 `resplit_validation.py`（v2）。每个数据目录含 `train/val/test.h5`、`data-manifest.json` 和 `<split>-manifest.json`，运行脚本按清单核对文件大小、窗数和类别数。
 - 运行目录 `STUDY`：队列在这个目录里调用各个脚本，所以先把它们拷到一起：`cp ../teammate_ptq/*.py ../tusl_events/evaluate_events.py ./*.sh ./*.py "$STUDY"/`。
-- 路径：除 `pretrain_queue.sh` 外，脚本开头的默认路径都能用环境变量覆盖（`PY`、`STUDY`、`SRC`、`DATA_ROOT`、`TUSL_ROOT`、`ART`）。
+- 路径：除 `pretrain_queue.sh` 外，脚本开头的默认路径都能用环境变量覆盖（`PY`、`STUDY`、`SRC`、`DATA_ROOT`、`TUSL_ROOT`、`ART`）；三值预训练还读 `DATA`（TUAB 预训练语料目录）和 `SMOKE`（冒烟测试目录），冒烟测试还读 `FORMAL_ART`（放 FP32 父目录的 `$ART`）。
 
 ## 运行
 
