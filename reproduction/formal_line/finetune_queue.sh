@@ -110,6 +110,7 @@ ptq_tusl() {  # ptq_tusl <out> <task>: seven percentiles, validation macro AUROC
 
 fp32_pre=$ART/seed$SEED/fp32/pretrain/complete.json
 qap_pre=$ART/seed$SEED/$arm/pretrain/complete.json
+if [ "$FP32_PARENTS" = given ] && [ ! -f "$fp32_pre" ]; then echo "[$(date '+%F %T')] missing FP32 parent $fp32_pre"; exit 2; fi
 echo "[$(date '+%F %T')] waiting for $fp32_pre"; wait_for "$fp32_pre"
 for task in $TASKS; do
   stage "$ART/seed$SEED/fp32/finetune-$task" fp32 "$fp32_pre" "$task" || exit 2

@@ -1,9 +1,9 @@
 # Environment of the formal-line runs (WSL2 Ubuntu, glibc 2.39, Python 3.11.16, RTX 5060 Ti, driver 591.86).
-# torch/torchvision/torchaudio: --extra-index-url https://download.pytorch.org/whl/cu128
-# mamba-ssm: prebuilt release wheel mamba_ssm-2.3.2.post1+cu12torch2.7cxx11abiTRUE-cp311-cp311-linux_x86_64.whl
-#   (sha256 62f046ec823624504066b077976730441d79ecab0045e46fd06167334421a3d1)
+# Install: pip install --extra-index-url https://download.pytorch.org/whl/cu128 -r requirements-formal.txt
 # torch wheel torch-2.7.1+cu128-cp311-cp311-manylinux_2_28_x86_64.whl
 #   (sha256 c301dc280458afd95450af794924c98fe07522dd148ff384739b810e3e3179f2)
+# mamba-ssm 2.3.2.post1 came from a prebuilt wheel in the run environment, but the quantized
+# FEMBA model is pure PyTorch and never imports it, so its line is commented out below.
 absl-py==2.5.0
 accelerate==1.14.0
 aiohappyeyeballs==2.7.1
@@ -54,7 +54,7 @@ lightning==2.6.5
 lightning-utilities==0.15.3
 line_profiler==5.0.2
 lmdb==2.3.0
-mamba-ssm==2.3.2.post1
+# mamba-ssm==2.3.2.post1
 Markdown==3.10.3
 markdown-it-py==4.2.0
 MarkupSafe==3.0.3

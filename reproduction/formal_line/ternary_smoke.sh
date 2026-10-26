@@ -30,7 +30,7 @@ echo "[$(date '+%F %T')] ternary QAP pretraining, one epoch"
     --output "$art/seed42/qap_ternary_a8/pretrain" --group qap_b --stage pretrain --seed 42 --max-epochs 1 \
     --weight-bit-width 2 --weight-quant-scheme ternary --activation-bit-width 8) > "$art/logs/pretrain.log" 2>&1 || fail "ternary pretraining"
 echo "[$(date '+%F %T')] fine-tuning queue, ternary, tuar and tusl0-v2"
-(cd "$STUDY" && ART="$art" DATA_ROOT="$OUT/data" TUSL_ROOT="$TUSL_ROOT" TUSL_EPOCHS=1 SEED=42 BITS=2 SCHEME=ternary \
+(cd "$STUDY" && ART="$art" DATA_ROOT="$OUT/data" TUSL_ROOT="$TUSL_ROOT" TUSL_EPOCHS=1 FP32_PARENTS=run SEED=42 BITS=2 SCHEME=ternary \
     TASKS="tuar tusl0-v2" "$QUEUE") > "$art/logs/queue.log" 2>&1 || fail "fine-tuning queue"
 grep -q "FINETUNE_QUEUE_DONE" "$art/logs/queue.log" || fail "fine-tuning queue did not finish"
 "$PY" - "$art/seed42" <<'EOF' || fail "quantized evaluations are not ternary"

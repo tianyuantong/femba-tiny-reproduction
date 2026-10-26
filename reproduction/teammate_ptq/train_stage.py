@@ -119,6 +119,7 @@ def observer_state(model):
 
 def model_contract(model, pretrain, enabled):
     import torch
+    from brevitas.core.quant.ternary import TernaryQuant
     from brevitas.proxy.parameter_quant import WeightQuantProxyFromInjectorBase
     from brevitas.proxy.quant_proxy import QuantProxyFromInjector
     from brevitas.proxy.runtime_quant import ActQuantProxyFromInjectorBase
@@ -141,7 +142,10 @@ def model_contract(model, pretrain, enabled):
         for proxy in selected:
             tensor_quant = (proxy.fused_activation_quant_proxy.tensor_quant if role == "activation"
                             else proxy.tensor_quant)
-            widths.append(int(tensor_quant.msb_clamp_bit_width_impl().item()))
+            # ternary weights carry a constant 2-bit width instead of the integer clamp
+            bit_width = (tensor_quant.bit_width if isinstance(tensor_quant, TernaryQuant)
+                         else tensor_quant.msb_clamp_bit_width_impl)
+            widths.append(int(bit_width().item()))
         assert set(widths) == {config[f"{role}_bit_width"]}
         actual_widths[role] = widths
     depthwise = [name for name, module in model.named_modules()
