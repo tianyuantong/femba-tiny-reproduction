@@ -1,5 +1,7 @@
 # 共用位宽配置与三值接口
 
+正式线（TUAB 预训练 2 轮、int4 = W4A8、三值激活 8 位）按[正式线运行说明](../formal_line/README.md)运行；本页的命令示例沿用试点（TUAR、按录音划分）。
+
 权重、激活分别使用 `weight_bit_width` / `activation_bit_width`，默认均为 8；对应的 `weight_quant_scheme` / `activation_quant_scheme` 默认为 `uniform`；权重另支持 `ternary`（见下），激活只支持 `uniform`。位宽必须为 2–16 的整数，不能是布尔值。以下命令控制 Brevitas 伪量化 proxy；本页不报告新的 INT4 或三值准确率，也不提供低位宽部署内核。
 
 量化覆盖保持原样：分类器 **35A / 18W**，预训练编码器 **34A / 17W**；4 个 depthwise 卷积权重、归一化与预训练 decoder 保持 FP32，实际 `dt_rank=96`。默认 W8A8 保持原参数和计算路径。完整配置存入训练配置、检查点和量化检查记录；旧检查点缺少配置字段时按 uniform W8A8 读取。量化检查点不能改位宽或 scheme 后加载；FP32 父模型允许转换到指定目标配置，C 的 observer 从新统计开始。

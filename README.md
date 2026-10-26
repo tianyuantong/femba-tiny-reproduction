@@ -47,6 +47,10 @@ FP32 预训练后量化微调的 C 组三种子 AUROC 为 **0.8940 ± 0.0168**�
 
 [结果、配置与运行命令](reproduction/teammate_ptq/README.md) · [INT4 / 三值共用接口](reproduction/teammate_ptq/QUANTIZATION.md)
 
+## 正式线：三个任务 × 三档位宽
+
+TUAR、TUAB、TUSL 三个任务全部按受试者划分，在 int8（W8A8）、int4（W4A8）、三值（激活 8 位）下比较 FP32、PTQ、C、QAP，种子 42 / 43 / 44。协议、环境、运行命令和多台机器分跑的做法见[正式线运行说明](reproduction/formal_line/README.md)。
+
 ## 来源
 
 基于 [pulp-bio/BioFoundation 的 2025 快照](https://github.com/pulp-bio/BioFoundation/tree/d88596590f3bd3fce573be07646b7d3977ce7bcc)
