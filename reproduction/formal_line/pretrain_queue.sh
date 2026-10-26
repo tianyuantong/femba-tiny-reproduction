@@ -1,6 +1,8 @@
 #!/bin/bash
 # Sequential pretraining queue for the formal line (2 epochs each, every epoch saved).
 # Entries: group bits seed. Skips entries whose output already has complete.json.
+# From 2026-10-26 this machine pretrains FP32 and int8 only; int4 (seeds 43/44) and
+# ternary pretraining run on other machines.
 set -u
 PY=/root/envs/femba/bin/python
 STUDY=/root/work/femba-formal-study
@@ -13,10 +15,8 @@ QUEUE="qap_b 8 42
 qap_b 4 42
 fp32 8 43
 qap_b 8 43
-qap_b 4 43
 fp32 8 44
-qap_b 8 44
-qap_b 4 44"
+qap_b 8 44"
 echo "$QUEUE" | while read -r group bits seed; do
   name=$group; [ "$group" = qap_b ] && name="qap_w${bits}a8"
   out=$ART/seed$seed/$name/pretrain
