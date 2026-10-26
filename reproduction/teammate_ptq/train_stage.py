@@ -154,8 +154,8 @@ def model_contract(model, pretrain, enabled):
     assert fixed == [f"mamba_blocks.{block}.mamba_{branch}.conv1d.weight_scale"
                      for block in range(2) for branch in ("fwd", "rev")]
     count = sum(parameter.numel() for parameter in model.parameters())
-    if not pretrain:
-        assert count == 8670626
+    if not pretrain:  # 8,670,626 for the two-class head; each extra class adds d_model + 1
+        assert count == 8670626 + (model.classifier.out_features - 2) * (model.d_model + 1)
     return {"parameters": count, "dt_proj_shapes": ranks, "quantization_enabled": enabled,
             "activation_quantizers": len(acts), "weight_quantizers": len(weights),
             "native_fixed_parameters_at_construction": fixed,
@@ -165,8 +165,11 @@ def model_contract(model, pretrain, enabled):
 
 def data_manifest(args):
     manifest = json.loads(args.data_manifest.read_text())
+    if "splits" in manifest:
+        args.split_table = {split: dict(manifest["splits"][split]) for split in SPLITS}
     result = {}
-    for split, (windows, size, digest) in SPLITS.items():
+    for split, spec in args.split_table.items():
+        windows, size, digest = spec["windows"], spec["bytes"], spec["sha256"]
         entry = manifest["data"][split]
         path = args.data_root / f"{split}.h5"
         assert entry["sha256"] == digest and entry["bytes"] == size
@@ -193,7 +196,9 @@ def compose_config(args):
                  "resume=false", f"+model.quantization_enabled={str(enabled).lower()}",
                  f"io.base_output_path={json.dumps(str(args.output / 'tb_logs'))}",
                  f"io.checkpoint_dirpath={json.dumps(str(args.output / 'checkpoints'))}",
-                 "final_test=false"]
+                 "final_test=false", f"trainer.max_epochs={args.max_epochs}"]
+    if args.save_every_epoch:
+        overrides.append("model_checkpoint.save_top_k=-1")
     overrides.extend(f"+model.{key}={value}" for key, value in argument_quantization_config(args).items())
     if pretrain:
         overrides.extend(["+data_module.datasets.tuar_train.use_cache=false",
@@ -201,7 +206,8 @@ def compose_config(args):
     else:
         overrides.extend(["data_module=finetune_data_module_tuar", "gpus=1", "trainer.strategy=auto",
                           "batch_size=32", "num_workers=4", "scheduler.warmup_epochs=1",
-                          f"pretrained_checkpoint_path={json.dumps(str(args.pretrained))}"])
+                          f"pretrained_checkpoint_path={json.dumps(str(args.pretrained))}",
+                          f"model.num_classes={args.num_classes}", f"model.classification_type={args.classification_type}"])
         for split in SPLITS:
             overrides.extend([f"+data_module.{split}.use_cache=false",
                               f"data_module.{split}.hdf5_file={json.dumps(str(args.data_root / (split + '.h5')))}"])
@@ -221,7 +227,7 @@ def validate_config(cfg, args):
     assert cfg.trainer.accelerator == "gpu" and cfg.trainer.strategy == "auto"
     assert cfg.trainer.get("precision", "32-true") in (32, "32-true")
     assert cfg.trainer.get("accumulate_grad_batches", 1) == 1
-    assert cfg.trainer.max_epochs == (10 if pretrain else 5)
+    assert cfg.trainer.max_epochs == args.max_epochs
     assert cfg.final_validate is True and cfg.final_test is False
     assert cfg.model.quantization_enabled == (args.group != "fp32")
     assert cfg.model.seq_length == 1280 and cfg.model.num_channels == 22
@@ -239,7 +245,7 @@ def validate_config(cfg, args):
         assert cfg.optimizer.weight_decay == 0.5 and cfg.layerwise_lr_decay == 0.75
         assert cfg.finetuning.freeze_layers is True
         assert cfg.scheduler.warmup_epochs == 1 and cfg.scheduler.min_lr == 1e-6
-        assert cfg.model.num_classes == 2 and cfg.model.classification_type == "bc"
+        assert cfg.model.num_classes == args.num_classes and cfg.model.classification_type == args.classification_type
 
 
 def validate_pretrained_metadata(hyperparameters: Mapping, args) -> None:
@@ -271,24 +277,28 @@ class StageAudit:
         self.epochs = []
         self.load_count = 0
         self.fit_started = False
+        self.train_windows = None
 
     def record_data(self, module):
         if self.args.stage != "pretrain":
-            assert [len(getattr(module, split)) for split in SPLITS] == [55524, 6426, 7211]
+            assert [len(getattr(module, split)) for split in SPLITS] == [self.args.split_table[s]["windows"] for s in SPLITS]
+            self.train_windows = self.args.split_table["train"]["windows"]
             return
         import numpy as np
 
         result = {}
         for split in ("train", "val"):
             subsets = getattr(module, split).datasets
-            assert len(subsets) == 1 and len(subsets[0].dataset) == 55524
+            assert len(subsets) == 1 and len(subsets[0].dataset) == self.args.split_table["train"]["windows"]
             indices = np.asarray(subsets[0].indices, dtype="<i8")
             path = self.args.output / f"pretrain_{split}_indices.npy"
             with path.open("xb") as stream:
                 np.save(stream, indices, allow_pickle=False)
             result[split] = {"windows": len(indices), "ordered_int64_sha256": hashlib.sha256(indices.tobytes()).hexdigest(),
                              "file": path.name, "file_sha256": sha256(path)}
-        assert result["train"]["windows"] == 49971 and result["val"]["windows"] == 5553
+        total = self.args.split_table["train"]["windows"]
+        assert result["train"]["windows"] == int(total * 0.9) and result["val"]["windows"] == total - int(total * 0.9)
+        self.train_windows = result["train"]["windows"]
         write_json(self.args.output / "pretrain_split.json", result)
 
     def attach_task(self, task):
@@ -371,8 +381,8 @@ class StageAudit:
 
             def on_fit_end(self, trainer, task):
                 with unchanged_rng():
-                    epochs = 10 if audit.args.stage == "pretrain" else 5
-                    expected_steps = epochs * ((49971 if audit.args.stage == "pretrain" else 55524) // 32)
+                    epochs = audit.args.max_epochs
+                    expected_steps = epochs * (audit.train_windows // 32)
                     assert [row["epoch"] for row in audit.epochs] == list(range(epochs))
                     assert trainer.global_step == expected_steps
                     checkpoint = trainer.checkpoint_callback
@@ -437,12 +447,24 @@ def arguments(argv=None):
     parser.add_argument("--pretrained", type=Path,
                         help="Selected pretraining checkpoint for fine-tuning, including group C")
     parser.add_argument("--pretrained-sha256", help="SHA256 of --pretrained")
+    parser.add_argument("--max-epochs", type=int, default=None,
+                        help="Override the native epoch count (default 10 for pretraining, 5 for fine-tuning)")
+    parser.add_argument("--save-every-epoch", action="store_true",
+                        help="Keep every epoch checkpoint instead of only the best validation loss")
     parser.add_argument("--plan-only", action="store_true",
                         help="Resolve and validate the fixed Hydra recipe, without training or creating outputs")
     add_quantization_arguments(parser)
     args = parser.parse_args(argv)
+    if args.max_epochs is None:
+        args.max_epochs = 10 if args.stage == "pretrain" else 5
+    if args.max_epochs < 1:
+        raise ValueError("--max-epochs must be at least 1")
+    args.split_table = {split: {"windows": w, "bytes": b, "sha256": d} for split, (w, b, d) in SPLITS.items()}
     for name in ("source", "data_root", "data_manifest", "output"):
         setattr(args, name, getattr(args, name).expanduser().resolve())
+    manifest = json.loads(args.data_manifest.read_text()) if args.data_manifest.is_file() else {}
+    args.num_classes = int(manifest.get("num_classes", 2))
+    args.classification_type = str(manifest.get("classification_type", "bc"))
     if args.output == args.source or args.source in args.output.parents:
         raise ValueError("Store stage artifacts outside the source checkout")
     if not (args.source / "config/defaults.yaml").is_file() or not (args.source / "run_train.py").is_file():

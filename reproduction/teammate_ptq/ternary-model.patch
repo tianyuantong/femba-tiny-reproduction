@@ -1,0 +1,260 @@
+diff --git a/models/femba_quantization.py b/models/femba_quantization.py
+index ed1c69c..2ff939c 100644
+--- a/models/femba_quantization.py
++++ b/models/femba_quantization.py
+@@ -27,6 +27,9 @@ from typing import Any
+ 
+ CONFIG_FIELDS = ("weight_bit_width", "activation_bit_width",
+                  "weight_quant_scheme", "activation_quant_scheme")
++WEIGHT_SCHEMES = ("uniform", "ternary")
++TERNARY_BIT_WIDTH = 2        # codes -1/0/+1 occupy a 2-bit container
++TERNARY_THRESHOLD = 0.7      # TWN: |w| > 0.7 * mean|w| maps to +-1, else 0
+ 
+ 
+ def quantization_config(
+@@ -46,12 +49,12 @@ def quantization_config(
+                         ("activation_quant_scheme", activation_quant_scheme)):
+         if not isinstance(value, str):
+             raise TypeError(f"{name} must be a string")
+-        if value != "uniform":
+-            raise ValueError(
+-                f"{name}={value!r} is not integrated into the FEMBA model; "
+-                "use 'uniform'. Ternary requires its explicit three-level mapping "
+-                "interface and is not uniform two-bit quantization."
+-            )
++    if weight_quant_scheme not in WEIGHT_SCHEMES:
++        raise ValueError(f"weight_quant_scheme={weight_quant_scheme!r}; use one of {WEIGHT_SCHEMES}")
++    if weight_quant_scheme == "ternary" and weight_bit_width != TERNARY_BIT_WIDTH:
++        raise ValueError("ternary weights are stored as 2-bit codes; set weight_bit_width=2")
++    if activation_quant_scheme != "uniform":
++        raise ValueError(f"activation_quant_scheme={activation_quant_scheme!r} is not integrated; use 'uniform'")
+     return {"weight_bit_width": weight_bit_width,
+             "activation_bit_width": activation_bit_width,
+             "weight_quant_scheme": weight_quant_scheme,
+diff --git a/models/femba_ternary.py b/models/femba_ternary.py
+index ccebd95..1c2266f 100644
+--- a/models/femba_ternary.py
++++ b/models/femba_ternary.py
+@@ -26,6 +26,31 @@ This interface neither packs codes nor configures model weight/activation proxie
+ from collections.abc import Mapping
+ from dataclasses import dataclass
+ import math
++
++from brevitas.inject.enum import (QuantType, RestrictValueType, ScalingImplType,
++                                  ScalingPerOutputType, StatsOp)
++from brevitas.quant.solver import WeightQuantSolver
++
++from models.femba_quantization import TERNARY_THRESHOLD
++
++
++class TernaryWeightPerTensorMeanAbs(WeightQuantSolver):
++    """Brevitas weight quantizer for the FEMBA ternary scheme.
++
++    Per tensor: scale = mean|w| (recomputed from the weights every forward),
++    code = +1 if w > 0.7 * scale, -1 if w < -0.7 * scale, else 0; dequantized
++    value = code * scale. Gradients use Brevitas' ternary straight-through
++    estimator. This is the Ternary Weight Networks rule with the threshold
++    constant 0.7 and the mean-absolute scale shared by threshold and output.
++    """
++    quant_type = QuantType.TERNARY
++    threshold = TERNARY_THRESHOLD
++    scaling_impl_type = ScalingImplType.STATS
++    scaling_stats_op = StatsOp.AVE
++    scaling_per_output_type = ScalingPerOutputType.TENSOR
++    restrict_scaling_type = RestrictValueType.FP
++    scaling_min_val = 1e-10
++    signed = True
+ from numbers import Real
+ 
+ import torch
+diff --git a/ARES/tests/test_networks/brevitas_custom_layers.py b/ARES/tests/test_networks/brevitas_custom_layers.py
+index a052361..184b450 100644
+--- a/ARES/tests/test_networks/brevitas_custom_layers.py
++++ b/ARES/tests/test_networks/brevitas_custom_layers.py
+@@ -25,15 +25,25 @@ from models.femba_quantization import quantization_config
+ 
+ 
+ def _resolve_bit_widths(bit_width: int, weight_bit_width: int | None,
+-                        activation_bit_width: int | None) -> tuple[int, int]:
++                        activation_bit_width: int | None,
++                        weight_quant_scheme: str = "uniform") -> tuple[int, int]:
+     """Keep the shared bit_width argument compatible with older ARES callers."""
+     quantization_config(bit_width, bit_width)
+     config = quantization_config(
+         bit_width if weight_bit_width is None else weight_bit_width,
+-        bit_width if activation_bit_width is None else activation_bit_width)
++        bit_width if activation_bit_width is None else activation_bit_width,
++        weight_quant_scheme)
+     return config["weight_bit_width"], config["activation_bit_width"]
+ 
+ 
++def _weight_quant_kwargs(weight_bit_width: int, weight_quant_scheme: str = "uniform") -> dict:
++    """Weight quantizer arguments for QuantLinear / QuantConv2d under the chosen scheme."""
++    if weight_quant_scheme == "ternary":
++        from models.femba_ternary import TernaryWeightPerTensorMeanAbs
++        return {"weight_quant": TernaryWeightPerTensorMeanAbs}
++    return {"weight_bit_width": weight_bit_width}
++
++
+ # Pre-computed LUT for integer softmax: exp(x) * 2^24 for x in [-128, 0]
+ # Index: x + 128 (so index 0 = exp(-128), index 128 = exp(0))
+ # This matches the C code in network_dma_pipeline.c.mako exactly
+@@ -328,10 +338,11 @@ class QuantPatchEmbed(nn.Module):
+         *,
+         weight_bit_width: int | None = None,
+         activation_bit_width: int | None = None,
++        weight_quant_scheme: str = "uniform",
+     ):
+         super().__init__()
+         weight_bit_width, activation_bit_width = _resolve_bit_widths(
+-            bit_width, weight_bit_width, activation_bit_width)
++            bit_width, weight_bit_width, activation_bit_width, weight_quant_scheme)
+         self.inp_size = inp_size if isinstance(inp_size, tuple) else (inp_size, inp_size)
+         # Support both scalar and tuple patch_size/stride
+         self.patch_size = patch_size if isinstance(patch_size, tuple) else (patch_size, patch_size)
+@@ -356,7 +367,7 @@ class QuantPatchEmbed(nn.Module):
+             stride=self.stride,
+             padding=0,
+             bias=True,
+-            weight_bit_width=weight_bit_width,
++            **_weight_quant_kwargs(weight_bit_width, weight_quant_scheme),
+             return_quant_tensor=False  # We'll requantize after reshape
+         )
+ 
+@@ -1139,10 +1150,11 @@ class QuantSSM(nn.Module):
+         *,
+         weight_bit_width: int | None = None,
+         activation_bit_width: int | None = None,
++        weight_quant_scheme: str = "uniform",
+     ):
+         super().__init__()
+         weight_bit_width, activation_bit_width = _resolve_bit_widths(
+-            bit_width, weight_bit_width, activation_bit_width)
++            bit_width, weight_bit_width, activation_bit_width, weight_quant_scheme)
+         self.d_inner = d_inner
+         self.d_state = d_state
+         self.dt_rank = dt_rank if dt_rank is not None else max(1, d_inner // 16)
+@@ -1159,7 +1171,7 @@ class QuantSSM(nn.Module):
+         self.x_proj = QuantLinear(
+             d_inner, self.dt_rank + 2 * d_state,
+             bias=False,
+-            weight_bit_width=weight_bit_width,
++            **_weight_quant_kwargs(weight_bit_width, weight_quant_scheme),
+             return_quant_tensor=False
+         )
+ 
+@@ -1167,7 +1179,7 @@ class QuantSSM(nn.Module):
+         self.dt_proj = QuantLinear(
+             self.dt_rank, d_inner,
+             bias=True,  # Important: bias initializes dt range
+-            weight_bit_width=weight_bit_width,
++            **_weight_quant_kwargs(weight_bit_width, weight_quant_scheme),
+             return_quant_tensor=False
+         )
+ 
+@@ -1321,10 +1333,11 @@ class QuantMambaWrapper(nn.Module):
+         *,
+         weight_bit_width: int | None = None,
+         activation_bit_width: int | None = None,
++        weight_quant_scheme: str = "uniform",
+     ):
+         super().__init__()
+         weight_bit_width, activation_bit_width = _resolve_bit_widths(
+-            bit_width, weight_bit_width, activation_bit_width)
++            bit_width, weight_bit_width, activation_bit_width, weight_quant_scheme)
+         self.d_model = d_model
+         self.d_inner = d_inner if d_inner is not None else 2 * d_model
+         self.d_state = d_state
+@@ -1338,6 +1351,7 @@ class QuantMambaWrapper(nn.Module):
+             conv_kernel=conv_kernel,
+             weight_bit_width=weight_bit_width,
+             activation_bit_width=activation_bit_width,
++            weight_quant_scheme=weight_quant_scheme,
+             return_quant_tensor=True
+         )
+ 
+@@ -1349,6 +1363,7 @@ class QuantMambaWrapper(nn.Module):
+             conv_kernel=conv_kernel,
+             weight_bit_width=weight_bit_width,
+             activation_bit_width=activation_bit_width,
++            weight_quant_scheme=weight_quant_scheme,
+             return_quant_tensor=True
+         )
+ 
+@@ -1506,10 +1521,11 @@ class QuantMambaBlock(nn.Module):
+         *,
+         weight_bit_width: int | None = None,
+         activation_bit_width: int | None = None,
++        weight_quant_scheme: str = "uniform",
+     ):
+         super().__init__()
+         weight_bit_width, activation_bit_width = _resolve_bit_widths(
+-            bit_width, weight_bit_width, activation_bit_width)
++            bit_width, weight_bit_width, activation_bit_width, weight_quant_scheme)
+         self.d_model = d_model
+         self.d_inner = d_inner if d_inner is not None else 2 * d_model
+         self.d_state = d_state
+@@ -1519,7 +1535,7 @@ class QuantMambaBlock(nn.Module):
+         self.in_proj = QuantLinear(
+             d_model, 2 * self.d_inner,
+             bias=False,
+-            weight_bit_width=weight_bit_width,
++            **_weight_quant_kwargs(weight_bit_width, weight_quant_scheme),
+             return_quant_tensor=False
+         )
+         self.in_proj_quant = QuantIdentity(
+@@ -1548,6 +1564,7 @@ class QuantMambaBlock(nn.Module):
+             d_state=d_state,
+             weight_bit_width=weight_bit_width,
+             activation_bit_width=activation_bit_width,
++            weight_quant_scheme=weight_quant_scheme,
+             return_quant_tensor=True
+         )
+ 
+@@ -1555,7 +1572,7 @@ class QuantMambaBlock(nn.Module):
+         self.out_proj = QuantLinear(
+             self.d_inner, d_model,
+             bias=False,
+-            weight_bit_width=weight_bit_width,
++            **_weight_quant_kwargs(weight_bit_width, weight_quant_scheme),
+             return_quant_tensor=False
+         )
+         self.output_quant = QuantIdentity(
+diff --git a/ARES/tests/test_networks/test_25_femba_tiny_int8.py b/ARES/tests/test_networks/test_25_femba_tiny_int8.py
+index 1a6a18a..50ba134 100644
+--- a/ARES/tests/test_networks/test_25_femba_tiny_int8.py
++++ b/ARES/tests/test_networks/test_25_femba_tiny_int8.py
+@@ -41,7 +41,7 @@ import torch.nn as nn
+ from brevitas import nn as qnn
+ from brevitas.quant import Int8ActPerTensorFloat
+ 
+-from .brevitas_custom_layers import QuantPatchEmbed, QuantMambaWrapper
++from .brevitas_custom_layers import QuantPatchEmbed, QuantMambaWrapper, _weight_quant_kwargs
+ from models.femba_quantization import quantization_config
+ 
+ 
+@@ -152,6 +152,7 @@ class FEMBATinyInt8(nn.Module):
+             embed_dim=embed_dim,
+             weight_bit_width=weight_bit_width,
+             activation_bit_width=activation_bit_width,
++            weight_quant_scheme=weight_quant_scheme,
+             return_quant_tensor=True
+         )
+ 
+@@ -195,6 +196,7 @@ class FEMBATinyInt8(nn.Module):
+                     bidirectional_strategy="add",
+                     weight_bit_width=weight_bit_width,
+                     activation_bit_width=activation_bit_width,
++                    weight_quant_scheme=weight_quant_scheme,
+                     return_quant_tensor=True
+                 )
+             )
+@@ -231,7 +233,7 @@ class FEMBATinyInt8(nn.Module):
+             self.d_model,
+             num_classes,
+             bias=True,
+-            weight_bit_width=weight_bit_width,
++            **_weight_quant_kwargs(weight_bit_width, weight_quant_scheme),
+             return_quant_tensor=False
+         )
+ 

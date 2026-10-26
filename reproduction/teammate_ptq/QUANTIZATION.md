@@ -1,6 +1,6 @@
 # 共用位宽配置与三值接口
 
-权重、激活分别使用 `weight_bit_width` / `activation_bit_width`，默认均为 8；对应的 `weight_quant_scheme` / `activation_quant_scheme` 默认且目前只支持 `uniform`。位宽必须为 2–16 的整数，不能是布尔值。以下命令控制 Brevitas 伪量化 proxy；本页不报告新的 INT4 或三值准确率，也不提供低位宽部署内核。
+权重、激活分别使用 `weight_bit_width` / `activation_bit_width`，默认均为 8；对应的 `weight_quant_scheme` / `activation_quant_scheme` 默认为 `uniform`；权重另支持 `ternary`（见下），激活只支持 `uniform`。位宽必须为 2–16 的整数，不能是布尔值。以下命令控制 Brevitas 伪量化 proxy；本页不报告新的 INT4 或三值准确率，也不提供低位宽部署内核。
 
 量化覆盖保持原样：分类器 **35A / 18W**，预训练编码器 **34A / 17W**；4 个 depthwise 卷积权重、归一化与预训练 decoder 保持 FP32，实际 `dt_rank=96`。默认 W8A8 保持原参数和计算路径。完整配置存入训练配置、检查点和量化检查记录；旧检查点缺少配置字段时按 uniform W8A8 读取。量化检查点不能改位宽或 scheme 后加载；FP32 父模型允许转换到指定目标配置，C 的 observer 从新统计开始。
 
@@ -20,6 +20,8 @@ git -C "$teammate_source" apply --check "$study/source.patch"
 git -C "$teammate_source" apply "$study/source.patch"
 git -C "$teammate_source" apply --check "$study/quantization-config.patch"
 git -C "$teammate_source" apply "$study/quantization-config.patch"
+git -C "$teammate_source" apply --check "$study/ternary-model.patch"
+git -C "$teammate_source" apply "$study/ternary-model.patch"
 mkdir -p "$artifacts"
 ```
 
@@ -91,9 +93,13 @@ python "$study/evaluate_one.py" --source "$teammate_source" --data-root "$data" 
   --weight-bit-width 4 --activation-bit-width 4
 ```
 
-## 三值同学的映射接口
+## 三值权重（已接入模型）
 
-`models.femba_ternary` 提供可执行的独立映射接口，尚未接入 FEMBA 全模型。模型的 scheme 参数会拒绝 `ternary`。full-range uniform 2-bit 有四个量化级别；Brevitas 默认权重使用 narrow range，2-bit 时虽有三个代码，也没有因此实现下述显式 threshold/scale/STE 契约。不能把 uniform 2-bit 配置改名为三值。
+`ternary-model.patch` 把三值权重接进了全模型：`--weight-bit-width 2 --weight-quant-scheme ternary`（激活保持 8 位）。每个权重张量按 TWN 规则量化：scale 取该张量权重绝对值的平均值，`|w| > 0.7 × scale` 的权重映射为 ±1，其余为 0，重建值为 code × scale；梯度走 Brevitas 的三值直通估计器。覆盖范围和 uniform 相同（分类器 18 个权重张量，预训练 17 个），4 个 depthwise 卷积权重、归一化和 decoder 仍为 FP32。配置检查要求三值必须配 `weight_bit_width=2`，其他位宽会被拒绝；`test_ternary_model.py` 核对 18 个量化器都是 2 位、三个取值、scale 等于平均绝对值。训练、校准、评估命令与 INT4 相同，把位宽参数换成 `--weight-bit-width 2 --weight-quant-scheme ternary` 即可。
+
+## 三值映射接口（独立实现，供导出与核对）
+
+`models.femba_ternary` 另外提供一个不依赖模型的映射接口，和上面的模型量化器使用同一套 codes/threshold/scale 语义，用于导出与核对。full-range uniform 2-bit 有四个量化级别；Brevitas 默认权重使用 narrow range，2-bit 时虽有三个代码，也没有因此实现下述显式 threshold/scale/STE 契约。不能把 uniform 2-bit 配置改名为三值。
 
 给定有限浮点输入 `x`、正的常量 `scale`、非负 `threshold`：`x < -threshold*scale` 映射为 −1，`x > threshold*scale` 映射为 +1，其余映射为 0，两个边界均归零。重建值为 `code*scale`；对输入使用 identity STE，scale 不学习。scale/threshold 的选择方法及使用的训练窗口必须记录，仅从训练数据决定并在验证、测试前冻结。
 

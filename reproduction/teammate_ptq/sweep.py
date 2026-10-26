@@ -229,6 +229,7 @@ def test_and_verify(args, checkpoints: dict, inputs: dict, calibration: dict, se
 def run(args) -> dict:
     checkpoints = {"fp32": args.fp32, **existing_checkpoints(args)}
     args.source, args.data, args.output = args.source.resolve(), args.data.resolve(), args.output.resolve()
+    capture.use_data_splits(args.data)
     sys.path.insert(0, str(args.source))
     config = capture.argument_quantization_config(args)
     parent_sha = capture.sha256(args.fp32)

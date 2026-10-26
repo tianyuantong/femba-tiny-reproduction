@@ -34,7 +34,24 @@ from threshold_control import binary_metrics, ranking_metrics
 
 BASE_COMMIT = "a2a4d441485efd8423c44b35d7448a30ccd44437"
 MODEL_IDS = ("fp32", "ptq_original", "ptq_p99", "qap_b")
-SPLITS = {"val": (6426, [2927, 3499]), "test": (7211, [3304, 3907])}
+PILOT_SPLITS = {"val": (6426, [2927, 3499]), "test": (7211, [3304, 3907])}
+SPLITS = dict(PILOT_SPLITS)
+
+
+def use_data_splits(data: Path) -> dict:
+    """Expected window and class counts: from <data>/data-manifest.json when present, else the pilot data."""
+    manifest = data / "data-manifest.json"
+    if manifest.is_file():
+        splits = json.loads(manifest.read_text())["splits"]
+        expected = {}
+        for split in ("val", "test"):
+            counts = json.loads((data / f"{split}-manifest.json").read_text())["label_counts"]
+            expected[split] = (splits[split]["windows"], [counts.get("0", 0), counts.get("1", 0)])
+    else:
+        expected = PILOT_SPLITS
+    SPLITS.clear()
+    SPLITS.update(expected)
+    return SPLITS
 SOURCE_FILES = (
     "models/FEMBA_int8.py", "models/femba_ptq.py", "tasks/finetune_task.py",
     "models/femba_quantization.py", "models/femba_ternary.py",
@@ -163,7 +180,7 @@ def safe_load_checkpoint(path: Path) -> dict:
 
 
 def load_task(path: Path, model_id: str, *, expected_config=None, device="cuda",
-              target_config=None):
+              target_config=None, num_classes=2, classification_type="bc"):
     """Strictly reload; only an FP32 checkpoint may adopt an explicit PTQ target."""
     from omegaconf import OmegaConf
     from models.femba_quantization import quantization_config
@@ -183,8 +200,8 @@ def load_task(path: Path, model_id: str, *, expected_config=None, device="cuda",
         cfg.model[key] = value
     if cfg.model._target_ != "models.FEMBA_int8.FEMBATinyInt8Classifier":
         raise ValueError("Expected the teammate ARES binary classifier")
-    if cfg.model.num_classes != 2 or cfg.model.classification_type != "bc":
-        raise ValueError("Expected two-class CE classification")
+    if cfg.model.num_classes != num_classes or cfg.model.classification_type != classification_type:
+        raise ValueError(f"Expected {num_classes}-class {classification_type} classification")
     norm = cfg.input_normalization
     if not norm.normalize or (norm.quartile_normalization_lower_val,
                              norm.quartile_normalization_upper_val) != (-20, 20):
@@ -339,6 +356,7 @@ def run(args) -> None:
     from contextlib import ExitStack
 
     source, data, output = args.source.resolve(), args.data.resolve(), args.output.resolve()
+    use_data_splits(data)
     sys.path.insert(0, str(source))
     expected_config = argument_quantization_config(args, infer=True)
     provenance = source_record(source)
