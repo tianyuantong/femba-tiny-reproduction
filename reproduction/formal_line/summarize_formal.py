@@ -2,10 +2,12 @@
 
 Reads ``<artifacts>/seed<seed>/<arm>/...`` written by finetune_queue.sh:
 binary tasks (tuar, tuab) from evaluate_one.py / sweep.py results, TUSL folds
-from evaluate_events.py results. Arms: fp32 and, per weight setting
+from evaluate_events.py results, protocol v2 (``tusl<k>-v2``) and protocol v1
+(``tusl<k>``) kept apart. Arms: fp32 and, per weight setting
 (w8a8, w4a8, ternary_a8), ptq / c / qap. Prints a Markdown summary and writes
 ``summary.json``. Seeds are the unit of variation: TUSL folds are averaged
-within a seed first; differences are computed within the same seed (and fold).
+within a seed first, only when all four folds exist (partial ones are listed as
+incomplete); differences are computed within the same seed (and fold).
 """
 import argparse
 import json
@@ -16,6 +18,8 @@ SETTINGS = ("w8a8", "w4a8", "ternary_a8")
 BINARY_TASKS = ("tuar", "tuab")
 BINARY_METRICS = ("auroc", "ap", "bacc_default", "bacc_val_thr")
 TUSL_METRICS = ("macro_auroc", "macro_ap", "bacc")
+TUSL_PROTOCOLS = {"tusl-v2": "tusl{fold}-v2", "tusl-v1": "tusl{fold}"}  # summary task -> fold task names
+TUSL_FOLDS = 4
 
 
 def load(path: Path):
@@ -41,8 +45,8 @@ def arm_dirs(seed_dir: Path, setting: str) -> dict:
             "c": seed_dir / f"c_{setting}", "qap": seed_dir / f"qap_{setting}"}
 
 
-def collect(artifacts: Path) -> dict:
-    out = {}
+def collect(artifacts: Path) -> tuple[dict, list[str]]:
+    out, incomplete = {}, {}
     for seed_dir in sorted(artifacts.glob("seed*")):
         seed = int(seed_dir.name[4:])
         for setting in SETTINGS:
@@ -52,17 +56,22 @@ def collect(artifacts: Path) -> dict:
                     result = load(root / f"sweep-{task}" / "results.json") if arm == "ptq" else load(root / f"finetune-{task}" / "eval" / "results.json")
                     if result:
                         out.setdefault(setting, {}).setdefault(task, {}).setdefault(arm, {})[seed] = binary_row(result, arm == "ptq")
-                folds = {}
-                for fold in range(4):
-                    task = f"tusl{fold}"
-                    result = load(root / f"sweep-{task}" / "test" / "results.json") if arm == "ptq" else load(root / f"finetune-{task}" / "eval" / "results.json")
-                    if result:
-                        folds[fold] = tusl_row(result)
-                if folds:
-                    out.setdefault(setting, {}).setdefault("tusl", {}).setdefault(arm, {})[seed] = {
-                        "folds": folds, **{m: statistics.mean(f[m] for f in folds.values()) for m in TUSL_METRICS}}
+                for protocol, fold_task in TUSL_PROTOCOLS.items():
+                    folds = {}
+                    for fold in range(TUSL_FOLDS):
+                        task = fold_task.format(fold=fold)
+                        result = load(root / f"sweep-{task}" / "test" / "results.json") if arm == "ptq" else load(root / f"finetune-{task}" / "eval" / "results.json")
+                        if result:
+                            folds[fold] = tusl_row(result)
+                    if len(folds) == TUSL_FOLDS:
+                        out.setdefault(setting, {}).setdefault(protocol, {}).setdefault(arm, {})[seed] = {
+                            "folds": folds, **{m: statistics.mean(f[m] for f in folds.values()) for m in TUSL_METRICS}}
+                    elif folds:
+                        owner = arm if arm == "fp32" else f"{arm} {setting}"
+                        incomplete[f"{protocol} {owner} seed {seed}: folds {sorted(folds)} of {TUSL_FOLDS}"] = None
     # fp32 is read under every setting; a setting with no quantized result yet is left out
-    return {setting: tasks for setting, tasks in out.items() if any(arm != "fp32" for arms in tasks.values() for arm in arms)}
+    summary = {setting: tasks for setting, tasks in out.items() if any(arm != "fp32" for arms in tasks.values() for arm in arms)}
+    return summary, list(incomplete)
 
 
 def mean_sd(values: list[float]) -> str:
@@ -78,7 +87,7 @@ def render(summary: dict) -> str:
     for setting, tasks in summary.items():
         lines.append(f"\n## {setting}\n")
         for task, arms in tasks.items():
-            metrics = TUSL_METRICS if task == "tusl" else BINARY_METRICS
+            metrics = TUSL_METRICS if task in TUSL_PROTOCOLS else BINARY_METRICS
             lines.append(f"### {task}\n")
             lines.append("| arm | seeds | " + " | ".join(metrics) + " |")
             lines.append("| --- | --- | " + " | ".join("---:" for _ in metrics) + " |")
@@ -86,14 +95,14 @@ def render(summary: dict) -> str:
                 rows = arms.get(arm, {})
                 lines.append(f"| {arm} | {','.join(str(s) for s in sorted(rows))} | " +
                              " | ".join(mean_sd([rows[s][m] for s in sorted(rows)]) for m in metrics) + " |")
-            key = "macro_auroc" if task == "tusl" else "auroc"
+            key = "macro_auroc" if task in TUSL_PROTOCOLS else "auroc"
             for a, b in (("qap", "ptq"), ("c", "ptq"), ("qap", "c")):
                 shared = sorted(set(arms.get(a, {})) & set(arms.get(b, {})))
                 if shared:
                     diffs = [arms[a][s][key] - arms[b][s][key] for s in shared]
                     lines.append(f"- {a} − {b} ({key}, seeds {shared}): " + ", ".join(f"{d:+.4f}" for d in diffs) +
                                  (f"; mean {statistics.mean(diffs):+.4f}" if len(diffs) > 1 else ""))
-            if task == "tusl":
+            if task in TUSL_PROTOCOLS:
                 for arm in ("fp32", "ptq", "c", "qap"):
                     for seed, row in sorted(arms.get(arm, {}).items()):
                         lines.append(f"- {arm} seed {seed} per fold macro AUROC: " +
@@ -107,8 +116,10 @@ def main() -> None:
     parser.add_argument("--artifacts", type=Path, required=True)
     parser.add_argument("--output", type=Path, default=None, help="where to write summary.json and summary.md")
     args = parser.parse_args()
-    summary = collect(args.artifacts)
+    summary, incomplete = collect(args.artifacts)
     text = render(summary)
+    if incomplete:
+        text += "\n\nIncomplete TUSL (not averaged):\n" + "\n".join(f"- {line}" for line in incomplete)
     print(text)
     if args.output:
         args.output.mkdir(parents=True, exist_ok=True)
