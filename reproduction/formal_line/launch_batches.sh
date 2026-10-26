@@ -14,12 +14,14 @@ QUEUE=${QUEUE:-./finetune_queue.sh}
 SMOKE=${SMOKE:-/root/work/femba-artifacts/ternary-smoke}
 TASKS=${TASKS:-tuar tuab tusl0-v2 tusl1-v2 tusl2-v2 tusl3-v2}
 # seed:bits:scheme; ternary seed 42 follows seed 43 int8 so its QAP stages find the
-# ternary pretraining (queued after all uniform pretraining) already complete
-BATCHES="42:4:uniform 43:8:uniform 42:2:ternary 43:4:uniform 44:8:uniform 44:4:uniform 43:2:ternary 44:2:ternary"
+# ternary pretraining (queued after all uniform pretraining) already complete. A machine
+# that runs only part of the matrix passes its own list, e.g. BATCHES="42:2:ternary".
+BATCHES=${BATCHES:-42:4:uniform 43:8:uniform 42:2:ternary 43:4:uniform 44:8:uniform 44:4:uniform 43:2:ternary 44:2:ternary}
 
 wait_for() { while [ ! -f "$1" ]; do sleep 300; done; }
 
-previous=$ART/seed42/qap_w8a8/finetune-tuab/complete.json
+# the first batch waits for this marker; START_AFTER=none starts it at once
+previous=${START_AFTER:-$ART/seed42/qap_w8a8/finetune-tuab/complete.json}
 for batch in $BATCHES; do
   IFS=: read -r seed bits scheme <<< "$batch"
   setting=w${bits}a8; [ "$scheme" = ternary ] && setting=ternary_a8
@@ -28,7 +30,7 @@ for batch in $BATCHES; do
     echo "[$(date '+%F %T')] seed$seed $setting was started before"
   else
     echo "[$(date '+%F %T')] seed$seed $setting waits for $previous"
-    wait_for "$previous"
+    [ "$previous" = none ] || wait_for "$previous"
     if [ "$scheme" = ternary ]; then
       while [ ! -f "$SMOKE/PASSED" ] && [ ! -f "$SMOKE/FAILED" ]; do sleep 300; done
       if [ ! -f "$SMOKE/PASSED" ]; then echo "[$(date '+%F %T')] skip seed$seed $setting: ternary smoke test failed"; continue; fi

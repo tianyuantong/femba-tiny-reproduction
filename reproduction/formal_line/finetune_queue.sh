@@ -11,6 +11,9 @@
 # Waits for the seed's FP32 pretraining (and the matching QAP pretraining) to
 # complete, then runs: FP32 fine-tune, C fine-tune, QAP fine-tune, PTQ sweep on
 # the FP32 fine-tuned checkpoint, and evaluation of the three fine-tuned models.
+# FP32_PARENTS=given (a machine running only quantized settings): the seed's FP32 stages
+# and their evaluations must already be in $ART, copied from the machine that ran them;
+# a missing one is an error rather than trained again, so all settings share one FP32.
 set -u
 PY=${PY:-/root/envs/femba/bin/python}
 STUDY=${STUDY:-/root/work/femba-formal-study}
@@ -25,6 +28,7 @@ SEED=${SEED:-42}
 BITS=${BITS:-8}
 SCHEME=${SCHEME:-uniform}
 TASKS=${TASKS:-tuar tuab}
+FP32_PARENTS=${FP32_PARENTS:-run}
 arm=qap_w${BITS}a8; [ "$SCHEME" = ternary ] && arm=qap_ternary_a8
 quant=(--weight-bit-width "$BITS" --activation-bit-width 8 --weight-quant-scheme "$SCHEME")
 log="$ART/logs/seed$SEED-finetune-${arm#qap_}${LOG_SUFFIX:-}.log"
@@ -55,6 +59,7 @@ stage() {  # stage <out> <group> <parent complete.json> <task> [quant args...]
   local out=$1 group=$2 parent=$3 task=$4; shift 4
   local epochs=(); is_tusl "$task" && epochs=(--max-epochs "$TUSL_EPOCHS")
   if [ -f "$out/complete.json" ]; then echo "[$(date '+%F %T')] skip $out"; return 0; fi
+  if [ "$group" = fp32 ] && [ "$FP32_PARENTS" = given ]; then echo "[$(date '+%F %T')] missing FP32 parent $out"; return 1; fi
   claim "$out" || { wait_shared "$out" complete.json; return $?; }
   rm -rf "$out"
   echo "[$(date '+%F %T')] finetune $group $task -> $out"
@@ -67,6 +72,7 @@ stage() {  # stage <out> <group> <parent complete.json> <task> [quant args...]
 evaluate() {  # evaluate <stage out> <kind> <task>
   local run=$1 kind=$2 task=$3 out=$1/eval
   if [ -f "$out/results.json" ]; then return 0; fi
+  if [ "$kind" = fp32 ] && [ "$FP32_PARENTS" = given ]; then echo "[$(date '+%F %T')] missing FP32 evaluation $out"; return 1; fi
   claim "$out" || { wait_shared "$out" results.json; return $?; }
   rm -rf "$out"
   echo "[$(date '+%F %T')] evaluate $kind $task"
