@@ -1,7 +1,8 @@
 #!/bin/bash
 # Fine-tuning, PTQ calibration and evaluation for one seed and one weight setting
 # on the formal line (TUAR, 1/5-subject TUAB and the four TUSL event folds; full
-# fine-tuning, 5 epochs).
+# fine-tuning, 5 epochs; TUSL folds TUSL_EPOCHS=20, since 5 epochs over ~400
+# windows are 60-70 steps and leave the classifier near uniform).
 #   usage: SEED=42 BITS=8 SCHEME=uniform TASKS="tuar tuab tusl0 tusl1 tusl2 tusl3" ./finetune_queue.sh
 # TUSL folds (tusl<k>) are three-class: evaluation is event-level
 # (evaluate_events.py) and the PTQ percentile is chosen by validation macro AUROC.
@@ -15,6 +16,7 @@ SRC=${SRC:-/root/work/femba-formal-source}
 DATA_ROOT=${DATA_ROOT:-/root/work/femba-artifacts/subject-data-20261025}
 TUSL_ROOT=${TUSL_ROOT:-/root/work/femba-artifacts/tusl-events-20261025}
 PERCENTILES="99.999 99.99 99.9 99 98 95 90"
+TUSL_EPOCHS=${TUSL_EPOCHS:-20}
 ART=${ART:-/root/work/femba-artifacts/formal-20261025}
 SEED=${SEED:-42}
 BITS=${BITS:-8}
@@ -48,6 +50,7 @@ is_tusl() { case "$1" in tusl[0-9]) return 0 ;; *) return 1 ;; esac; }
 metric() { "$PY" -c 'import json,sys; print(json.load(open(sys.argv[1]))["splits"]["val"]["events"]["macro_auroc"])' "$1"; }
 stage() {  # stage <out> <group> <parent complete.json> <task> [quant args...]
   local out=$1 group=$2 parent=$3 task=$4; shift 4
+  local epochs=(); is_tusl "$task" && epochs=(--max-epochs "$TUSL_EPOCHS")
   if [ -f "$out/complete.json" ]; then echo "[$(date '+%F %T')] skip $out"; return 0; fi
   claim "$out" || { wait_shared "$out" complete.json; return $?; }
   rm -rf "$out"
@@ -55,7 +58,7 @@ stage() {  # stage <out> <group> <parent complete.json> <task> [quant args...]
   (cd "$STUDY" && "$PY" train_stage.py --source "$SRC" --data-root "$(data_dir "$task")" \
       --data-manifest "$(data_dir "$task")/data-manifest.json" --output "$out" --group "$group" --stage finetune \
       --seed "$SEED" --pretrained "$(field "$parent" best_checkpoint)" \
-      --pretrained-sha256 "$(field "$parent" best_checkpoint_sha256)" "$@") >> "$log" 2>&1
+      --pretrained-sha256 "$(field "$parent" best_checkpoint_sha256)" "${epochs[@]}" "$@") >> "$log" 2>&1
   local code=$?; release "$out"; return $code
 }
 evaluate() {  # evaluate <stage out> <kind> <task>
