@@ -46,10 +46,14 @@ FP32 的预训练和微调只在一台机器上跑，三档位宽共用这一份
    ```bash
    grep -rl <原根目录> "$ROOT/formal-20261025" --include=complete.json | xargs sed -i "s#<原根目录>#$ROOT#g"
    ```
-2. **设路径**（每个终端）：
+2. **设路径**（每个终端；同一条 `export` 里的变量会先展开再赋值，所以互相引用的变量一行一个）：
    ```bash
-   export PY=<python> STUDY=<运行目录> SRC=<打好补丁的源码> ART=$ROOT/formal-20261025
-   export DATA_ROOT=$ROOT/subject-data-20261025 TUSL_ROOT=$ROOT/tusl-events-20261026-v2 DATA=$DATA_ROOT/tuab FORMAL_ART=$ART
+   export ROOT=<根目录> PY=<python> STUDY=<运行目录> SRC=<打好补丁的源码>
+   export ART="$ROOT/formal-20261025"
+   export DATA_ROOT="$ROOT/subject-data-20261025"
+   export TUSL_ROOT="$ROOT/tusl-events-20261026-v2"
+   export DATA="$DATA_ROOT/tuab"
+   export FORMAL_ART="$ART"
    mkdir -p "$ART/logs"
    ```
 3. **先对照一次**：重跑一个已有的 FP32 阶段（比如种子 42 的 `finetune-tusl0-v2`，约 5 分钟），逐轮比较验证损失和原机器的 `epochs.jsonl`，记下两台机器的差别。
