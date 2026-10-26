@@ -28,7 +28,7 @@ field() { "$PY" -c 'import json,sys; print(json.load(open(sys.argv[1]))[sys.argv
 wait_for() { while [ ! -f "$1" ]; do sleep 120; done; }
 # Shared outputs (FP32 stages, their evaluations) can be claimed by several queues:
 # the first to create <out>.lock runs it, the others wait for its completion marker.
-claim() { mkdir "$1.lock" 2>/dev/null; }
+claim() { mkdir -p "$(dirname "$1")" && mkdir "$1.lock" 2>/dev/null; }
 release() { rmdir "$1.lock" 2>/dev/null; }
 wait_shared() {  # wait_shared <out> <marker>
   echo "[$(date '+%F %T')] another queue owns $1; waiting"
