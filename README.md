@@ -1,59 +1,52 @@
-# FEMBA-Tiny 2025 复现与精度实验
+# FEMBA-Tiny 复现与量化实验
 
-基于 FEMBA 2025 年公开代码和预训练权重，复现 TUAR 二分类基线，并比较 FP16、PTQ 和 Hadamard 旋转后的结果。
+比较训练后量化（PTQ）、FP32 预训练后量化微调（C），以及量化预训练后量化微调（QAP）。当前正式线覆盖 TUAR、TUAB、TUSL 三个任务，采用受试者划分，设置 int8（W8A8）、int4（W4A8）和三值权重（−1 / 0 / +1，激活 8 位），每档与共用的 FP32 基线对照，种子为 42 / 43 / 44。W/A 表示权重／激活位宽，量化实验使用 Brevitas 伪量化。
 
-单种子 seed 42 · 7,090 个测试窗口 · RTX 5060 Ti · 量化采用 FP32 QDQ 模拟。
+## 当前工作与进度
 
-## FP32 复现
+以下进度截至 **2026-10-27**，以仓库已提交的材料为准。
 
-![FP32 复现结果与论文 Table IV 的 AUROC 对照](reproduction/figures/fp32-gap.svg)
+| 工作 | 已交付内容与状态 |
+| --- | --- |
+| TUAR INT8 试点 | **已完成并发布结果**：按录音划分的三个种子，包含 FP32、PTQ、C、QAP 四组及配对分析，见 [INT8 团队小结](reproduction/teammate_ptq/README.md) |
+| 正式线复现流程 | **代码和说明已提交**：三个任务的数据构建、环境、预训练、微调、PTQ、评估、汇总与多机分工，见 [正式线运行说明](reproduction/formal_line/README.md) |
+| 正式线完整结果 | **尚未在仓库发布**覆盖三个任务、三档位宽、三个种子的完整汇总表 |
 
-| 配置 | 标签／AdamW 学习率 | AUROC | AP |
-| --- | --- | ---: | ---: |
-| 公开代码配方 | 18 类、占比 ≥30%／5e-4 | 0.923889 | 0.933093 |
-| 论文标签对照 | 13 类、任一出现／5e-4 | 0.913040 | 0.944898 |
-| 学习率对照 | 13 类、任一出现／1e-4 | 0.898821 | 0.938437 |
-| 2025 论文 Table IV | TUAR 二分类 | 0.937 ± 0.008 | 0.912 ± 0.010 |
+正式线二分类 PTQ 校准和评估的修复已合并，见 [PR #11](https://github.com/tianyuantong/femba-tiny-reproduction/pull/11)。
 
-论文标签组保留代码的归一化、AdamW 和模型实现。
+## 从哪里开始
 
-## 精度对照
+从 **`baseline-2025` 分支的 [reproduction/formal_line/README.md](reproduction/formal_line/README.md)** 开始。
 
-![各量化配置的测试 AUROC](reproduction/figures/precision-ladder.svg)
+1. **准备环境和数据**：按[环境与数据](reproduction/formal_line/README.md#环境与数据)安装依赖、生成数据并核对清单。仓库提供数据构建与校验脚本，数据文件和检查点另行交付，不随 Git 仓库分发。
+2. **准备模型源码**：按[独立准备源码](reproduction/teammate_ptq/QUANTIZATION.md#独立准备源码)检出上游 `a2a4d44`，依次应用 `source.patch`、`quantization-config.patch`、`ternary-model.patch`。正式线训练参数以正式线运行说明为准。
+3. **运行自己负责的位宽**：按[多台机器分跑](reproduction/formal_line/README.md#多台机器分跑)设置路径、接收共用 FP32 父检查点，再运行 INT4 或三值的预训练、微调和评估；三值先做冒烟测试。结果用 [summarize_formal.py](reproduction/formal_line/summarize_formal.py) 汇总。
 
-统一使用按最低验证 loss 选定的 1e-4 检查点，FP32 AUROC 为 **0.8988**。
-W/A 表示权重／激活位宽；A8 使用 57 处量化位置、浮点尺度。
+TUSL 使用标注事件三分类和四折评估；v2 验证集规则是看过 v1 测试结果后的探索性修订，协议要求保留 v1 对照。具体划分和指标见[正式线协议](reproduction/formal_line/README.md#协议)。
 
-| 配置 | 未旋转 AUROC | H128 旋转 AUROC |
-| --- | ---: | ---: |
-| W8A32 | 0.8999 | 0.9001 |
-| W4A32 | 0.8449 | 0.8219 |
-| W8A8 | 0.5000 | 0.5000 |
-| W4A8 | 0.5000 | 0.5000 |
+## 已完成：TUAR INT8 试点
 
-FP16 的直接转换、状态保留和 AMP 三种路径均在首批验证出现 NaN。
+**本节只有一个 TUAR 数据集，按录音划分，未按受试者划分。** 测试集为 7,211 个窗口；下表是 seeds 42 / 43 / 44 的均值 ± 样本标准差。
 
-W8A32 精度接近 FP32，已测 A8 配置均预测为正类。
-Linear22/W8A8 的首个前向分支 `out_proj` 输入在静态 max 尺度下，99.9964% 的元素从非零量化为零。
-H128 将五处输出投影输入的校准峰值缩小 4.3–11.1 倍，Rot-A8 分类仍未恢复。
+| 方法 | 测试 AUROC |
+| --- | ---: |
+| FP32 | 0.9045 ± 0.0095 |
+| PTQ INT8 | 0.8707 ± 0.0082 |
+| C：FP32 预训练＋量化微调 | 0.8940 ± 0.0168 |
+| QAP B：量化预训练＋量化微调 | 0.9021 ± 0.0055 |
 
-[完整结果](reproduction/RESULTS.md) · [复现步骤](reproduction/PROTOCOL.md)
+QAP B 在三个种子上均优于 PTQ。与 C 的严格同初始化配对只有 seed43/44，QAP B−C 的 AUROC 差为 **−0.0013 ± 0.0036**，未观察到量化预训练的一致收益；QAP42 使用队友检查点的完整复测值。
 
-## 上游仓库模型的 PTQ 对照
+[完整指标与结论](reproduction/teammate_ptq/README.md) · [逐种子结果与来源](reproduction/teammate_ptq/c-seed-results.json) · [试点复现命令](reproduction/teammate_ptq/TRAINING.md)
 
-使用上游仓库 [berumottovv00/BioFoundation](https://github.com/berumottovv00/BioFoundation) 的 ARES 模型与 7,211 个测试窗口，比较 FP32、INT8 PTQ 和 QAP。
-三个训练种子（42/43/44）的平均 AUROC：FP32 **0.9045**、七档验证校准的 PTQ **0.8707**、QAP B **0.9021**。
-FP32 预训练后量化微调的 C 组三种子 AUROC 为 **0.8940 ± 0.0168**；严格配对的 seed43/44 中 QAP B−C 为 **−0.0013 ± 0.0036**，未观察到量化预训练的一致收益。结果页包含逐种子统计、分类阈值对照和训练曲线。
+## 历史实验：2025 公开模型复现
 
-[结果、配置与运行命令](reproduction/teammate_ptq/README.md) · [INT4 / 三值共用接口](reproduction/teammate_ptq/QUANTIZATION.md)
+早期实验使用 FEMBA 2025 公开代码和预训练权重，在 TUAR 的 7,090 个测试窗口上进行单种子 seed42 对照，包括 FP32 标签／学习率复现、FP16、PTQ 和 H128 Hadamard 旋转。该阶段使用 FP32 QDQ 模拟，其量化位置和评估口径与上述 INT8 试点不同，结果分别保留。
 
-## 正式线：三个任务 × 三档位宽
+在该阶段的配置下，W8A32 精度接近 FP32，57 处激活量化的 W8A8 / W4A8 得到 AUROC 0.5；FP16 三种路径均在首批验证出现 NaN。完整数值、曲线与诊断见[历史实验结果](reproduction/RESULTS.md)，运行步骤见[历史复现协议](reproduction/PROTOCOL.md)。
 
-TUAR、TUAB、TUSL 三个任务全部按受试者划分，在 int8（W8A8）、int4（W4A8）、三值（激活 8 位）下比较 FP32、PTQ、C、QAP，种子 42 / 43 / 44。协议、环境、运行命令和多台机器分跑的做法见[正式线运行说明](reproduction/formal_line/README.md)。
+## 上游来源
 
-## 来源
-
-基于 [pulp-bio/BioFoundation 的 2025 快照](https://github.com/pulp-bio/BioFoundation/tree/d88596590f3bd3fce573be07646b7d3977ce7bcc)
-和 [PulpBio/FEMBA 预训练权重](https://huggingface.co/PulpBio/FEMBA)，论文见
-[FEMBA（2025）](https://arxiv.org/abs/2502.06438v2)。上游代码采用 [Apache-2.0](LICENSE)。
-仓库提供代码和结果摘要；数据集、权重及逐样本预测保留在本地。
+- **INT8 试点与正式线**：模型及 QAP 流水线来自 [berumottovv00/BioFoundation](https://github.com/berumottovv00/BioFoundation/tree/a2a4d441485efd8423c44b35d7448a30ccd44437)，本仓库提供复现脚本、量化配置补丁、数据划分与评估流程。
+- **早期公开模型复现**：基于 [pulp-bio/BioFoundation 的 2025 快照](https://github.com/pulp-bio/BioFoundation/tree/d88596590f3bd3fce573be07646b7d3977ce7bcc)和 [PulpBio/FEMBA 预训练权重](https://huggingface.co/PulpBio/FEMBA)。
+- **论文与许可证**：[FEMBA（2025）](https://arxiv.org/abs/2502.06438v2) · [Apache-2.0](LICENSE)。

@@ -8,7 +8,7 @@
 
 ## 独立准备源码
 
-保留 [source.patch](source.patch) 的历史版本，在全新副本上依次应用两个 patch。环境沿用 [历史运行版本](seed-results.json) 与 [训练说明](TRAINING.md)，Brevitas 固定为 0.12.1。
+保留 [source.patch](source.patch) 的历史版本，在全新副本上依次应用三个 patch：[source.patch](source.patch)、[quantization-config.patch](quantization-config.patch)、[ternary-model.patch](ternary-model.patch)。环境沿用 [历史运行版本](seed-results.json) 与 [训练说明](TRAINING.md)，Brevitas 固定为 0.12.1。
 
 ```bash
 study=/path/to/this-repo/reproduction/teammate_ptq
