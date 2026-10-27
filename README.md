@@ -1,18 +1,13 @@
 # FEMBA-Tiny 复现与量化实验
 
-比较训练后量化（PTQ）、FP32 预训练后量化微调（C），以及量化预训练后量化微调（QAP）。当前正式线覆盖 TUAR、TUAB、TUSL 三个任务，采用受试者划分，设置 int8（W8A8）、int4（W4A8）和三值权重（−1 / 0 / +1，激活 8 位），每档与共用的 FP32 基线对照，种子为 42 / 43 / 44。W/A 表示权重／激活位宽，量化实验使用 Brevitas 伪量化。
+比较训练后量化（PTQ）、FP32 预训练后量化微调（C），以及量化预训练后量化微调（QAP）。正式线方案覆盖 TUAR、TUAB、TUSL 三个任务，采用受试者划分，设置 int8（W8A8）、int4（W4A8）和三值权重（−1 / 0 / +1，激活 8 位），每档与共用的 FP32 基线对照，种子为 42 / 43 / 44。W/A 表示权重／激活位宽，量化实验使用 Brevitas 伪量化。
 
-## 当前工作与进度
+## 仓库已有内容
 
-以下进度截至 **2026-10-27**，以仓库已提交的材料为准。
-
-| 工作 | 已交付内容与状态 |
+| 内容 | 说明与入口 |
 | --- | --- |
-| TUAR INT8 试点 | **已完成并发布结果**：按录音划分的三个种子，包含 FP32、PTQ、C、QAP 四组及配对分析，见 [INT8 团队小结](reproduction/teammate_ptq/README.md) |
-| 正式线复现流程 | **代码和说明已提交**：三个任务的数据构建、环境、预训练、微调、PTQ、评估、汇总与多机分工，见 [正式线运行说明](reproduction/formal_line/README.md) |
-| 正式线完整结果 | **尚未在仓库发布**覆盖三个任务、三档位宽、三个种子的完整汇总表 |
-
-正式线二分类 PTQ 校准和评估的修复已合并，见 [PR #11](https://github.com/tianyuantong/femba-tiny-reproduction/pull/11)。
+| TUAR INT8 试点结果 | 按录音划分的三个种子，包含 FP32、PTQ、C、QAP 四组及配对分析，见 [INT8 团队小结](reproduction/teammate_ptq/README.md) |
+| 正式线复现流程 | 三个任务的数据构建、环境、预训练、微调、PTQ、评估、汇总与多机分工，见 [正式线运行说明](reproduction/formal_line/README.md) |
 
 ## 从哪里开始
 
