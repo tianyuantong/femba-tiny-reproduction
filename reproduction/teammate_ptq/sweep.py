@@ -141,18 +141,21 @@ def existing_checkpoints(args) -> dict:
 
 def calibrate_new(args, checkpoints: dict) -> dict:
     manifests = []
-    candidates = CANDIDATES[4:] if "original" in checkpoints else CANDIDATES
+    reusing = "original" in checkpoints
+    candidates = CANDIDATES[4:] if reusing else CANDIDATES
     for name, percentile in candidates:
         directory = args.output / name
         print(f"CALIBRATE {name}", flush=True)
+        # binary classifier calibrated on the protocol's 512 seed-42 training windows
         result = calibrate.run(SimpleNamespace(source=args.source, data=args.data,
-            checkpoint=args.fp32, output=directory, percentile=percentile,
-            **capture.argument_quantization_config(args)))
+            checkpoint=args.fp32, output=directory, percentile=percentile, calibration_windows=512,
+            num_classes=2, classification_type="bc", **capture.argument_quantization_config(args)))
         checkpoints[name] = directory / result["checkpoint_file"]
         manifests.append(result["recipe"]["indices_sha256"])
     assert len(set(manifests)) == 1, "Calibration subsets or order changed across percentiles"
-    # Same seed42 manifest used by the original four frozen checkpoints.
-    assert manifests[0] == "58886a53d3250e3d803f044aa3bd412bdb5a6a4b49aec38c196f071ff9c804bf"
+    if reusing:
+        # Same seed42 manifest used by the original four frozen pilot checkpoints.
+        assert manifests[0] == "58886a53d3250e3d803f044aa3bd412bdb5a6a4b49aec38c196f071ff9c804bf"
     return {"indices_sha256": manifests[0], "new_calibrations": len(candidates)}
 
 
