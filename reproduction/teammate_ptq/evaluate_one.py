@@ -56,6 +56,7 @@ def replay_split(args, split, inputs):
 
 def run(args):
     sys.path.insert(0, str(args.source))
+    capture.use_data_splits(args.data)
     checkpoint_sha = capture.sha256(args.checkpoint)
     if checkpoint_sha != args.checkpoint_sha256:
         raise ValueError("Checkpoint differs from the explicit training-stage handoff")

@@ -65,6 +65,21 @@ class SweepContracts(unittest.TestCase):
             with self.assertRaisesRegex(ValueError, "preset percentile"):
                 sweep.check_parent(Path("new.ckpt"), "a" * 64, 99.999)
 
+    def test_fresh_sweep_calibrates_seven_binary_candidates_on_any_data(self):
+        calls = []
+
+        def calibrated(namespace):
+            calls.append(namespace)
+            return {"checkpoint_file": "ptq.ckpt", "recipe": {"indices_sha256": "formal-line-manifest"}}
+
+        args = SimpleNamespace(source=Path("source"), data=Path("data"), fp32=Path("fp32.ckpt"), output=Path("sweep"))
+        with patch.object(sweep.calibrate, "run", side_effect=calibrated), \
+                patch.object(sweep.capture, "argument_quantization_config", return_value={}):
+            calibration = sweep.calibrate_new(args, {"fp32": args.fp32})
+        self.assertEqual(calibration, {"indices_sha256": "formal-line-manifest", "new_calibrations": 7})
+        self.assertEqual({(call.calibration_windows, call.num_classes, call.classification_type) for call in calls},
+                         {(512, 2, "bc")})
+
     def test_candidate_and_metric_order_are_fixed(self):
         rows = validation_rows()
         self.assertEqual(sweep.choose_candidate(rows)["candidate"], "original")
