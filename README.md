@@ -6,6 +6,7 @@
 
 | 内容 | 说明与入口 |
 | --- | --- |
+| 正式线 FP32 / INT8 结果 | 受试者划分，TUAR、TUAB、TUSL 三个任务，FP32、PTQ、C、QAP 四组各三个种子，见 [INT8 结果](reproduction/formal_line/results/int8/README.md) |
 | TUAR INT8 试点结果 | 按录音划分的三个种子，包含 FP32、PTQ、C、QAP 四组及配对分析，见 [INT8 团队小结](reproduction/teammate_ptq/README.md) |
 | 正式线复现流程 | 三个任务的数据构建、环境、预训练、微调、PTQ、评估、汇总与多机分工，见 [正式线运行说明](reproduction/formal_line/README.md) |
 
@@ -18,6 +19,20 @@
 3. **运行自己负责的位宽**：按[多台机器分跑](reproduction/formal_line/README.md#多台机器分跑)设置路径、接收共用 FP32 父检查点，再运行 INT4 或三值的预训练、微调和评估；三值先做冒烟测试。结果用 [summarize_formal.py](reproduction/formal_line/summarize_formal.py) 汇总。
 
 TUSL 使用标注事件三分类和四折评估；v2 验证集规则是看过 v1 测试结果后的探索性修订，协议要求保留 v1 对照。具体划分和指标见[正式线协议](reproduction/formal_line/README.md#协议)。
+
+## 已完成：正式线 FP32 与 INT8
+
+受试者划分，种子 42 / 43 / 44。下表是测试 AUROC 的均值 ± 样本标准差；TUSL 是协议 v2 下事件级宏平均 AUROC 的四折平均。
+
+| 任务 | FP32 | PTQ INT8 | C INT8 | QAP INT8 |
+| --- | ---: | ---: | ---: | ---: |
+| TUAR | 0.8663 ± 0.0064 | 0.8552 ± 0.0177 | 0.8642 ± 0.0051 | 0.8608 ± 0.0133 |
+| TUAB | 0.8391 ± 0.0083 | 0.7560 ± 0.0473 | 0.8392 ± 0.0126 | 0.8510 ± 0.0069 |
+| TUSL v2 | 0.8339 ± 0.0292 | 0.8194 ± 0.0228 | 0.8263 ± 0.0324 | 0.8609 ± 0.0280 |
+
+PTQ 在三个任务上均值都最低，TUAB 上比 FP32 低 0.083。QAP 对 PTQ 在 TUAB、TUSL v2 上三个种子都领先，TUAR 上基本持平。三个任务都没有 QAP 稳定优于 C 的证据：TUSL v2 上的 +0.035 全部来自一名受试者主导的一折。
+
+[完整结果与结论](reproduction/formal_line/results/int8/README.md) · [逐种子结果](reproduction/formal_line/results/int8/summary.json) · [来源记录](reproduction/formal_line/results/int8/provenance.json)
 
 ## 已完成：TUAR INT8 试点
 
