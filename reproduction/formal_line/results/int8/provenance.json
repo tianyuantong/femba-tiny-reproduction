@@ -1,0 +1,3321 @@
+{
+  "source_repository": "https://github.com/berumottovv00/BioFoundation",
+  "source_base_commit": "a2a4d441485efd8423c44b35d7448a30ccd44437",
+  "source_patches": ["reproduction/teammate_ptq/source.patch", "reproduction/teammate_ptq/quantization-config.patch", "reproduction/teammate_ptq/ternary-model.patch"],
+  "source_variants": {
+    "seed42_fp32_pretrain": {
+      "ARES/tests/test_networks/brevitas_custom_layers.py": "a32920e2c32edfb0fe685fd6dd843066fe63290e0ba049bbb449c5c308756392",
+      "ARES/tests/test_networks/test_25_femba_tiny_int8.py": "9b634ff24aab47b8dd0e59c666ebe789fe14172b3e7b0ca6dd9d579cc36652c4",
+      "data_module/finetune_data_module.py": "f5e15802a45ebc8af98165320cfb2daba4b62b742b1cf8f9cbbfba565672474a",
+      "data_module/pretrain_data_module.py": "3e907ebde7ac71fadee4daeccbe8d74399972057aa9ec808e5fff97fd1dda155",
+      "datasets/hdf5_dataset.py": "f0461d1d4a20fe9930d3fc5d35df791899ec33d2b401ab547d01c2cd8cf92c98",
+      "models/FEMBA_int8.py": "0be91c15c8532c1b35f6bef38382ff37a3c1d9646ce0164ac1bb330c77e338f4",
+      "models/femba_decoder.py": "87071914bc557816f309b4ed8db7c3c6e8ab6b2b0445339892f51a6fd5ef4363",
+      "models/femba_ptq.py": "609cf70ec2ba0dc01692531d7af1b40974acc53c3b706b4988eb01db6447ecf0",
+      "models/femba_quantization.py": "8503352735f2327ff6d40a62e6cb5ff9dd54ff00642c9b7af7866efb77cf5ed9",
+      "models/femba_ternary.py": "a011ffc503292decff0c3f0defb9d09fc463ad8053f0f89aef383d77998971ed",
+      "run_train.py": "a6fd5637001af987180126ef362b0005cdb2396730fff6b05c20f702e8e24aae",
+      "tasks/finetune_task.py": "3547367acf92ffbddabe2d60610e88207e527db8815940d985909e681f02b573",
+      "tasks/pretrain_task.py": "42e6bb4b2c0b231e4debc87d55e1fbf4b0aaa3895e1bcd70f48bffde6eb1af2d",
+      "util/train_utils.py": "13eba63f611af0cf8d6b58efe28eb1e7be7909735e25f2ae460b74703aab9e9b"
+    },
+    "later_formal": {
+      "ARES/tests/test_networks/brevitas_custom_layers.py": "3be16f1d62a2fbd16a06f39cf7cbb9c46314437ee23f26d205dc946acdfd8c45",
+      "ARES/tests/test_networks/test_25_femba_tiny_int8.py": "15bb3d7198d1fcaf604adf2389cbee81eb87850a58281efe18b2fa4e1fa370a2",
+      "data_module/finetune_data_module.py": "f5e15802a45ebc8af98165320cfb2daba4b62b742b1cf8f9cbbfba565672474a",
+      "data_module/pretrain_data_module.py": "3e907ebde7ac71fadee4daeccbe8d74399972057aa9ec808e5fff97fd1dda155",
+      "datasets/hdf5_dataset.py": "f0461d1d4a20fe9930d3fc5d35df791899ec33d2b401ab547d01c2cd8cf92c98",
+      "models/FEMBA_int8.py": "0be91c15c8532c1b35f6bef38382ff37a3c1d9646ce0164ac1bb330c77e338f4",
+      "models/femba_decoder.py": "87071914bc557816f309b4ed8db7c3c6e8ab6b2b0445339892f51a6fd5ef4363",
+      "models/femba_ptq.py": "609cf70ec2ba0dc01692531d7af1b40974acc53c3b706b4988eb01db6447ecf0",
+      "models/femba_quantization.py": "e2cd0340416b3894cbc0979233a1fc9b702ff345e66305004e729143ef4d2274",
+      "models/femba_ternary.py": "42f6527bbcffbd8984e5d1d7d04ed07eb5b4d491ab61286ed7e3c605808644c9",
+      "run_train.py": "a6fd5637001af987180126ef362b0005cdb2396730fff6b05c20f702e8e24aae",
+      "tasks/finetune_task.py": "3547367acf92ffbddabe2d60610e88207e527db8815940d985909e681f02b573",
+      "tasks/pretrain_task.py": "42e6bb4b2c0b231e4debc87d55e1fbf4b0aaa3895e1bcd70f48bffde6eb1af2d",
+      "util/train_utils.py": "13eba63f611af0cf8d6b58efe28eb1e7be7909735e25f2ae460b74703aab9e9b"
+    }
+  },
+  "source_variant_note": "Both variants are source_base_commit with source_patches applied as of a commit of this repository: later_formal as of b6c9245 (unchanged since), seed42_fp32_pretrain as of c797fd6, before ternary-model.patch existed. ternary-model.patch adds the ternary weight scheme; FP32 and uniform quantization build the same layers with the same arguments.",
+  "runners_sha256": {
+    "calibrate.py": "4a8d43640c80c795436345d74fa00461d301416c451b963917f3c743394215df",
+    "evaluate.py": "811f1b5971573682777c5cbe799cd9044d0cf82ba6e202c4eaf9ac6619f249c1",
+    "evaluate_events.py": "3591b8d7ad522213890534326b8f33f854528d7cda50c57d507fdfe8e73edbc9",
+    "evaluate_one.py": "a28ec1cb392b549b63ec12e1c922909f93b6ef489700c5e5b6162c65002ef115",
+    "finetune_queue_v4.sh": "84f18b4cc6e5df780645bf777486758d388083d3e1b9e1458b933306307f482e",
+    "launch_batches_v4.sh": "f2350e4262b899224e0a5544b3c8ad1bd5b773f2563d1baa4a98005941a332c8",
+    "summarize_formal.py": "1deafca7d08392989d64376fe5eb1e43a027fbe957ba4cf520309b2d5618f5f7",
+    "sweep.py": "4fa5baa4dac12d499195c70f28fa475dd70ee2090e6e2e9f64e7a20d4fde6182",
+    "threshold_control.py": "0de32020f9ce7f06446aa464721fd71b0f2ab7961d80f96179f99a73b88fdc4a",
+    "train_stage.py": "9b3db4990dcc88a2b1494b4bcfe43916f84ae83e5a0369a7ba4c53d669729ac3"
+  },
+  "runner_commits": {
+    "train_stage.py": "e781cd4",
+    "finetune_queue_v4.sh": "44d4d93 (reproduction/formal_line/finetune_queue.sh)",
+    "evaluate_one.py": "93522ee",
+    "sweep.py": "93522ee",
+    "evaluate.py": "e781cd4",
+    "calibrate.py": "e781cd4",
+    "evaluate_events.py": "e781cd4",
+    "threshold_control.py": "8633bdb",
+    "summarize_formal.py": "4b964ed"
+  },
+  "runner_note": "runner_commits gives the commit of this repository whose file content each runner matches. Later commits change train_stage.py only for ternary weights and finetune_queue.sh only by the FP32_PARENTS option. The seed42/fp32/pretrain and seed42/qap_w8a8/pretrain stages ran train_stage.py as of commit 05b21a8 (sha256 b345b56897404169a44c51758b68cd3c923473863edb70e30ccb7d8855d5d1ec), which lacks only the three-class fine-tuning support; pretraining is the same. launch_batches_v4.sh only orders the queue runs.",
+  "scope": "Stages and PTQ sweeps behind the TUAR, TUAB and TUSL v2 results. The seed42 TUSL v1 runs used the later_formal source and the same train_stage.py and calibrate.py.",
+  "training_stages": [
+    {
+      "stage": "seed42/fp32/pretrain",
+      "epochs": 2,
+      "selected_epoch": 1,
+      "best_validation_loss": 0.08546314388513565,
+      "checkpoint_sha256": "57216556fa8b458dd84cbc809b3d8277512b33a4114040dfa3b6548286c2680e",
+      "source_variant": "seed42_fp32_pretrain",
+      "data": {
+        "train": {
+          "dataset": "tuab",
+          "sha256": "342bd3e818656d5d89d602d9db72e2deeb0a417ab7da3c3a677ec387d5563898"
+        },
+        "val": {
+          "dataset": "tuab",
+          "sha256": "f1bdd5c63f59a18aa678c961c58a7d5d4f1e316a2f26f2a5b177a9c088b62e37"
+        },
+        "test": {
+          "dataset": "tuab",
+          "sha256": "23d7c2f4fce207661c3d5d54ef9935bca2edff9dcc851911ad1f5f7bfb8a06b5"
+        }
+      },
+      "quantization": {
+        "quantization_enabled": false,
+        "activation_quantizers": 34,
+        "weight_quantizers": 17,
+        "dt_proj_shapes": [[1540, 96], [1540, 96], [1540, 96], [1540, 96]],
+        "configuration": {
+          "weight_bit_width": 8,
+          "activation_bit_width": 8,
+          "weight_quant_scheme": "uniform",
+          "activation_quant_scheme": "uniform"
+        },
+        "actual_proxy_bit_widths": {
+          "activation": [8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8],
+          "weight": [8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8]
+        }
+      }
+    },
+    {
+      "stage": "seed42/fp32/finetune-tuar",
+      "epochs": 5,
+      "selected_epoch": 0,
+      "best_validation_loss": 0.3266577124595642,
+      "checkpoint_sha256": "fc6bd3d7c3d6215fde3bd37d08a54749df9937d0b6e2bc6ecf257991b9b7156e",
+      "source_variant": "later_formal",
+      "data": {
+        "train": {
+          "dataset": "tuar",
+          "sha256": "f4b32cf4a9794c4be8eec73c663f2b31b4f373ba39c7b2a36d618bff92dbe1c5"
+        },
+        "val": {
+          "dataset": "tuar",
+          "sha256": "65cea843f613c716a6364298f2959ebee5adbfbd3188208e34b94cdb220058e9"
+        },
+        "test": {
+          "dataset": "tuar",
+          "sha256": "770bcaf65d61e31af7c94d4af9701006e4bebb6feb322306dd6dbe80657fbd2e"
+        }
+      },
+      "quantization": {
+        "quantization_enabled": false,
+        "activation_quantizers": 35,
+        "weight_quantizers": 18,
+        "dt_proj_shapes": [[1540, 96], [1540, 96], [1540, 96], [1540, 96]],
+        "configuration": {
+          "weight_bit_width": 8,
+          "activation_bit_width": 8,
+          "weight_quant_scheme": "uniform",
+          "activation_quant_scheme": "uniform"
+        },
+        "actual_proxy_bit_widths": {
+          "activation": [8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8],
+          "weight": [8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8]
+        }
+      },
+      "parent_checkpoint_sha256": "57216556fa8b458dd84cbc809b3d8277512b33a4114040dfa3b6548286c2680e",
+      "classifier_initialization_sha256": "798a70c3d79999fa1490e9544427476944a6f8bff2f89380739911aac91d88f7",
+      "classifier_initialization_preserved": true
+    },
+    {
+      "stage": "seed42/fp32/finetune-tuab",
+      "epochs": 5,
+      "selected_epoch": 0,
+      "best_validation_loss": 0.48442724347114563,
+      "checkpoint_sha256": "2e4cd3144c8e165b2ce6ff16bdad711edfe681681c02e19674cebdc18dc26c3a",
+      "source_variant": "later_formal",
+      "data": {
+        "train": {
+          "dataset": "tuab-ft",
+          "sha256": "28c45e5db40000724111f85e9cd3e96ce5e27de2cb9f1c6601f50379aa686309"
+        },
+        "val": {
+          "dataset": "tuab-ft",
+          "sha256": "cb91bb2aaac4c2f7088d9e9b2c6ebdb01ede719d52b65a298c9c4c8ae31a2e36"
+        },
+        "test": {
+          "dataset": "tuab-ft",
+          "sha256": "23d7c2f4fce207661c3d5d54ef9935bca2edff9dcc851911ad1f5f7bfb8a06b5"
+        }
+      },
+      "quantization": {
+        "quantization_enabled": false,
+        "activation_quantizers": 35,
+        "weight_quantizers": 18,
+        "dt_proj_shapes": [[1540, 96], [1540, 96], [1540, 96], [1540, 96]],
+        "configuration": {
+          "weight_bit_width": 8,
+          "activation_bit_width": 8,
+          "weight_quant_scheme": "uniform",
+          "activation_quant_scheme": "uniform"
+        },
+        "actual_proxy_bit_widths": {
+          "activation": [8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8],
+          "weight": [8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8]
+        }
+      },
+      "parent_checkpoint_sha256": "57216556fa8b458dd84cbc809b3d8277512b33a4114040dfa3b6548286c2680e",
+      "classifier_initialization_sha256": "798a70c3d79999fa1490e9544427476944a6f8bff2f89380739911aac91d88f7",
+      "classifier_initialization_preserved": true
+    },
+    {
+      "stage": "seed42/fp32/finetune-tusl0-v2",
+      "epochs": 20,
+      "selected_epoch": 15,
+      "best_validation_loss": 0.5222809314727783,
+      "checkpoint_sha256": "bb8ab93df5ac8565effd7cadeed99b7917372468cea6e1064db47c254f9a3624",
+      "source_variant": "later_formal",
+      "data": {
+        "train": {
+          "dataset": "tusl-v2/fold0",
+          "sha256": "08c5ef16e0babf342967ae1e508a1149406e0cbd0ed5fe02068982a7e0053488"
+        },
+        "val": {
+          "dataset": "tusl-v2/fold0",
+          "sha256": "ba569d7c5c44fb2cb3d135fce5ec1eca830e76a97b3f9a3abed7c5520bc715d0"
+        },
+        "test": {
+          "dataset": "tusl-v2/fold0",
+          "sha256": "ad4cf1173dd8c2bb4da067a7cc112668e9ee5e2e7fdced5cd41005ad9a98a161"
+        }
+      },
+      "quantization": {
+        "quantization_enabled": false,
+        "activation_quantizers": 35,
+        "weight_quantizers": 18,
+        "dt_proj_shapes": [[1540, 96], [1540, 96], [1540, 96], [1540, 96]],
+        "configuration": {
+          "weight_bit_width": 8,
+          "activation_bit_width": 8,
+          "weight_quant_scheme": "uniform",
+          "activation_quant_scheme": "uniform"
+        },
+        "actual_proxy_bit_widths": {
+          "activation": [8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8],
+          "weight": [8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8]
+        }
+      },
+      "parent_checkpoint_sha256": "57216556fa8b458dd84cbc809b3d8277512b33a4114040dfa3b6548286c2680e",
+      "classifier_initialization_sha256": "2d91e6cf1fd5c7dca904e8e4f8508dd4829ede53fbb7218fd2bcca8d3e3c392f",
+      "classifier_initialization_preserved": true
+    },
+    {
+      "stage": "seed42/fp32/finetune-tusl1-v2",
+      "epochs": 20,
+      "selected_epoch": 12,
+      "best_validation_loss": 0.9282580614089966,
+      "checkpoint_sha256": "1ad71d9545f556990b2bc8b4b6e60dd062f4fe2cc9878096060e8fde9d07e0df",
+      "source_variant": "later_formal",
+      "data": {
+        "train": {
+          "dataset": "tusl-v2/fold1",
+          "sha256": "62d6f3252f67a6c8ad9ec5fa1077954a47d1eefe6e60f663cdc52161732ab618"
+        },
+        "val": {
+          "dataset": "tusl-v2/fold1",
+          "sha256": "a6970f1745bcf2622fbed692576c98fae45bb289595eee9d7a6a53075bafa0f4"
+        },
+        "test": {
+          "dataset": "tusl-v2/fold1",
+          "sha256": "8ebff8de819879f2e0d1102f7ac74ebd7e2e03aa7b3e325e133830ae60202e41"
+        }
+      },
+      "quantization": {
+        "quantization_enabled": false,
+        "activation_quantizers": 35,
+        "weight_quantizers": 18,
+        "dt_proj_shapes": [[1540, 96], [1540, 96], [1540, 96], [1540, 96]],
+        "configuration": {
+          "weight_bit_width": 8,
+          "activation_bit_width": 8,
+          "weight_quant_scheme": "uniform",
+          "activation_quant_scheme": "uniform"
+        },
+        "actual_proxy_bit_widths": {
+          "activation": [8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8],
+          "weight": [8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8]
+        }
+      },
+      "parent_checkpoint_sha256": "57216556fa8b458dd84cbc809b3d8277512b33a4114040dfa3b6548286c2680e",
+      "classifier_initialization_sha256": "2d91e6cf1fd5c7dca904e8e4f8508dd4829ede53fbb7218fd2bcca8d3e3c392f",
+      "classifier_initialization_preserved": true
+    },
+    {
+      "stage": "seed42/fp32/finetune-tusl2-v2",
+      "epochs": 20,
+      "selected_epoch": 13,
+      "best_validation_loss": 0.5749691128730774,
+      "checkpoint_sha256": "d01cee82f17e8635740d29fa16780e11d558c30c8478738f598cf6b1f90ccf16",
+      "source_variant": "later_formal",
+      "data": {
+        "train": {
+          "dataset": "tusl-v2/fold2",
+          "sha256": "ec7e131f7f24133708fe33bd2e23f92370aab5e220efd9d01c799a9a7c175150"
+        },
+        "val": {
+          "dataset": "tusl-v2/fold2",
+          "sha256": "ee55407ec927fef10a83c74d3c9d7b3aba47b91199de836287db5a8a5dce59ac"
+        },
+        "test": {
+          "dataset": "tusl-v2/fold2",
+          "sha256": "153ee0e44de3becdc370b3c2b1ea1bbbd6ddd0fccd66fc549fa2910fae3cd82f"
+        }
+      },
+      "quantization": {
+        "quantization_enabled": false,
+        "activation_quantizers": 35,
+        "weight_quantizers": 18,
+        "dt_proj_shapes": [[1540, 96], [1540, 96], [1540, 96], [1540, 96]],
+        "configuration": {
+          "weight_bit_width": 8,
+          "activation_bit_width": 8,
+          "weight_quant_scheme": "uniform",
+          "activation_quant_scheme": "uniform"
+        },
+        "actual_proxy_bit_widths": {
+          "activation": [8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8],
+          "weight": [8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8]
+        }
+      },
+      "parent_checkpoint_sha256": "57216556fa8b458dd84cbc809b3d8277512b33a4114040dfa3b6548286c2680e",
+      "classifier_initialization_sha256": "2d91e6cf1fd5c7dca904e8e4f8508dd4829ede53fbb7218fd2bcca8d3e3c392f",
+      "classifier_initialization_preserved": true
+    },
+    {
+      "stage": "seed42/fp32/finetune-tusl3-v2",
+      "epochs": 20,
+      "selected_epoch": 14,
+      "best_validation_loss": 0.7240145206451416,
+      "checkpoint_sha256": "6403fddeae22f57801efef7371abc14cf2b96ee724b697b5b74eab55450e1c53",
+      "source_variant": "later_formal",
+      "data": {
+        "train": {
+          "dataset": "tusl-v2/fold3",
+          "sha256": "e0bd739696aa8e10b4d30af512727280c253eef12027657358fbf2e7f7e7bfd1"
+        },
+        "val": {
+          "dataset": "tusl-v2/fold3",
+          "sha256": "1b0ecd653c4ef8537f0534fe14cfd866d591be503771e3741206a2d64bde7b59"
+        },
+        "test": {
+          "dataset": "tusl-v2/fold3",
+          "sha256": "7dfb8f16c0ecd2f6842551815c7e8dcc1ca95abc0d64f87bf8618baa3b8e2673"
+        }
+      },
+      "quantization": {
+        "quantization_enabled": false,
+        "activation_quantizers": 35,
+        "weight_quantizers": 18,
+        "dt_proj_shapes": [[1540, 96], [1540, 96], [1540, 96], [1540, 96]],
+        "configuration": {
+          "weight_bit_width": 8,
+          "activation_bit_width": 8,
+          "weight_quant_scheme": "uniform",
+          "activation_quant_scheme": "uniform"
+        },
+        "actual_proxy_bit_widths": {
+          "activation": [8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8],
+          "weight": [8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8]
+        }
+      },
+      "parent_checkpoint_sha256": "57216556fa8b458dd84cbc809b3d8277512b33a4114040dfa3b6548286c2680e",
+      "classifier_initialization_sha256": "2d91e6cf1fd5c7dca904e8e4f8508dd4829ede53fbb7218fd2bcca8d3e3c392f",
+      "classifier_initialization_preserved": true
+    },
+    {
+      "stage": "seed42/c_w8a8/finetune-tuar",
+      "epochs": 5,
+      "selected_epoch": 2,
+      "best_validation_loss": 0.36981603503227234,
+      "checkpoint_sha256": "7d7c55b9e3594aa947241b87b68a59e8b83a3015a21c19fcd3efe89d165bdcfe",
+      "source_variant": "later_formal",
+      "data": {
+        "train": {
+          "dataset": "tuar",
+          "sha256": "f4b32cf4a9794c4be8eec73c663f2b31b4f373ba39c7b2a36d618bff92dbe1c5"
+        },
+        "val": {
+          "dataset": "tuar",
+          "sha256": "65cea843f613c716a6364298f2959ebee5adbfbd3188208e34b94cdb220058e9"
+        },
+        "test": {
+          "dataset": "tuar",
+          "sha256": "770bcaf65d61e31af7c94d4af9701006e4bebb6feb322306dd6dbe80657fbd2e"
+        }
+      },
+      "quantization": {
+        "quantization_enabled": true,
+        "activation_quantizers": 35,
+        "weight_quantizers": 18,
+        "dt_proj_shapes": [[1540, 96], [1540, 96], [1540, 96], [1540, 96]],
+        "configuration": {
+          "weight_bit_width": 8,
+          "activation_bit_width": 8,
+          "weight_quant_scheme": "uniform",
+          "activation_quant_scheme": "uniform"
+        },
+        "actual_proxy_bit_widths": {
+          "activation": [8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8],
+          "weight": [8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8]
+        }
+      },
+      "parent_checkpoint_sha256": "57216556fa8b458dd84cbc809b3d8277512b33a4114040dfa3b6548286c2680e",
+      "classifier_initialization_sha256": "798a70c3d79999fa1490e9544427476944a6f8bff2f89380739911aac91d88f7",
+      "classifier_initialization_preserved": true,
+      "fresh_shared_parent_observers": 34,
+      "fresh_target_observers": 35,
+      "first_batch_updated_observers": 35
+    },
+    {
+      "stage": "seed42/c_w8a8/finetune-tuab",
+      "epochs": 5,
+      "selected_epoch": 0,
+      "best_validation_loss": 0.5038547515869141,
+      "checkpoint_sha256": "b9e518f2a08a8c483c5f51d6e3cce414a91fc96c4dd264575df58b2cd0934d23",
+      "source_variant": "later_formal",
+      "data": {
+        "train": {
+          "dataset": "tuab-ft",
+          "sha256": "28c45e5db40000724111f85e9cd3e96ce5e27de2cb9f1c6601f50379aa686309"
+        },
+        "val": {
+          "dataset": "tuab-ft",
+          "sha256": "cb91bb2aaac4c2f7088d9e9b2c6ebdb01ede719d52b65a298c9c4c8ae31a2e36"
+        },
+        "test": {
+          "dataset": "tuab-ft",
+          "sha256": "23d7c2f4fce207661c3d5d54ef9935bca2edff9dcc851911ad1f5f7bfb8a06b5"
+        }
+      },
+      "quantization": {
+        "quantization_enabled": true,
+        "activation_quantizers": 35,
+        "weight_quantizers": 18,
+        "dt_proj_shapes": [[1540, 96], [1540, 96], [1540, 96], [1540, 96]],
+        "configuration": {
+          "weight_bit_width": 8,
+          "activation_bit_width": 8,
+          "weight_quant_scheme": "uniform",
+          "activation_quant_scheme": "uniform"
+        },
+        "actual_proxy_bit_widths": {
+          "activation": [8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8],
+          "weight": [8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8]
+        }
+      },
+      "parent_checkpoint_sha256": "57216556fa8b458dd84cbc809b3d8277512b33a4114040dfa3b6548286c2680e",
+      "classifier_initialization_sha256": "798a70c3d79999fa1490e9544427476944a6f8bff2f89380739911aac91d88f7",
+      "classifier_initialization_preserved": true,
+      "fresh_shared_parent_observers": 34,
+      "fresh_target_observers": 35,
+      "first_batch_updated_observers": 35
+    },
+    {
+      "stage": "seed42/c_w8a8/finetune-tusl0-v2",
+      "epochs": 20,
+      "selected_epoch": 16,
+      "best_validation_loss": 0.5579057335853577,
+      "checkpoint_sha256": "97b76c00411a0f765d9c7820be326bfd4f5a92dcf7098af3c9d5909196657c81",
+      "source_variant": "later_formal",
+      "data": {
+        "train": {
+          "dataset": "tusl-v2/fold0",
+          "sha256": "08c5ef16e0babf342967ae1e508a1149406e0cbd0ed5fe02068982a7e0053488"
+        },
+        "val": {
+          "dataset": "tusl-v2/fold0",
+          "sha256": "ba569d7c5c44fb2cb3d135fce5ec1eca830e76a97b3f9a3abed7c5520bc715d0"
+        },
+        "test": {
+          "dataset": "tusl-v2/fold0",
+          "sha256": "ad4cf1173dd8c2bb4da067a7cc112668e9ee5e2e7fdced5cd41005ad9a98a161"
+        }
+      },
+      "quantization": {
+        "quantization_enabled": true,
+        "activation_quantizers": 35,
+        "weight_quantizers": 18,
+        "dt_proj_shapes": [[1540, 96], [1540, 96], [1540, 96], [1540, 96]],
+        "configuration": {
+          "weight_bit_width": 8,
+          "activation_bit_width": 8,
+          "weight_quant_scheme": "uniform",
+          "activation_quant_scheme": "uniform"
+        },
+        "actual_proxy_bit_widths": {
+          "activation": [8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8],
+          "weight": [8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8]
+        }
+      },
+      "parent_checkpoint_sha256": "57216556fa8b458dd84cbc809b3d8277512b33a4114040dfa3b6548286c2680e",
+      "classifier_initialization_sha256": "2d91e6cf1fd5c7dca904e8e4f8508dd4829ede53fbb7218fd2bcca8d3e3c392f",
+      "classifier_initialization_preserved": true,
+      "fresh_shared_parent_observers": 34,
+      "fresh_target_observers": 35,
+      "first_batch_updated_observers": 35
+    },
+    {
+      "stage": "seed42/c_w8a8/finetune-tusl1-v2",
+      "epochs": 20,
+      "selected_epoch": 13,
+      "best_validation_loss": 0.9154350161552429,
+      "checkpoint_sha256": "030a08f650e7f4c49a54499e5bcd89983e2f8aecfe15bbcc8f9c6732c84880e5",
+      "source_variant": "later_formal",
+      "data": {
+        "train": {
+          "dataset": "tusl-v2/fold1",
+          "sha256": "62d6f3252f67a6c8ad9ec5fa1077954a47d1eefe6e60f663cdc52161732ab618"
+        },
+        "val": {
+          "dataset": "tusl-v2/fold1",
+          "sha256": "a6970f1745bcf2622fbed692576c98fae45bb289595eee9d7a6a53075bafa0f4"
+        },
+        "test": {
+          "dataset": "tusl-v2/fold1",
+          "sha256": "8ebff8de819879f2e0d1102f7ac74ebd7e2e03aa7b3e325e133830ae60202e41"
+        }
+      },
+      "quantization": {
+        "quantization_enabled": true,
+        "activation_quantizers": 35,
+        "weight_quantizers": 18,
+        "dt_proj_shapes": [[1540, 96], [1540, 96], [1540, 96], [1540, 96]],
+        "configuration": {
+          "weight_bit_width": 8,
+          "activation_bit_width": 8,
+          "weight_quant_scheme": "uniform",
+          "activation_quant_scheme": "uniform"
+        },
+        "actual_proxy_bit_widths": {
+          "activation": [8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8],
+          "weight": [8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8]
+        }
+      },
+      "parent_checkpoint_sha256": "57216556fa8b458dd84cbc809b3d8277512b33a4114040dfa3b6548286c2680e",
+      "classifier_initialization_sha256": "2d91e6cf1fd5c7dca904e8e4f8508dd4829ede53fbb7218fd2bcca8d3e3c392f",
+      "classifier_initialization_preserved": true,
+      "fresh_shared_parent_observers": 34,
+      "fresh_target_observers": 35,
+      "first_batch_updated_observers": 35
+    },
+    {
+      "stage": "seed42/c_w8a8/finetune-tusl2-v2",
+      "epochs": 20,
+      "selected_epoch": 19,
+      "best_validation_loss": 0.5884908437728882,
+      "checkpoint_sha256": "c4e91a949e9273d034edcf958ecf60391dc9b3021c82c2b820a80ae47ebf2b52",
+      "source_variant": "later_formal",
+      "data": {
+        "train": {
+          "dataset": "tusl-v2/fold2",
+          "sha256": "ec7e131f7f24133708fe33bd2e23f92370aab5e220efd9d01c799a9a7c175150"
+        },
+        "val": {
+          "dataset": "tusl-v2/fold2",
+          "sha256": "ee55407ec927fef10a83c74d3c9d7b3aba47b91199de836287db5a8a5dce59ac"
+        },
+        "test": {
+          "dataset": "tusl-v2/fold2",
+          "sha256": "153ee0e44de3becdc370b3c2b1ea1bbbd6ddd0fccd66fc549fa2910fae3cd82f"
+        }
+      },
+      "quantization": {
+        "quantization_enabled": true,
+        "activation_quantizers": 35,
+        "weight_quantizers": 18,
+        "dt_proj_shapes": [[1540, 96], [1540, 96], [1540, 96], [1540, 96]],
+        "configuration": {
+          "weight_bit_width": 8,
+          "activation_bit_width": 8,
+          "weight_quant_scheme": "uniform",
+          "activation_quant_scheme": "uniform"
+        },
+        "actual_proxy_bit_widths": {
+          "activation": [8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8],
+          "weight": [8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8]
+        }
+      },
+      "parent_checkpoint_sha256": "57216556fa8b458dd84cbc809b3d8277512b33a4114040dfa3b6548286c2680e",
+      "classifier_initialization_sha256": "2d91e6cf1fd5c7dca904e8e4f8508dd4829ede53fbb7218fd2bcca8d3e3c392f",
+      "classifier_initialization_preserved": true,
+      "fresh_shared_parent_observers": 34,
+      "fresh_target_observers": 35,
+      "first_batch_updated_observers": 35
+    },
+    {
+      "stage": "seed42/c_w8a8/finetune-tusl3-v2",
+      "epochs": 20,
+      "selected_epoch": 17,
+      "best_validation_loss": 0.7413234114646912,
+      "checkpoint_sha256": "f80972928a56c18581131f4c5983cbc08cf2fbfc4f35fa3842a9bd83728d3930",
+      "source_variant": "later_formal",
+      "data": {
+        "train": {
+          "dataset": "tusl-v2/fold3",
+          "sha256": "e0bd739696aa8e10b4d30af512727280c253eef12027657358fbf2e7f7e7bfd1"
+        },
+        "val": {
+          "dataset": "tusl-v2/fold3",
+          "sha256": "1b0ecd653c4ef8537f0534fe14cfd866d591be503771e3741206a2d64bde7b59"
+        },
+        "test": {
+          "dataset": "tusl-v2/fold3",
+          "sha256": "7dfb8f16c0ecd2f6842551815c7e8dcc1ca95abc0d64f87bf8618baa3b8e2673"
+        }
+      },
+      "quantization": {
+        "quantization_enabled": true,
+        "activation_quantizers": 35,
+        "weight_quantizers": 18,
+        "dt_proj_shapes": [[1540, 96], [1540, 96], [1540, 96], [1540, 96]],
+        "configuration": {
+          "weight_bit_width": 8,
+          "activation_bit_width": 8,
+          "weight_quant_scheme": "uniform",
+          "activation_quant_scheme": "uniform"
+        },
+        "actual_proxy_bit_widths": {
+          "activation": [8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8],
+          "weight": [8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8]
+        }
+      },
+      "parent_checkpoint_sha256": "57216556fa8b458dd84cbc809b3d8277512b33a4114040dfa3b6548286c2680e",
+      "classifier_initialization_sha256": "2d91e6cf1fd5c7dca904e8e4f8508dd4829ede53fbb7218fd2bcca8d3e3c392f",
+      "classifier_initialization_preserved": true,
+      "fresh_shared_parent_observers": 34,
+      "fresh_target_observers": 35,
+      "first_batch_updated_observers": 35
+    },
+    {
+      "stage": "seed42/qap_w8a8/pretrain",
+      "epochs": 2,
+      "selected_epoch": 1,
+      "best_validation_loss": 0.08745159208774567,
+      "checkpoint_sha256": "c90c77d1bb722c89ce9d3045d9680f9aac05b493642d49a93140d55dcba7cc62",
+      "source_variant": "later_formal",
+      "data": {
+        "train": {
+          "dataset": "tuab",
+          "sha256": "342bd3e818656d5d89d602d9db72e2deeb0a417ab7da3c3a677ec387d5563898"
+        },
+        "val": {
+          "dataset": "tuab",
+          "sha256": "f1bdd5c63f59a18aa678c961c58a7d5d4f1e316a2f26f2a5b177a9c088b62e37"
+        },
+        "test": {
+          "dataset": "tuab",
+          "sha256": "23d7c2f4fce207661c3d5d54ef9935bca2edff9dcc851911ad1f5f7bfb8a06b5"
+        }
+      },
+      "quantization": {
+        "quantization_enabled": true,
+        "activation_quantizers": 34,
+        "weight_quantizers": 17,
+        "dt_proj_shapes": [[1540, 96], [1540, 96], [1540, 96], [1540, 96]],
+        "configuration": {
+          "weight_bit_width": 8,
+          "activation_bit_width": 8,
+          "weight_quant_scheme": "uniform",
+          "activation_quant_scheme": "uniform"
+        },
+        "actual_proxy_bit_widths": {
+          "activation": [8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8],
+          "weight": [8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8]
+        }
+      }
+    },
+    {
+      "stage": "seed42/qap_w8a8/finetune-tuar",
+      "epochs": 5,
+      "selected_epoch": 0,
+      "best_validation_loss": 0.32656949758529663,
+      "checkpoint_sha256": "13b04a15a366d70eb7f2dadf1400620ddf6e5e1b0c1624f772ee0eab443eff97",
+      "source_variant": "later_formal",
+      "data": {
+        "train": {
+          "dataset": "tuar",
+          "sha256": "f4b32cf4a9794c4be8eec73c663f2b31b4f373ba39c7b2a36d618bff92dbe1c5"
+        },
+        "val": {
+          "dataset": "tuar",
+          "sha256": "65cea843f613c716a6364298f2959ebee5adbfbd3188208e34b94cdb220058e9"
+        },
+        "test": {
+          "dataset": "tuar",
+          "sha256": "770bcaf65d61e31af7c94d4af9701006e4bebb6feb322306dd6dbe80657fbd2e"
+        }
+      },
+      "quantization": {
+        "quantization_enabled": true,
+        "activation_quantizers": 35,
+        "weight_quantizers": 18,
+        "dt_proj_shapes": [[1540, 96], [1540, 96], [1540, 96], [1540, 96]],
+        "configuration": {
+          "weight_bit_width": 8,
+          "activation_bit_width": 8,
+          "weight_quant_scheme": "uniform",
+          "activation_quant_scheme": "uniform"
+        },
+        "actual_proxy_bit_widths": {
+          "activation": [8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8],
+          "weight": [8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8]
+        }
+      },
+      "parent_checkpoint_sha256": "c90c77d1bb722c89ce9d3045d9680f9aac05b493642d49a93140d55dcba7cc62",
+      "classifier_initialization_sha256": "798a70c3d79999fa1490e9544427476944a6f8bff2f89380739911aac91d88f7",
+      "classifier_initialization_preserved": true
+    },
+    {
+      "stage": "seed42/qap_w8a8/finetune-tuab",
+      "epochs": 5,
+      "selected_epoch": 0,
+      "best_validation_loss": 0.49245503544807434,
+      "checkpoint_sha256": "975f4ee91745bf193706746bb6839ed1da7deffcc12a179df335daf03e8c93c5",
+      "source_variant": "later_formal",
+      "data": {
+        "train": {
+          "dataset": "tuab-ft",
+          "sha256": "28c45e5db40000724111f85e9cd3e96ce5e27de2cb9f1c6601f50379aa686309"
+        },
+        "val": {
+          "dataset": "tuab-ft",
+          "sha256": "cb91bb2aaac4c2f7088d9e9b2c6ebdb01ede719d52b65a298c9c4c8ae31a2e36"
+        },
+        "test": {
+          "dataset": "tuab-ft",
+          "sha256": "23d7c2f4fce207661c3d5d54ef9935bca2edff9dcc851911ad1f5f7bfb8a06b5"
+        }
+      },
+      "quantization": {
+        "quantization_enabled": true,
+        "activation_quantizers": 35,
+        "weight_quantizers": 18,
+        "dt_proj_shapes": [[1540, 96], [1540, 96], [1540, 96], [1540, 96]],
+        "configuration": {
+          "weight_bit_width": 8,
+          "activation_bit_width": 8,
+          "weight_quant_scheme": "uniform",
+          "activation_quant_scheme": "uniform"
+        },
+        "actual_proxy_bit_widths": {
+          "activation": [8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8],
+          "weight": [8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8]
+        }
+      },
+      "parent_checkpoint_sha256": "c90c77d1bb722c89ce9d3045d9680f9aac05b493642d49a93140d55dcba7cc62",
+      "classifier_initialization_sha256": "798a70c3d79999fa1490e9544427476944a6f8bff2f89380739911aac91d88f7",
+      "classifier_initialization_preserved": true
+    },
+    {
+      "stage": "seed42/qap_w8a8/finetune-tusl0-v2",
+      "epochs": 20,
+      "selected_epoch": 15,
+      "best_validation_loss": 0.5191769599914551,
+      "checkpoint_sha256": "779e22b86900ed436368cb97f250aaec7b07331d8eeb11a9fc130ecdeeeb2c05",
+      "source_variant": "later_formal",
+      "data": {
+        "train": {
+          "dataset": "tusl-v2/fold0",
+          "sha256": "08c5ef16e0babf342967ae1e508a1149406e0cbd0ed5fe02068982a7e0053488"
+        },
+        "val": {
+          "dataset": "tusl-v2/fold0",
+          "sha256": "ba569d7c5c44fb2cb3d135fce5ec1eca830e76a97b3f9a3abed7c5520bc715d0"
+        },
+        "test": {
+          "dataset": "tusl-v2/fold0",
+          "sha256": "ad4cf1173dd8c2bb4da067a7cc112668e9ee5e2e7fdced5cd41005ad9a98a161"
+        }
+      },
+      "quantization": {
+        "quantization_enabled": true,
+        "activation_quantizers": 35,
+        "weight_quantizers": 18,
+        "dt_proj_shapes": [[1540, 96], [1540, 96], [1540, 96], [1540, 96]],
+        "configuration": {
+          "weight_bit_width": 8,
+          "activation_bit_width": 8,
+          "weight_quant_scheme": "uniform",
+          "activation_quant_scheme": "uniform"
+        },
+        "actual_proxy_bit_widths": {
+          "activation": [8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8],
+          "weight": [8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8]
+        }
+      },
+      "parent_checkpoint_sha256": "c90c77d1bb722c89ce9d3045d9680f9aac05b493642d49a93140d55dcba7cc62",
+      "classifier_initialization_sha256": "2d91e6cf1fd5c7dca904e8e4f8508dd4829ede53fbb7218fd2bcca8d3e3c392f",
+      "classifier_initialization_preserved": true
+    },
+    {
+      "stage": "seed42/qap_w8a8/finetune-tusl1-v2",
+      "epochs": 20,
+      "selected_epoch": 11,
+      "best_validation_loss": 0.857592761516571,
+      "checkpoint_sha256": "97bcab91cde25f30efc42c71fbd92bdf64c7033d22377c66fea76c37af29d547",
+      "source_variant": "later_formal",
+      "data": {
+        "train": {
+          "dataset": "tusl-v2/fold1",
+          "sha256": "62d6f3252f67a6c8ad9ec5fa1077954a47d1eefe6e60f663cdc52161732ab618"
+        },
+        "val": {
+          "dataset": "tusl-v2/fold1",
+          "sha256": "a6970f1745bcf2622fbed692576c98fae45bb289595eee9d7a6a53075bafa0f4"
+        },
+        "test": {
+          "dataset": "tusl-v2/fold1",
+          "sha256": "8ebff8de819879f2e0d1102f7ac74ebd7e2e03aa7b3e325e133830ae60202e41"
+        }
+      },
+      "quantization": {
+        "quantization_enabled": true,
+        "activation_quantizers": 35,
+        "weight_quantizers": 18,
+        "dt_proj_shapes": [[1540, 96], [1540, 96], [1540, 96], [1540, 96]],
+        "configuration": {
+          "weight_bit_width": 8,
+          "activation_bit_width": 8,
+          "weight_quant_scheme": "uniform",
+          "activation_quant_scheme": "uniform"
+        },
+        "actual_proxy_bit_widths": {
+          "activation": [8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8],
+          "weight": [8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8]
+        }
+      },
+      "parent_checkpoint_sha256": "c90c77d1bb722c89ce9d3045d9680f9aac05b493642d49a93140d55dcba7cc62",
+      "classifier_initialization_sha256": "2d91e6cf1fd5c7dca904e8e4f8508dd4829ede53fbb7218fd2bcca8d3e3c392f",
+      "classifier_initialization_preserved": true
+    },
+    {
+      "stage": "seed42/qap_w8a8/finetune-tusl2-v2",
+      "epochs": 20,
+      "selected_epoch": 11,
+      "best_validation_loss": 0.6684142351150513,
+      "checkpoint_sha256": "def2080b9cbb4da41f359e1246e7416fa5086347bf1f9e0a84c5144209aa0702",
+      "source_variant": "later_formal",
+      "data": {
+        "train": {
+          "dataset": "tusl-v2/fold2",
+          "sha256": "ec7e131f7f24133708fe33bd2e23f92370aab5e220efd9d01c799a9a7c175150"
+        },
+        "val": {
+          "dataset": "tusl-v2/fold2",
+          "sha256": "ee55407ec927fef10a83c74d3c9d7b3aba47b91199de836287db5a8a5dce59ac"
+        },
+        "test": {
+          "dataset": "tusl-v2/fold2",
+          "sha256": "153ee0e44de3becdc370b3c2b1ea1bbbd6ddd0fccd66fc549fa2910fae3cd82f"
+        }
+      },
+      "quantization": {
+        "quantization_enabled": true,
+        "activation_quantizers": 35,
+        "weight_quantizers": 18,
+        "dt_proj_shapes": [[1540, 96], [1540, 96], [1540, 96], [1540, 96]],
+        "configuration": {
+          "weight_bit_width": 8,
+          "activation_bit_width": 8,
+          "weight_quant_scheme": "uniform",
+          "activation_quant_scheme": "uniform"
+        },
+        "actual_proxy_bit_widths": {
+          "activation": [8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8],
+          "weight": [8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8]
+        }
+      },
+      "parent_checkpoint_sha256": "c90c77d1bb722c89ce9d3045d9680f9aac05b493642d49a93140d55dcba7cc62",
+      "classifier_initialization_sha256": "2d91e6cf1fd5c7dca904e8e4f8508dd4829ede53fbb7218fd2bcca8d3e3c392f",
+      "classifier_initialization_preserved": true
+    },
+    {
+      "stage": "seed42/qap_w8a8/finetune-tusl3-v2",
+      "epochs": 20,
+      "selected_epoch": 18,
+      "best_validation_loss": 0.7057282328605652,
+      "checkpoint_sha256": "caea28190bb9f674a77b9d1fc2448eea776dd46fae3c54bc17f0aa647c171ea1",
+      "source_variant": "later_formal",
+      "data": {
+        "train": {
+          "dataset": "tusl-v2/fold3",
+          "sha256": "e0bd739696aa8e10b4d30af512727280c253eef12027657358fbf2e7f7e7bfd1"
+        },
+        "val": {
+          "dataset": "tusl-v2/fold3",
+          "sha256": "1b0ecd653c4ef8537f0534fe14cfd866d591be503771e3741206a2d64bde7b59"
+        },
+        "test": {
+          "dataset": "tusl-v2/fold3",
+          "sha256": "7dfb8f16c0ecd2f6842551815c7e8dcc1ca95abc0d64f87bf8618baa3b8e2673"
+        }
+      },
+      "quantization": {
+        "quantization_enabled": true,
+        "activation_quantizers": 35,
+        "weight_quantizers": 18,
+        "dt_proj_shapes": [[1540, 96], [1540, 96], [1540, 96], [1540, 96]],
+        "configuration": {
+          "weight_bit_width": 8,
+          "activation_bit_width": 8,
+          "weight_quant_scheme": "uniform",
+          "activation_quant_scheme": "uniform"
+        },
+        "actual_proxy_bit_widths": {
+          "activation": [8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8],
+          "weight": [8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8]
+        }
+      },
+      "parent_checkpoint_sha256": "c90c77d1bb722c89ce9d3045d9680f9aac05b493642d49a93140d55dcba7cc62",
+      "classifier_initialization_sha256": "2d91e6cf1fd5c7dca904e8e4f8508dd4829ede53fbb7218fd2bcca8d3e3c392f",
+      "classifier_initialization_preserved": true
+    },
+    {
+      "stage": "seed43/fp32/pretrain",
+      "epochs": 2,
+      "selected_epoch": 1,
+      "best_validation_loss": 0.08281917124986649,
+      "checkpoint_sha256": "5cc1d7819b599c118048039f07e684e924185703d04160c4e2f82c230eda1cc7",
+      "source_variant": "later_formal",
+      "data": {
+        "train": {
+          "dataset": "tuab",
+          "sha256": "342bd3e818656d5d89d602d9db72e2deeb0a417ab7da3c3a677ec387d5563898"
+        },
+        "val": {
+          "dataset": "tuab",
+          "sha256": "f1bdd5c63f59a18aa678c961c58a7d5d4f1e316a2f26f2a5b177a9c088b62e37"
+        },
+        "test": {
+          "dataset": "tuab",
+          "sha256": "23d7c2f4fce207661c3d5d54ef9935bca2edff9dcc851911ad1f5f7bfb8a06b5"
+        }
+      },
+      "quantization": {
+        "quantization_enabled": false,
+        "activation_quantizers": 34,
+        "weight_quantizers": 17,
+        "dt_proj_shapes": [[1540, 96], [1540, 96], [1540, 96], [1540, 96]],
+        "configuration": {
+          "weight_bit_width": 8,
+          "activation_bit_width": 8,
+          "weight_quant_scheme": "uniform",
+          "activation_quant_scheme": "uniform"
+        },
+        "actual_proxy_bit_widths": {
+          "activation": [8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8],
+          "weight": [8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8]
+        }
+      }
+    },
+    {
+      "stage": "seed43/fp32/finetune-tuar",
+      "epochs": 5,
+      "selected_epoch": 3,
+      "best_validation_loss": 0.30275535583496094,
+      "checkpoint_sha256": "a0f48fba8cadf996c50b718e2df575c73f871075a84f9447c35d1aea8fb0ab50",
+      "source_variant": "later_formal",
+      "data": {
+        "train": {
+          "dataset": "tuar",
+          "sha256": "f4b32cf4a9794c4be8eec73c663f2b31b4f373ba39c7b2a36d618bff92dbe1c5"
+        },
+        "val": {
+          "dataset": "tuar",
+          "sha256": "65cea843f613c716a6364298f2959ebee5adbfbd3188208e34b94cdb220058e9"
+        },
+        "test": {
+          "dataset": "tuar",
+          "sha256": "770bcaf65d61e31af7c94d4af9701006e4bebb6feb322306dd6dbe80657fbd2e"
+        }
+      },
+      "quantization": {
+        "quantization_enabled": false,
+        "activation_quantizers": 35,
+        "weight_quantizers": 18,
+        "dt_proj_shapes": [[1540, 96], [1540, 96], [1540, 96], [1540, 96]],
+        "configuration": {
+          "weight_bit_width": 8,
+          "activation_bit_width": 8,
+          "weight_quant_scheme": "uniform",
+          "activation_quant_scheme": "uniform"
+        },
+        "actual_proxy_bit_widths": {
+          "activation": [8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8],
+          "weight": [8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8]
+        }
+      },
+      "parent_checkpoint_sha256": "5cc1d7819b599c118048039f07e684e924185703d04160c4e2f82c230eda1cc7",
+      "classifier_initialization_sha256": "273936748188d0d23b269bec375ee9910769dd0714e460313ca9c87a357631f7",
+      "classifier_initialization_preserved": true
+    },
+    {
+      "stage": "seed43/fp32/finetune-tuab",
+      "epochs": 5,
+      "selected_epoch": 0,
+      "best_validation_loss": 0.49606719613075256,
+      "checkpoint_sha256": "aaa3040dc32d49e4a2632936599a591ce68b90ddf8f19ec6b5749b5d6d7af33c",
+      "source_variant": "later_formal",
+      "data": {
+        "train": {
+          "dataset": "tuab-ft",
+          "sha256": "28c45e5db40000724111f85e9cd3e96ce5e27de2cb9f1c6601f50379aa686309"
+        },
+        "val": {
+          "dataset": "tuab-ft",
+          "sha256": "cb91bb2aaac4c2f7088d9e9b2c6ebdb01ede719d52b65a298c9c4c8ae31a2e36"
+        },
+        "test": {
+          "dataset": "tuab-ft",
+          "sha256": "23d7c2f4fce207661c3d5d54ef9935bca2edff9dcc851911ad1f5f7bfb8a06b5"
+        }
+      },
+      "quantization": {
+        "quantization_enabled": false,
+        "activation_quantizers": 35,
+        "weight_quantizers": 18,
+        "dt_proj_shapes": [[1540, 96], [1540, 96], [1540, 96], [1540, 96]],
+        "configuration": {
+          "weight_bit_width": 8,
+          "activation_bit_width": 8,
+          "weight_quant_scheme": "uniform",
+          "activation_quant_scheme": "uniform"
+        },
+        "actual_proxy_bit_widths": {
+          "activation": [8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8],
+          "weight": [8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8]
+        }
+      },
+      "parent_checkpoint_sha256": "5cc1d7819b599c118048039f07e684e924185703d04160c4e2f82c230eda1cc7",
+      "classifier_initialization_sha256": "273936748188d0d23b269bec375ee9910769dd0714e460313ca9c87a357631f7",
+      "classifier_initialization_preserved": true
+    },
+    {
+      "stage": "seed43/fp32/finetune-tusl0-v2",
+      "epochs": 20,
+      "selected_epoch": 19,
+      "best_validation_loss": 0.6093164086341858,
+      "checkpoint_sha256": "704305ba5ae9aca553f3e0d161492d62c13b1c5d1c80fe789edbad451903ce11",
+      "source_variant": "later_formal",
+      "data": {
+        "train": {
+          "dataset": "tusl-v2/fold0",
+          "sha256": "08c5ef16e0babf342967ae1e508a1149406e0cbd0ed5fe02068982a7e0053488"
+        },
+        "val": {
+          "dataset": "tusl-v2/fold0",
+          "sha256": "ba569d7c5c44fb2cb3d135fce5ec1eca830e76a97b3f9a3abed7c5520bc715d0"
+        },
+        "test": {
+          "dataset": "tusl-v2/fold0",
+          "sha256": "ad4cf1173dd8c2bb4da067a7cc112668e9ee5e2e7fdced5cd41005ad9a98a161"
+        }
+      },
+      "quantization": {
+        "quantization_enabled": false,
+        "activation_quantizers": 35,
+        "weight_quantizers": 18,
+        "dt_proj_shapes": [[1540, 96], [1540, 96], [1540, 96], [1540, 96]],
+        "configuration": {
+          "weight_bit_width": 8,
+          "activation_bit_width": 8,
+          "weight_quant_scheme": "uniform",
+          "activation_quant_scheme": "uniform"
+        },
+        "actual_proxy_bit_widths": {
+          "activation": [8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8],
+          "weight": [8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8]
+        }
+      },
+      "parent_checkpoint_sha256": "5cc1d7819b599c118048039f07e684e924185703d04160c4e2f82c230eda1cc7",
+      "classifier_initialization_sha256": "b8631e849e7c05e45ae8d1cb826a4b3d3eae1377dab16d0a41325ce9e2eda56e",
+      "classifier_initialization_preserved": true
+    },
+    {
+      "stage": "seed43/fp32/finetune-tusl1-v2",
+      "epochs": 20,
+      "selected_epoch": 19,
+      "best_validation_loss": 0.9234502911567688,
+      "checkpoint_sha256": "71f4cd09de7bb00e1005f0e99ed12f3168c49add84ca7deff054ad647cb9d9f0",
+      "source_variant": "later_formal",
+      "data": {
+        "train": {
+          "dataset": "tusl-v2/fold1",
+          "sha256": "62d6f3252f67a6c8ad9ec5fa1077954a47d1eefe6e60f663cdc52161732ab618"
+        },
+        "val": {
+          "dataset": "tusl-v2/fold1",
+          "sha256": "a6970f1745bcf2622fbed692576c98fae45bb289595eee9d7a6a53075bafa0f4"
+        },
+        "test": {
+          "dataset": "tusl-v2/fold1",
+          "sha256": "8ebff8de819879f2e0d1102f7ac74ebd7e2e03aa7b3e325e133830ae60202e41"
+        }
+      },
+      "quantization": {
+        "quantization_enabled": false,
+        "activation_quantizers": 35,
+        "weight_quantizers": 18,
+        "dt_proj_shapes": [[1540, 96], [1540, 96], [1540, 96], [1540, 96]],
+        "configuration": {
+          "weight_bit_width": 8,
+          "activation_bit_width": 8,
+          "weight_quant_scheme": "uniform",
+          "activation_quant_scheme": "uniform"
+        },
+        "actual_proxy_bit_widths": {
+          "activation": [8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8],
+          "weight": [8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8]
+        }
+      },
+      "parent_checkpoint_sha256": "5cc1d7819b599c118048039f07e684e924185703d04160c4e2f82c230eda1cc7",
+      "classifier_initialization_sha256": "b8631e849e7c05e45ae8d1cb826a4b3d3eae1377dab16d0a41325ce9e2eda56e",
+      "classifier_initialization_preserved": true
+    },
+    {
+      "stage": "seed43/fp32/finetune-tusl2-v2",
+      "epochs": 20,
+      "selected_epoch": 18,
+      "best_validation_loss": 0.666360080242157,
+      "checkpoint_sha256": "1e9dceb65633477e049abfa314453e36d577b276923e9d6262bfc91c746aed0f",
+      "source_variant": "later_formal",
+      "data": {
+        "train": {
+          "dataset": "tusl-v2/fold2",
+          "sha256": "ec7e131f7f24133708fe33bd2e23f92370aab5e220efd9d01c799a9a7c175150"
+        },
+        "val": {
+          "dataset": "tusl-v2/fold2",
+          "sha256": "ee55407ec927fef10a83c74d3c9d7b3aba47b91199de836287db5a8a5dce59ac"
+        },
+        "test": {
+          "dataset": "tusl-v2/fold2",
+          "sha256": "153ee0e44de3becdc370b3c2b1ea1bbbd6ddd0fccd66fc549fa2910fae3cd82f"
+        }
+      },
+      "quantization": {
+        "quantization_enabled": false,
+        "activation_quantizers": 35,
+        "weight_quantizers": 18,
+        "dt_proj_shapes": [[1540, 96], [1540, 96], [1540, 96], [1540, 96]],
+        "configuration": {
+          "weight_bit_width": 8,
+          "activation_bit_width": 8,
+          "weight_quant_scheme": "uniform",
+          "activation_quant_scheme": "uniform"
+        },
+        "actual_proxy_bit_widths": {
+          "activation": [8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8],
+          "weight": [8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8]
+        }
+      },
+      "parent_checkpoint_sha256": "5cc1d7819b599c118048039f07e684e924185703d04160c4e2f82c230eda1cc7",
+      "classifier_initialization_sha256": "b8631e849e7c05e45ae8d1cb826a4b3d3eae1377dab16d0a41325ce9e2eda56e",
+      "classifier_initialization_preserved": true
+    },
+    {
+      "stage": "seed43/fp32/finetune-tusl3-v2",
+      "epochs": 20,
+      "selected_epoch": 18,
+      "best_validation_loss": 0.7310714721679688,
+      "checkpoint_sha256": "d76934dac2c3c82886eefe43854dbc5c6e35ae9eacd64cfd65dad9a726d2da6e",
+      "source_variant": "later_formal",
+      "data": {
+        "train": {
+          "dataset": "tusl-v2/fold3",
+          "sha256": "e0bd739696aa8e10b4d30af512727280c253eef12027657358fbf2e7f7e7bfd1"
+        },
+        "val": {
+          "dataset": "tusl-v2/fold3",
+          "sha256": "1b0ecd653c4ef8537f0534fe14cfd866d591be503771e3741206a2d64bde7b59"
+        },
+        "test": {
+          "dataset": "tusl-v2/fold3",
+          "sha256": "7dfb8f16c0ecd2f6842551815c7e8dcc1ca95abc0d64f87bf8618baa3b8e2673"
+        }
+      },
+      "quantization": {
+        "quantization_enabled": false,
+        "activation_quantizers": 35,
+        "weight_quantizers": 18,
+        "dt_proj_shapes": [[1540, 96], [1540, 96], [1540, 96], [1540, 96]],
+        "configuration": {
+          "weight_bit_width": 8,
+          "activation_bit_width": 8,
+          "weight_quant_scheme": "uniform",
+          "activation_quant_scheme": "uniform"
+        },
+        "actual_proxy_bit_widths": {
+          "activation": [8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8],
+          "weight": [8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8]
+        }
+      },
+      "parent_checkpoint_sha256": "5cc1d7819b599c118048039f07e684e924185703d04160c4e2f82c230eda1cc7",
+      "classifier_initialization_sha256": "b8631e849e7c05e45ae8d1cb826a4b3d3eae1377dab16d0a41325ce9e2eda56e",
+      "classifier_initialization_preserved": true
+    },
+    {
+      "stage": "seed43/c_w8a8/finetune-tuar",
+      "epochs": 5,
+      "selected_epoch": 3,
+      "best_validation_loss": 0.3562382459640503,
+      "checkpoint_sha256": "c15ab2e3cf27c3834b6248144122450ea7ced4d5bedd8f750425715fea1b1092",
+      "source_variant": "later_formal",
+      "data": {
+        "train": {
+          "dataset": "tuar",
+          "sha256": "f4b32cf4a9794c4be8eec73c663f2b31b4f373ba39c7b2a36d618bff92dbe1c5"
+        },
+        "val": {
+          "dataset": "tuar",
+          "sha256": "65cea843f613c716a6364298f2959ebee5adbfbd3188208e34b94cdb220058e9"
+        },
+        "test": {
+          "dataset": "tuar",
+          "sha256": "770bcaf65d61e31af7c94d4af9701006e4bebb6feb322306dd6dbe80657fbd2e"
+        }
+      },
+      "quantization": {
+        "quantization_enabled": true,
+        "activation_quantizers": 35,
+        "weight_quantizers": 18,
+        "dt_proj_shapes": [[1540, 96], [1540, 96], [1540, 96], [1540, 96]],
+        "configuration": {
+          "weight_bit_width": 8,
+          "activation_bit_width": 8,
+          "weight_quant_scheme": "uniform",
+          "activation_quant_scheme": "uniform"
+        },
+        "actual_proxy_bit_widths": {
+          "activation": [8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8],
+          "weight": [8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8]
+        }
+      },
+      "parent_checkpoint_sha256": "5cc1d7819b599c118048039f07e684e924185703d04160c4e2f82c230eda1cc7",
+      "classifier_initialization_sha256": "273936748188d0d23b269bec375ee9910769dd0714e460313ca9c87a357631f7",
+      "classifier_initialization_preserved": true,
+      "fresh_shared_parent_observers": 34,
+      "fresh_target_observers": 35,
+      "first_batch_updated_observers": 35
+    },
+    {
+      "stage": "seed43/c_w8a8/finetune-tuab",
+      "epochs": 5,
+      "selected_epoch": 1,
+      "best_validation_loss": 0.5036546587944031,
+      "checkpoint_sha256": "980c95524af0a98da0af61475600b302cb51d50bab83ed8c643f1f1e66a63595",
+      "source_variant": "later_formal",
+      "data": {
+        "train": {
+          "dataset": "tuab-ft",
+          "sha256": "28c45e5db40000724111f85e9cd3e96ce5e27de2cb9f1c6601f50379aa686309"
+        },
+        "val": {
+          "dataset": "tuab-ft",
+          "sha256": "cb91bb2aaac4c2f7088d9e9b2c6ebdb01ede719d52b65a298c9c4c8ae31a2e36"
+        },
+        "test": {
+          "dataset": "tuab-ft",
+          "sha256": "23d7c2f4fce207661c3d5d54ef9935bca2edff9dcc851911ad1f5f7bfb8a06b5"
+        }
+      },
+      "quantization": {
+        "quantization_enabled": true,
+        "activation_quantizers": 35,
+        "weight_quantizers": 18,
+        "dt_proj_shapes": [[1540, 96], [1540, 96], [1540, 96], [1540, 96]],
+        "configuration": {
+          "weight_bit_width": 8,
+          "activation_bit_width": 8,
+          "weight_quant_scheme": "uniform",
+          "activation_quant_scheme": "uniform"
+        },
+        "actual_proxy_bit_widths": {
+          "activation": [8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8],
+          "weight": [8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8]
+        }
+      },
+      "parent_checkpoint_sha256": "5cc1d7819b599c118048039f07e684e924185703d04160c4e2f82c230eda1cc7",
+      "classifier_initialization_sha256": "273936748188d0d23b269bec375ee9910769dd0714e460313ca9c87a357631f7",
+      "classifier_initialization_preserved": true,
+      "fresh_shared_parent_observers": 34,
+      "fresh_target_observers": 35,
+      "first_batch_updated_observers": 35
+    },
+    {
+      "stage": "seed43/c_w8a8/finetune-tusl0-v2",
+      "epochs": 20,
+      "selected_epoch": 19,
+      "best_validation_loss": 0.6664976477622986,
+      "checkpoint_sha256": "09c81b1744608332a813ea2f4d5e27070af81e951d60b8e1434c33e8301f8309",
+      "source_variant": "later_formal",
+      "data": {
+        "train": {
+          "dataset": "tusl-v2/fold0",
+          "sha256": "08c5ef16e0babf342967ae1e508a1149406e0cbd0ed5fe02068982a7e0053488"
+        },
+        "val": {
+          "dataset": "tusl-v2/fold0",
+          "sha256": "ba569d7c5c44fb2cb3d135fce5ec1eca830e76a97b3f9a3abed7c5520bc715d0"
+        },
+        "test": {
+          "dataset": "tusl-v2/fold0",
+          "sha256": "ad4cf1173dd8c2bb4da067a7cc112668e9ee5e2e7fdced5cd41005ad9a98a161"
+        }
+      },
+      "quantization": {
+        "quantization_enabled": true,
+        "activation_quantizers": 35,
+        "weight_quantizers": 18,
+        "dt_proj_shapes": [[1540, 96], [1540, 96], [1540, 96], [1540, 96]],
+        "configuration": {
+          "weight_bit_width": 8,
+          "activation_bit_width": 8,
+          "weight_quant_scheme": "uniform",
+          "activation_quant_scheme": "uniform"
+        },
+        "actual_proxy_bit_widths": {
+          "activation": [8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8],
+          "weight": [8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8]
+        }
+      },
+      "parent_checkpoint_sha256": "5cc1d7819b599c118048039f07e684e924185703d04160c4e2f82c230eda1cc7",
+      "classifier_initialization_sha256": "b8631e849e7c05e45ae8d1cb826a4b3d3eae1377dab16d0a41325ce9e2eda56e",
+      "classifier_initialization_preserved": true,
+      "fresh_shared_parent_observers": 34,
+      "fresh_target_observers": 35,
+      "first_batch_updated_observers": 35
+    },
+    {
+      "stage": "seed43/c_w8a8/finetune-tusl1-v2",
+      "epochs": 20,
+      "selected_epoch": 18,
+      "best_validation_loss": 0.8835271000862122,
+      "checkpoint_sha256": "fe64ced4881aa128d39aa47a4c61a6bbb2555b73bd16339daef58da39c6ba2f2",
+      "source_variant": "later_formal",
+      "data": {
+        "train": {
+          "dataset": "tusl-v2/fold1",
+          "sha256": "62d6f3252f67a6c8ad9ec5fa1077954a47d1eefe6e60f663cdc52161732ab618"
+        },
+        "val": {
+          "dataset": "tusl-v2/fold1",
+          "sha256": "a6970f1745bcf2622fbed692576c98fae45bb289595eee9d7a6a53075bafa0f4"
+        },
+        "test": {
+          "dataset": "tusl-v2/fold1",
+          "sha256": "8ebff8de819879f2e0d1102f7ac74ebd7e2e03aa7b3e325e133830ae60202e41"
+        }
+      },
+      "quantization": {
+        "quantization_enabled": true,
+        "activation_quantizers": 35,
+        "weight_quantizers": 18,
+        "dt_proj_shapes": [[1540, 96], [1540, 96], [1540, 96], [1540, 96]],
+        "configuration": {
+          "weight_bit_width": 8,
+          "activation_bit_width": 8,
+          "weight_quant_scheme": "uniform",
+          "activation_quant_scheme": "uniform"
+        },
+        "actual_proxy_bit_widths": {
+          "activation": [8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8],
+          "weight": [8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8]
+        }
+      },
+      "parent_checkpoint_sha256": "5cc1d7819b599c118048039f07e684e924185703d04160c4e2f82c230eda1cc7",
+      "classifier_initialization_sha256": "b8631e849e7c05e45ae8d1cb826a4b3d3eae1377dab16d0a41325ce9e2eda56e",
+      "classifier_initialization_preserved": true,
+      "fresh_shared_parent_observers": 34,
+      "fresh_target_observers": 35,
+      "first_batch_updated_observers": 35
+    },
+    {
+      "stage": "seed43/c_w8a8/finetune-tusl2-v2",
+      "epochs": 20,
+      "selected_epoch": 19,
+      "best_validation_loss": 0.7085537910461426,
+      "checkpoint_sha256": "45329088225efceb3a0231397dfde6b641ec92cd7dac2ba9a9eb687a946cc8c7",
+      "source_variant": "later_formal",
+      "data": {
+        "train": {
+          "dataset": "tusl-v2/fold2",
+          "sha256": "ec7e131f7f24133708fe33bd2e23f92370aab5e220efd9d01c799a9a7c175150"
+        },
+        "val": {
+          "dataset": "tusl-v2/fold2",
+          "sha256": "ee55407ec927fef10a83c74d3c9d7b3aba47b91199de836287db5a8a5dce59ac"
+        },
+        "test": {
+          "dataset": "tusl-v2/fold2",
+          "sha256": "153ee0e44de3becdc370b3c2b1ea1bbbd6ddd0fccd66fc549fa2910fae3cd82f"
+        }
+      },
+      "quantization": {
+        "quantization_enabled": true,
+        "activation_quantizers": 35,
+        "weight_quantizers": 18,
+        "dt_proj_shapes": [[1540, 96], [1540, 96], [1540, 96], [1540, 96]],
+        "configuration": {
+          "weight_bit_width": 8,
+          "activation_bit_width": 8,
+          "weight_quant_scheme": "uniform",
+          "activation_quant_scheme": "uniform"
+        },
+        "actual_proxy_bit_widths": {
+          "activation": [8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8],
+          "weight": [8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8]
+        }
+      },
+      "parent_checkpoint_sha256": "5cc1d7819b599c118048039f07e684e924185703d04160c4e2f82c230eda1cc7",
+      "classifier_initialization_sha256": "b8631e849e7c05e45ae8d1cb826a4b3d3eae1377dab16d0a41325ce9e2eda56e",
+      "classifier_initialization_preserved": true,
+      "fresh_shared_parent_observers": 34,
+      "fresh_target_observers": 35,
+      "first_batch_updated_observers": 35
+    },
+    {
+      "stage": "seed43/c_w8a8/finetune-tusl3-v2",
+      "epochs": 20,
+      "selected_epoch": 19,
+      "best_validation_loss": 0.743640661239624,
+      "checkpoint_sha256": "b99eb307b2fdd9af3a608ce7dcbbc3dd4da55e3bb97747f555637fd46c703b8f",
+      "source_variant": "later_formal",
+      "data": {
+        "train": {
+          "dataset": "tusl-v2/fold3",
+          "sha256": "e0bd739696aa8e10b4d30af512727280c253eef12027657358fbf2e7f7e7bfd1"
+        },
+        "val": {
+          "dataset": "tusl-v2/fold3",
+          "sha256": "1b0ecd653c4ef8537f0534fe14cfd866d591be503771e3741206a2d64bde7b59"
+        },
+        "test": {
+          "dataset": "tusl-v2/fold3",
+          "sha256": "7dfb8f16c0ecd2f6842551815c7e8dcc1ca95abc0d64f87bf8618baa3b8e2673"
+        }
+      },
+      "quantization": {
+        "quantization_enabled": true,
+        "activation_quantizers": 35,
+        "weight_quantizers": 18,
+        "dt_proj_shapes": [[1540, 96], [1540, 96], [1540, 96], [1540, 96]],
+        "configuration": {
+          "weight_bit_width": 8,
+          "activation_bit_width": 8,
+          "weight_quant_scheme": "uniform",
+          "activation_quant_scheme": "uniform"
+        },
+        "actual_proxy_bit_widths": {
+          "activation": [8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8],
+          "weight": [8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8]
+        }
+      },
+      "parent_checkpoint_sha256": "5cc1d7819b599c118048039f07e684e924185703d04160c4e2f82c230eda1cc7",
+      "classifier_initialization_sha256": "b8631e849e7c05e45ae8d1cb826a4b3d3eae1377dab16d0a41325ce9e2eda56e",
+      "classifier_initialization_preserved": true,
+      "fresh_shared_parent_observers": 34,
+      "fresh_target_observers": 35,
+      "first_batch_updated_observers": 35
+    },
+    {
+      "stage": "seed43/qap_w8a8/pretrain",
+      "epochs": 2,
+      "selected_epoch": 1,
+      "best_validation_loss": 0.08487801998853683,
+      "checkpoint_sha256": "38041ae68f78c65681689eaa355cddc4209e8c7ff42f588f0d75759a636337d2",
+      "source_variant": "later_formal",
+      "data": {
+        "train": {
+          "dataset": "tuab",
+          "sha256": "342bd3e818656d5d89d602d9db72e2deeb0a417ab7da3c3a677ec387d5563898"
+        },
+        "val": {
+          "dataset": "tuab",
+          "sha256": "f1bdd5c63f59a18aa678c961c58a7d5d4f1e316a2f26f2a5b177a9c088b62e37"
+        },
+        "test": {
+          "dataset": "tuab",
+          "sha256": "23d7c2f4fce207661c3d5d54ef9935bca2edff9dcc851911ad1f5f7bfb8a06b5"
+        }
+      },
+      "quantization": {
+        "quantization_enabled": true,
+        "activation_quantizers": 34,
+        "weight_quantizers": 17,
+        "dt_proj_shapes": [[1540, 96], [1540, 96], [1540, 96], [1540, 96]],
+        "configuration": {
+          "weight_bit_width": 8,
+          "activation_bit_width": 8,
+          "weight_quant_scheme": "uniform",
+          "activation_quant_scheme": "uniform"
+        },
+        "actual_proxy_bit_widths": {
+          "activation": [8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8],
+          "weight": [8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8]
+        }
+      }
+    },
+    {
+      "stage": "seed43/qap_w8a8/finetune-tuar",
+      "epochs": 5,
+      "selected_epoch": 1,
+      "best_validation_loss": 0.3516506850719452,
+      "checkpoint_sha256": "738334d3bdfc6c65b8dc2d8a56add120869e5d9888fd41acb55522676324e8ab",
+      "source_variant": "later_formal",
+      "data": {
+        "train": {
+          "dataset": "tuar",
+          "sha256": "f4b32cf4a9794c4be8eec73c663f2b31b4f373ba39c7b2a36d618bff92dbe1c5"
+        },
+        "val": {
+          "dataset": "tuar",
+          "sha256": "65cea843f613c716a6364298f2959ebee5adbfbd3188208e34b94cdb220058e9"
+        },
+        "test": {
+          "dataset": "tuar",
+          "sha256": "770bcaf65d61e31af7c94d4af9701006e4bebb6feb322306dd6dbe80657fbd2e"
+        }
+      },
+      "quantization": {
+        "quantization_enabled": true,
+        "activation_quantizers": 35,
+        "weight_quantizers": 18,
+        "dt_proj_shapes": [[1540, 96], [1540, 96], [1540, 96], [1540, 96]],
+        "configuration": {
+          "weight_bit_width": 8,
+          "activation_bit_width": 8,
+          "weight_quant_scheme": "uniform",
+          "activation_quant_scheme": "uniform"
+        },
+        "actual_proxy_bit_widths": {
+          "activation": [8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8],
+          "weight": [8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8]
+        }
+      },
+      "parent_checkpoint_sha256": "38041ae68f78c65681689eaa355cddc4209e8c7ff42f588f0d75759a636337d2",
+      "classifier_initialization_sha256": "273936748188d0d23b269bec375ee9910769dd0714e460313ca9c87a357631f7",
+      "classifier_initialization_preserved": true
+    },
+    {
+      "stage": "seed43/qap_w8a8/finetune-tuab",
+      "epochs": 5,
+      "selected_epoch": 0,
+      "best_validation_loss": 0.47678130865097046,
+      "checkpoint_sha256": "bf657c73f7305e9897d393ca709e8b2e1357975f423bcd75a67aea04fb2e5c1e",
+      "source_variant": "later_formal",
+      "data": {
+        "train": {
+          "dataset": "tuab-ft",
+          "sha256": "28c45e5db40000724111f85e9cd3e96ce5e27de2cb9f1c6601f50379aa686309"
+        },
+        "val": {
+          "dataset": "tuab-ft",
+          "sha256": "cb91bb2aaac4c2f7088d9e9b2c6ebdb01ede719d52b65a298c9c4c8ae31a2e36"
+        },
+        "test": {
+          "dataset": "tuab-ft",
+          "sha256": "23d7c2f4fce207661c3d5d54ef9935bca2edff9dcc851911ad1f5f7bfb8a06b5"
+        }
+      },
+      "quantization": {
+        "quantization_enabled": true,
+        "activation_quantizers": 35,
+        "weight_quantizers": 18,
+        "dt_proj_shapes": [[1540, 96], [1540, 96], [1540, 96], [1540, 96]],
+        "configuration": {
+          "weight_bit_width": 8,
+          "activation_bit_width": 8,
+          "weight_quant_scheme": "uniform",
+          "activation_quant_scheme": "uniform"
+        },
+        "actual_proxy_bit_widths": {
+          "activation": [8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8],
+          "weight": [8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8]
+        }
+      },
+      "parent_checkpoint_sha256": "38041ae68f78c65681689eaa355cddc4209e8c7ff42f588f0d75759a636337d2",
+      "classifier_initialization_sha256": "273936748188d0d23b269bec375ee9910769dd0714e460313ca9c87a357631f7",
+      "classifier_initialization_preserved": true
+    },
+    {
+      "stage": "seed43/qap_w8a8/finetune-tusl0-v2",
+      "epochs": 20,
+      "selected_epoch": 19,
+      "best_validation_loss": 0.5120621919631958,
+      "checkpoint_sha256": "edc21d83cff15c43ee526321770315850d9e24d0fb5263aeaa76f64745735012",
+      "source_variant": "later_formal",
+      "data": {
+        "train": {
+          "dataset": "tusl-v2/fold0",
+          "sha256": "08c5ef16e0babf342967ae1e508a1149406e0cbd0ed5fe02068982a7e0053488"
+        },
+        "val": {
+          "dataset": "tusl-v2/fold0",
+          "sha256": "ba569d7c5c44fb2cb3d135fce5ec1eca830e76a97b3f9a3abed7c5520bc715d0"
+        },
+        "test": {
+          "dataset": "tusl-v2/fold0",
+          "sha256": "ad4cf1173dd8c2bb4da067a7cc112668e9ee5e2e7fdced5cd41005ad9a98a161"
+        }
+      },
+      "quantization": {
+        "quantization_enabled": true,
+        "activation_quantizers": 35,
+        "weight_quantizers": 18,
+        "dt_proj_shapes": [[1540, 96], [1540, 96], [1540, 96], [1540, 96]],
+        "configuration": {
+          "weight_bit_width": 8,
+          "activation_bit_width": 8,
+          "weight_quant_scheme": "uniform",
+          "activation_quant_scheme": "uniform"
+        },
+        "actual_proxy_bit_widths": {
+          "activation": [8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8],
+          "weight": [8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8]
+        }
+      },
+      "parent_checkpoint_sha256": "38041ae68f78c65681689eaa355cddc4209e8c7ff42f588f0d75759a636337d2",
+      "classifier_initialization_sha256": "b8631e849e7c05e45ae8d1cb826a4b3d3eae1377dab16d0a41325ce9e2eda56e",
+      "classifier_initialization_preserved": true
+    },
+    {
+      "stage": "seed43/qap_w8a8/finetune-tusl1-v2",
+      "epochs": 20,
+      "selected_epoch": 8,
+      "best_validation_loss": 0.837340235710144,
+      "checkpoint_sha256": "0f4d1c2f28d8a94b982cc84145b8eb01bc765d446c84a03886f208fda6aee5af",
+      "source_variant": "later_formal",
+      "data": {
+        "train": {
+          "dataset": "tusl-v2/fold1",
+          "sha256": "62d6f3252f67a6c8ad9ec5fa1077954a47d1eefe6e60f663cdc52161732ab618"
+        },
+        "val": {
+          "dataset": "tusl-v2/fold1",
+          "sha256": "a6970f1745bcf2622fbed692576c98fae45bb289595eee9d7a6a53075bafa0f4"
+        },
+        "test": {
+          "dataset": "tusl-v2/fold1",
+          "sha256": "8ebff8de819879f2e0d1102f7ac74ebd7e2e03aa7b3e325e133830ae60202e41"
+        }
+      },
+      "quantization": {
+        "quantization_enabled": true,
+        "activation_quantizers": 35,
+        "weight_quantizers": 18,
+        "dt_proj_shapes": [[1540, 96], [1540, 96], [1540, 96], [1540, 96]],
+        "configuration": {
+          "weight_bit_width": 8,
+          "activation_bit_width": 8,
+          "weight_quant_scheme": "uniform",
+          "activation_quant_scheme": "uniform"
+        },
+        "actual_proxy_bit_widths": {
+          "activation": [8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8],
+          "weight": [8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8]
+        }
+      },
+      "parent_checkpoint_sha256": "38041ae68f78c65681689eaa355cddc4209e8c7ff42f588f0d75759a636337d2",
+      "classifier_initialization_sha256": "b8631e849e7c05e45ae8d1cb826a4b3d3eae1377dab16d0a41325ce9e2eda56e",
+      "classifier_initialization_preserved": true
+    },
+    {
+      "stage": "seed43/qap_w8a8/finetune-tusl2-v2",
+      "epochs": 20,
+      "selected_epoch": 8,
+      "best_validation_loss": 0.7491061687469482,
+      "checkpoint_sha256": "830b65f622f41301cb67f9d158b20a46a62e51d1f8eee0267927377b2f963db0",
+      "source_variant": "later_formal",
+      "data": {
+        "train": {
+          "dataset": "tusl-v2/fold2",
+          "sha256": "ec7e131f7f24133708fe33bd2e23f92370aab5e220efd9d01c799a9a7c175150"
+        },
+        "val": {
+          "dataset": "tusl-v2/fold2",
+          "sha256": "ee55407ec927fef10a83c74d3c9d7b3aba47b91199de836287db5a8a5dce59ac"
+        },
+        "test": {
+          "dataset": "tusl-v2/fold2",
+          "sha256": "153ee0e44de3becdc370b3c2b1ea1bbbd6ddd0fccd66fc549fa2910fae3cd82f"
+        }
+      },
+      "quantization": {
+        "quantization_enabled": true,
+        "activation_quantizers": 35,
+        "weight_quantizers": 18,
+        "dt_proj_shapes": [[1540, 96], [1540, 96], [1540, 96], [1540, 96]],
+        "configuration": {
+          "weight_bit_width": 8,
+          "activation_bit_width": 8,
+          "weight_quant_scheme": "uniform",
+          "activation_quant_scheme": "uniform"
+        },
+        "actual_proxy_bit_widths": {
+          "activation": [8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8],
+          "weight": [8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8]
+        }
+      },
+      "parent_checkpoint_sha256": "38041ae68f78c65681689eaa355cddc4209e8c7ff42f588f0d75759a636337d2",
+      "classifier_initialization_sha256": "b8631e849e7c05e45ae8d1cb826a4b3d3eae1377dab16d0a41325ce9e2eda56e",
+      "classifier_initialization_preserved": true
+    },
+    {
+      "stage": "seed43/qap_w8a8/finetune-tusl3-v2",
+      "epochs": 20,
+      "selected_epoch": 17,
+      "best_validation_loss": 0.6402896642684937,
+      "checkpoint_sha256": "8180cf79e1c6e831a3e8b74956de839fe95a64c332a6a691debfbf3209966531",
+      "source_variant": "later_formal",
+      "data": {
+        "train": {
+          "dataset": "tusl-v2/fold3",
+          "sha256": "e0bd739696aa8e10b4d30af512727280c253eef12027657358fbf2e7f7e7bfd1"
+        },
+        "val": {
+          "dataset": "tusl-v2/fold3",
+          "sha256": "1b0ecd653c4ef8537f0534fe14cfd866d591be503771e3741206a2d64bde7b59"
+        },
+        "test": {
+          "dataset": "tusl-v2/fold3",
+          "sha256": "7dfb8f16c0ecd2f6842551815c7e8dcc1ca95abc0d64f87bf8618baa3b8e2673"
+        }
+      },
+      "quantization": {
+        "quantization_enabled": true,
+        "activation_quantizers": 35,
+        "weight_quantizers": 18,
+        "dt_proj_shapes": [[1540, 96], [1540, 96], [1540, 96], [1540, 96]],
+        "configuration": {
+          "weight_bit_width": 8,
+          "activation_bit_width": 8,
+          "weight_quant_scheme": "uniform",
+          "activation_quant_scheme": "uniform"
+        },
+        "actual_proxy_bit_widths": {
+          "activation": [8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8],
+          "weight": [8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8]
+        }
+      },
+      "parent_checkpoint_sha256": "38041ae68f78c65681689eaa355cddc4209e8c7ff42f588f0d75759a636337d2",
+      "classifier_initialization_sha256": "b8631e849e7c05e45ae8d1cb826a4b3d3eae1377dab16d0a41325ce9e2eda56e",
+      "classifier_initialization_preserved": true
+    },
+    {
+      "stage": "seed44/fp32/pretrain",
+      "epochs": 2,
+      "selected_epoch": 1,
+      "best_validation_loss": 0.07966040074825287,
+      "checkpoint_sha256": "fe04362efc1cd2922e3ddfa85b7d06db47da245f557106d5655f007845acda2f",
+      "source_variant": "later_formal",
+      "data": {
+        "train": {
+          "dataset": "tuab",
+          "sha256": "342bd3e818656d5d89d602d9db72e2deeb0a417ab7da3c3a677ec387d5563898"
+        },
+        "val": {
+          "dataset": "tuab",
+          "sha256": "f1bdd5c63f59a18aa678c961c58a7d5d4f1e316a2f26f2a5b177a9c088b62e37"
+        },
+        "test": {
+          "dataset": "tuab",
+          "sha256": "23d7c2f4fce207661c3d5d54ef9935bca2edff9dcc851911ad1f5f7bfb8a06b5"
+        }
+      },
+      "quantization": {
+        "quantization_enabled": false,
+        "activation_quantizers": 34,
+        "weight_quantizers": 17,
+        "dt_proj_shapes": [[1540, 96], [1540, 96], [1540, 96], [1540, 96]],
+        "configuration": {
+          "weight_bit_width": 8,
+          "activation_bit_width": 8,
+          "weight_quant_scheme": "uniform",
+          "activation_quant_scheme": "uniform"
+        },
+        "actual_proxy_bit_widths": {
+          "activation": [8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8],
+          "weight": [8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8]
+        }
+      }
+    },
+    {
+      "stage": "seed44/fp32/finetune-tuar",
+      "epochs": 5,
+      "selected_epoch": 1,
+      "best_validation_loss": 0.31787148118019104,
+      "checkpoint_sha256": "54b95955a5d423f6ca6593a4f4ac8072ea1b85b2a2f267d45d8ec8a2d32073ab",
+      "source_variant": "later_formal",
+      "data": {
+        "train": {
+          "dataset": "tuar",
+          "sha256": "f4b32cf4a9794c4be8eec73c663f2b31b4f373ba39c7b2a36d618bff92dbe1c5"
+        },
+        "val": {
+          "dataset": "tuar",
+          "sha256": "65cea843f613c716a6364298f2959ebee5adbfbd3188208e34b94cdb220058e9"
+        },
+        "test": {
+          "dataset": "tuar",
+          "sha256": "770bcaf65d61e31af7c94d4af9701006e4bebb6feb322306dd6dbe80657fbd2e"
+        }
+      },
+      "quantization": {
+        "quantization_enabled": false,
+        "activation_quantizers": 35,
+        "weight_quantizers": 18,
+        "dt_proj_shapes": [[1540, 96], [1540, 96], [1540, 96], [1540, 96]],
+        "configuration": {
+          "weight_bit_width": 8,
+          "activation_bit_width": 8,
+          "weight_quant_scheme": "uniform",
+          "activation_quant_scheme": "uniform"
+        },
+        "actual_proxy_bit_widths": {
+          "activation": [8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8],
+          "weight": [8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8]
+        }
+      },
+      "parent_checkpoint_sha256": "fe04362efc1cd2922e3ddfa85b7d06db47da245f557106d5655f007845acda2f",
+      "classifier_initialization_sha256": "92ce12d49934168f0a4bc64ed655c439b3f177bafb5ed101f6708a8ecd3841de",
+      "classifier_initialization_preserved": true
+    },
+    {
+      "stage": "seed44/fp32/finetune-tuab",
+      "epochs": 5,
+      "selected_epoch": 0,
+      "best_validation_loss": 0.4895826578140259,
+      "checkpoint_sha256": "67d6a76c4b11ef7a3644523eabc069a2afedbc17a70a852b927d1b9962632e56",
+      "source_variant": "later_formal",
+      "data": {
+        "train": {
+          "dataset": "tuab-ft",
+          "sha256": "28c45e5db40000724111f85e9cd3e96ce5e27de2cb9f1c6601f50379aa686309"
+        },
+        "val": {
+          "dataset": "tuab-ft",
+          "sha256": "cb91bb2aaac4c2f7088d9e9b2c6ebdb01ede719d52b65a298c9c4c8ae31a2e36"
+        },
+        "test": {
+          "dataset": "tuab-ft",
+          "sha256": "23d7c2f4fce207661c3d5d54ef9935bca2edff9dcc851911ad1f5f7bfb8a06b5"
+        }
+      },
+      "quantization": {
+        "quantization_enabled": false,
+        "activation_quantizers": 35,
+        "weight_quantizers": 18,
+        "dt_proj_shapes": [[1540, 96], [1540, 96], [1540, 96], [1540, 96]],
+        "configuration": {
+          "weight_bit_width": 8,
+          "activation_bit_width": 8,
+          "weight_quant_scheme": "uniform",
+          "activation_quant_scheme": "uniform"
+        },
+        "actual_proxy_bit_widths": {
+          "activation": [8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8],
+          "weight": [8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8]
+        }
+      },
+      "parent_checkpoint_sha256": "fe04362efc1cd2922e3ddfa85b7d06db47da245f557106d5655f007845acda2f",
+      "classifier_initialization_sha256": "92ce12d49934168f0a4bc64ed655c439b3f177bafb5ed101f6708a8ecd3841de",
+      "classifier_initialization_preserved": true
+    },
+    {
+      "stage": "seed44/fp32/finetune-tusl0-v2",
+      "epochs": 20,
+      "selected_epoch": 19,
+      "best_validation_loss": 0.5656480193138123,
+      "checkpoint_sha256": "8cae1c9db79e9ba9cac9661bce83cc0beb520fcc48800525d07b554c068469f9",
+      "source_variant": "later_formal",
+      "data": {
+        "train": {
+          "dataset": "tusl-v2/fold0",
+          "sha256": "08c5ef16e0babf342967ae1e508a1149406e0cbd0ed5fe02068982a7e0053488"
+        },
+        "val": {
+          "dataset": "tusl-v2/fold0",
+          "sha256": "ba569d7c5c44fb2cb3d135fce5ec1eca830e76a97b3f9a3abed7c5520bc715d0"
+        },
+        "test": {
+          "dataset": "tusl-v2/fold0",
+          "sha256": "ad4cf1173dd8c2bb4da067a7cc112668e9ee5e2e7fdced5cd41005ad9a98a161"
+        }
+      },
+      "quantization": {
+        "quantization_enabled": false,
+        "activation_quantizers": 35,
+        "weight_quantizers": 18,
+        "dt_proj_shapes": [[1540, 96], [1540, 96], [1540, 96], [1540, 96]],
+        "configuration": {
+          "weight_bit_width": 8,
+          "activation_bit_width": 8,
+          "weight_quant_scheme": "uniform",
+          "activation_quant_scheme": "uniform"
+        },
+        "actual_proxy_bit_widths": {
+          "activation": [8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8],
+          "weight": [8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8]
+        }
+      },
+      "parent_checkpoint_sha256": "fe04362efc1cd2922e3ddfa85b7d06db47da245f557106d5655f007845acda2f",
+      "classifier_initialization_sha256": "fbe65330b0a32a69392688b1298a56cec7e435281f33f9f3e826bea31cbb75fb",
+      "classifier_initialization_preserved": true
+    },
+    {
+      "stage": "seed44/fp32/finetune-tusl1-v2",
+      "epochs": 20,
+      "selected_epoch": 19,
+      "best_validation_loss": 0.936877429485321,
+      "checkpoint_sha256": "42a6a834e66f9d5ac2022e9de9f4d93ff5d8e235b85b72e9ee62f077e64f40ad",
+      "source_variant": "later_formal",
+      "data": {
+        "train": {
+          "dataset": "tusl-v2/fold1",
+          "sha256": "62d6f3252f67a6c8ad9ec5fa1077954a47d1eefe6e60f663cdc52161732ab618"
+        },
+        "val": {
+          "dataset": "tusl-v2/fold1",
+          "sha256": "a6970f1745bcf2622fbed692576c98fae45bb289595eee9d7a6a53075bafa0f4"
+        },
+        "test": {
+          "dataset": "tusl-v2/fold1",
+          "sha256": "8ebff8de819879f2e0d1102f7ac74ebd7e2e03aa7b3e325e133830ae60202e41"
+        }
+      },
+      "quantization": {
+        "quantization_enabled": false,
+        "activation_quantizers": 35,
+        "weight_quantizers": 18,
+        "dt_proj_shapes": [[1540, 96], [1540, 96], [1540, 96], [1540, 96]],
+        "configuration": {
+          "weight_bit_width": 8,
+          "activation_bit_width": 8,
+          "weight_quant_scheme": "uniform",
+          "activation_quant_scheme": "uniform"
+        },
+        "actual_proxy_bit_widths": {
+          "activation": [8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8],
+          "weight": [8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8]
+        }
+      },
+      "parent_checkpoint_sha256": "fe04362efc1cd2922e3ddfa85b7d06db47da245f557106d5655f007845acda2f",
+      "classifier_initialization_sha256": "fbe65330b0a32a69392688b1298a56cec7e435281f33f9f3e826bea31cbb75fb",
+      "classifier_initialization_preserved": true
+    },
+    {
+      "stage": "seed44/fp32/finetune-tusl2-v2",
+      "epochs": 20,
+      "selected_epoch": 17,
+      "best_validation_loss": 0.6349742412567139,
+      "checkpoint_sha256": "000e1cb8f7cd52c681fd056364f31b7b079b8cdbc1034c8f43cc1b32e4d02ef2",
+      "source_variant": "later_formal",
+      "data": {
+        "train": {
+          "dataset": "tusl-v2/fold2",
+          "sha256": "ec7e131f7f24133708fe33bd2e23f92370aab5e220efd9d01c799a9a7c175150"
+        },
+        "val": {
+          "dataset": "tusl-v2/fold2",
+          "sha256": "ee55407ec927fef10a83c74d3c9d7b3aba47b91199de836287db5a8a5dce59ac"
+        },
+        "test": {
+          "dataset": "tusl-v2/fold2",
+          "sha256": "153ee0e44de3becdc370b3c2b1ea1bbbd6ddd0fccd66fc549fa2910fae3cd82f"
+        }
+      },
+      "quantization": {
+        "quantization_enabled": false,
+        "activation_quantizers": 35,
+        "weight_quantizers": 18,
+        "dt_proj_shapes": [[1540, 96], [1540, 96], [1540, 96], [1540, 96]],
+        "configuration": {
+          "weight_bit_width": 8,
+          "activation_bit_width": 8,
+          "weight_quant_scheme": "uniform",
+          "activation_quant_scheme": "uniform"
+        },
+        "actual_proxy_bit_widths": {
+          "activation": [8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8],
+          "weight": [8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8]
+        }
+      },
+      "parent_checkpoint_sha256": "fe04362efc1cd2922e3ddfa85b7d06db47da245f557106d5655f007845acda2f",
+      "classifier_initialization_sha256": "fbe65330b0a32a69392688b1298a56cec7e435281f33f9f3e826bea31cbb75fb",
+      "classifier_initialization_preserved": true
+    },
+    {
+      "stage": "seed44/fp32/finetune-tusl3-v2",
+      "epochs": 20,
+      "selected_epoch": 16,
+      "best_validation_loss": 0.7459765672683716,
+      "checkpoint_sha256": "c0a5062a19789321ca545489ccbc267d3bbe78a225f7635e9f412fd34a7bb69e",
+      "source_variant": "later_formal",
+      "data": {
+        "train": {
+          "dataset": "tusl-v2/fold3",
+          "sha256": "e0bd739696aa8e10b4d30af512727280c253eef12027657358fbf2e7f7e7bfd1"
+        },
+        "val": {
+          "dataset": "tusl-v2/fold3",
+          "sha256": "1b0ecd653c4ef8537f0534fe14cfd866d591be503771e3741206a2d64bde7b59"
+        },
+        "test": {
+          "dataset": "tusl-v2/fold3",
+          "sha256": "7dfb8f16c0ecd2f6842551815c7e8dcc1ca95abc0d64f87bf8618baa3b8e2673"
+        }
+      },
+      "quantization": {
+        "quantization_enabled": false,
+        "activation_quantizers": 35,
+        "weight_quantizers": 18,
+        "dt_proj_shapes": [[1540, 96], [1540, 96], [1540, 96], [1540, 96]],
+        "configuration": {
+          "weight_bit_width": 8,
+          "activation_bit_width": 8,
+          "weight_quant_scheme": "uniform",
+          "activation_quant_scheme": "uniform"
+        },
+        "actual_proxy_bit_widths": {
+          "activation": [8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8],
+          "weight": [8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8]
+        }
+      },
+      "parent_checkpoint_sha256": "fe04362efc1cd2922e3ddfa85b7d06db47da245f557106d5655f007845acda2f",
+      "classifier_initialization_sha256": "fbe65330b0a32a69392688b1298a56cec7e435281f33f9f3e826bea31cbb75fb",
+      "classifier_initialization_preserved": true
+    },
+    {
+      "stage": "seed44/c_w8a8/finetune-tuar",
+      "epochs": 5,
+      "selected_epoch": 3,
+      "best_validation_loss": 0.34792837500572205,
+      "checkpoint_sha256": "81d965eccd5db9a558e0a73022f50f6e58174b711a448c11709622fa9930d55f",
+      "source_variant": "later_formal",
+      "data": {
+        "train": {
+          "dataset": "tuar",
+          "sha256": "f4b32cf4a9794c4be8eec73c663f2b31b4f373ba39c7b2a36d618bff92dbe1c5"
+        },
+        "val": {
+          "dataset": "tuar",
+          "sha256": "65cea843f613c716a6364298f2959ebee5adbfbd3188208e34b94cdb220058e9"
+        },
+        "test": {
+          "dataset": "tuar",
+          "sha256": "770bcaf65d61e31af7c94d4af9701006e4bebb6feb322306dd6dbe80657fbd2e"
+        }
+      },
+      "quantization": {
+        "quantization_enabled": true,
+        "activation_quantizers": 35,
+        "weight_quantizers": 18,
+        "dt_proj_shapes": [[1540, 96], [1540, 96], [1540, 96], [1540, 96]],
+        "configuration": {
+          "weight_bit_width": 8,
+          "activation_bit_width": 8,
+          "weight_quant_scheme": "uniform",
+          "activation_quant_scheme": "uniform"
+        },
+        "actual_proxy_bit_widths": {
+          "activation": [8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8],
+          "weight": [8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8]
+        }
+      },
+      "parent_checkpoint_sha256": "fe04362efc1cd2922e3ddfa85b7d06db47da245f557106d5655f007845acda2f",
+      "classifier_initialization_sha256": "92ce12d49934168f0a4bc64ed655c439b3f177bafb5ed101f6708a8ecd3841de",
+      "classifier_initialization_preserved": true,
+      "fresh_shared_parent_observers": 34,
+      "fresh_target_observers": 35,
+      "first_batch_updated_observers": 35
+    },
+    {
+      "stage": "seed44/c_w8a8/finetune-tuab",
+      "epochs": 5,
+      "selected_epoch": 2,
+      "best_validation_loss": 0.5288308262825012,
+      "checkpoint_sha256": "91901d4eaf7c4da3edb1a0ad2bf615111c243604faadd00e2cdbb17a9cb9c079",
+      "source_variant": "later_formal",
+      "data": {
+        "train": {
+          "dataset": "tuab-ft",
+          "sha256": "28c45e5db40000724111f85e9cd3e96ce5e27de2cb9f1c6601f50379aa686309"
+        },
+        "val": {
+          "dataset": "tuab-ft",
+          "sha256": "cb91bb2aaac4c2f7088d9e9b2c6ebdb01ede719d52b65a298c9c4c8ae31a2e36"
+        },
+        "test": {
+          "dataset": "tuab-ft",
+          "sha256": "23d7c2f4fce207661c3d5d54ef9935bca2edff9dcc851911ad1f5f7bfb8a06b5"
+        }
+      },
+      "quantization": {
+        "quantization_enabled": true,
+        "activation_quantizers": 35,
+        "weight_quantizers": 18,
+        "dt_proj_shapes": [[1540, 96], [1540, 96], [1540, 96], [1540, 96]],
+        "configuration": {
+          "weight_bit_width": 8,
+          "activation_bit_width": 8,
+          "weight_quant_scheme": "uniform",
+          "activation_quant_scheme": "uniform"
+        },
+        "actual_proxy_bit_widths": {
+          "activation": [8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8],
+          "weight": [8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8]
+        }
+      },
+      "parent_checkpoint_sha256": "fe04362efc1cd2922e3ddfa85b7d06db47da245f557106d5655f007845acda2f",
+      "classifier_initialization_sha256": "92ce12d49934168f0a4bc64ed655c439b3f177bafb5ed101f6708a8ecd3841de",
+      "classifier_initialization_preserved": true,
+      "fresh_shared_parent_observers": 34,
+      "fresh_target_observers": 35,
+      "first_batch_updated_observers": 35
+    },
+    {
+      "stage": "seed44/c_w8a8/finetune-tusl0-v2",
+      "epochs": 20,
+      "selected_epoch": 19,
+      "best_validation_loss": 0.6269599795341492,
+      "checkpoint_sha256": "c887dec46510e304d1a8f539ae618f9f208ab85335ee474a2d8206e1108d7d3d",
+      "source_variant": "later_formal",
+      "data": {
+        "train": {
+          "dataset": "tusl-v2/fold0",
+          "sha256": "08c5ef16e0babf342967ae1e508a1149406e0cbd0ed5fe02068982a7e0053488"
+        },
+        "val": {
+          "dataset": "tusl-v2/fold0",
+          "sha256": "ba569d7c5c44fb2cb3d135fce5ec1eca830e76a97b3f9a3abed7c5520bc715d0"
+        },
+        "test": {
+          "dataset": "tusl-v2/fold0",
+          "sha256": "ad4cf1173dd8c2bb4da067a7cc112668e9ee5e2e7fdced5cd41005ad9a98a161"
+        }
+      },
+      "quantization": {
+        "quantization_enabled": true,
+        "activation_quantizers": 35,
+        "weight_quantizers": 18,
+        "dt_proj_shapes": [[1540, 96], [1540, 96], [1540, 96], [1540, 96]],
+        "configuration": {
+          "weight_bit_width": 8,
+          "activation_bit_width": 8,
+          "weight_quant_scheme": "uniform",
+          "activation_quant_scheme": "uniform"
+        },
+        "actual_proxy_bit_widths": {
+          "activation": [8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8],
+          "weight": [8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8]
+        }
+      },
+      "parent_checkpoint_sha256": "fe04362efc1cd2922e3ddfa85b7d06db47da245f557106d5655f007845acda2f",
+      "classifier_initialization_sha256": "fbe65330b0a32a69392688b1298a56cec7e435281f33f9f3e826bea31cbb75fb",
+      "classifier_initialization_preserved": true,
+      "fresh_shared_parent_observers": 34,
+      "fresh_target_observers": 35,
+      "first_batch_updated_observers": 35
+    },
+    {
+      "stage": "seed44/c_w8a8/finetune-tusl1-v2",
+      "epochs": 20,
+      "selected_epoch": 18,
+      "best_validation_loss": 0.9355760216712952,
+      "checkpoint_sha256": "21e31dcbe36896e6d3ff657fdb94ce6b0561c2303907cf31e9bdcd712331b29a",
+      "source_variant": "later_formal",
+      "data": {
+        "train": {
+          "dataset": "tusl-v2/fold1",
+          "sha256": "62d6f3252f67a6c8ad9ec5fa1077954a47d1eefe6e60f663cdc52161732ab618"
+        },
+        "val": {
+          "dataset": "tusl-v2/fold1",
+          "sha256": "a6970f1745bcf2622fbed692576c98fae45bb289595eee9d7a6a53075bafa0f4"
+        },
+        "test": {
+          "dataset": "tusl-v2/fold1",
+          "sha256": "8ebff8de819879f2e0d1102f7ac74ebd7e2e03aa7b3e325e133830ae60202e41"
+        }
+      },
+      "quantization": {
+        "quantization_enabled": true,
+        "activation_quantizers": 35,
+        "weight_quantizers": 18,
+        "dt_proj_shapes": [[1540, 96], [1540, 96], [1540, 96], [1540, 96]],
+        "configuration": {
+          "weight_bit_width": 8,
+          "activation_bit_width": 8,
+          "weight_quant_scheme": "uniform",
+          "activation_quant_scheme": "uniform"
+        },
+        "actual_proxy_bit_widths": {
+          "activation": [8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8],
+          "weight": [8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8]
+        }
+      },
+      "parent_checkpoint_sha256": "fe04362efc1cd2922e3ddfa85b7d06db47da245f557106d5655f007845acda2f",
+      "classifier_initialization_sha256": "fbe65330b0a32a69392688b1298a56cec7e435281f33f9f3e826bea31cbb75fb",
+      "classifier_initialization_preserved": true,
+      "fresh_shared_parent_observers": 34,
+      "fresh_target_observers": 35,
+      "first_batch_updated_observers": 35
+    },
+    {
+      "stage": "seed44/c_w8a8/finetune-tusl2-v2",
+      "epochs": 20,
+      "selected_epoch": 15,
+      "best_validation_loss": 0.6524722576141357,
+      "checkpoint_sha256": "66d10946ce6fecf9c557fcac61780ff8f2677b4e7373fd04eda2c6a93f64a78d",
+      "source_variant": "later_formal",
+      "data": {
+        "train": {
+          "dataset": "tusl-v2/fold2",
+          "sha256": "ec7e131f7f24133708fe33bd2e23f92370aab5e220efd9d01c799a9a7c175150"
+        },
+        "val": {
+          "dataset": "tusl-v2/fold2",
+          "sha256": "ee55407ec927fef10a83c74d3c9d7b3aba47b91199de836287db5a8a5dce59ac"
+        },
+        "test": {
+          "dataset": "tusl-v2/fold2",
+          "sha256": "153ee0e44de3becdc370b3c2b1ea1bbbd6ddd0fccd66fc549fa2910fae3cd82f"
+        }
+      },
+      "quantization": {
+        "quantization_enabled": true,
+        "activation_quantizers": 35,
+        "weight_quantizers": 18,
+        "dt_proj_shapes": [[1540, 96], [1540, 96], [1540, 96], [1540, 96]],
+        "configuration": {
+          "weight_bit_width": 8,
+          "activation_bit_width": 8,
+          "weight_quant_scheme": "uniform",
+          "activation_quant_scheme": "uniform"
+        },
+        "actual_proxy_bit_widths": {
+          "activation": [8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8],
+          "weight": [8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8]
+        }
+      },
+      "parent_checkpoint_sha256": "fe04362efc1cd2922e3ddfa85b7d06db47da245f557106d5655f007845acda2f",
+      "classifier_initialization_sha256": "fbe65330b0a32a69392688b1298a56cec7e435281f33f9f3e826bea31cbb75fb",
+      "classifier_initialization_preserved": true,
+      "fresh_shared_parent_observers": 34,
+      "fresh_target_observers": 35,
+      "first_batch_updated_observers": 35
+    },
+    {
+      "stage": "seed44/c_w8a8/finetune-tusl3-v2",
+      "epochs": 20,
+      "selected_epoch": 17,
+      "best_validation_loss": 0.7536774277687073,
+      "checkpoint_sha256": "50b62ee226af0b84bc91319c1284c7bf4a111754fac580b22970da98a4d052b2",
+      "source_variant": "later_formal",
+      "data": {
+        "train": {
+          "dataset": "tusl-v2/fold3",
+          "sha256": "e0bd739696aa8e10b4d30af512727280c253eef12027657358fbf2e7f7e7bfd1"
+        },
+        "val": {
+          "dataset": "tusl-v2/fold3",
+          "sha256": "1b0ecd653c4ef8537f0534fe14cfd866d591be503771e3741206a2d64bde7b59"
+        },
+        "test": {
+          "dataset": "tusl-v2/fold3",
+          "sha256": "7dfb8f16c0ecd2f6842551815c7e8dcc1ca95abc0d64f87bf8618baa3b8e2673"
+        }
+      },
+      "quantization": {
+        "quantization_enabled": true,
+        "activation_quantizers": 35,
+        "weight_quantizers": 18,
+        "dt_proj_shapes": [[1540, 96], [1540, 96], [1540, 96], [1540, 96]],
+        "configuration": {
+          "weight_bit_width": 8,
+          "activation_bit_width": 8,
+          "weight_quant_scheme": "uniform",
+          "activation_quant_scheme": "uniform"
+        },
+        "actual_proxy_bit_widths": {
+          "activation": [8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8],
+          "weight": [8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8]
+        }
+      },
+      "parent_checkpoint_sha256": "fe04362efc1cd2922e3ddfa85b7d06db47da245f557106d5655f007845acda2f",
+      "classifier_initialization_sha256": "fbe65330b0a32a69392688b1298a56cec7e435281f33f9f3e826bea31cbb75fb",
+      "classifier_initialization_preserved": true,
+      "fresh_shared_parent_observers": 34,
+      "fresh_target_observers": 35,
+      "first_batch_updated_observers": 35
+    },
+    {
+      "stage": "seed44/qap_w8a8/pretrain",
+      "epochs": 2,
+      "selected_epoch": 1,
+      "best_validation_loss": 0.0821256935596466,
+      "checkpoint_sha256": "7e6d20f0169e339018715f52c508e155876d41144f448485c5fd7e61cd911565",
+      "source_variant": "later_formal",
+      "data": {
+        "train": {
+          "dataset": "tuab",
+          "sha256": "342bd3e818656d5d89d602d9db72e2deeb0a417ab7da3c3a677ec387d5563898"
+        },
+        "val": {
+          "dataset": "tuab",
+          "sha256": "f1bdd5c63f59a18aa678c961c58a7d5d4f1e316a2f26f2a5b177a9c088b62e37"
+        },
+        "test": {
+          "dataset": "tuab",
+          "sha256": "23d7c2f4fce207661c3d5d54ef9935bca2edff9dcc851911ad1f5f7bfb8a06b5"
+        }
+      },
+      "quantization": {
+        "quantization_enabled": true,
+        "activation_quantizers": 34,
+        "weight_quantizers": 17,
+        "dt_proj_shapes": [[1540, 96], [1540, 96], [1540, 96], [1540, 96]],
+        "configuration": {
+          "weight_bit_width": 8,
+          "activation_bit_width": 8,
+          "weight_quant_scheme": "uniform",
+          "activation_quant_scheme": "uniform"
+        },
+        "actual_proxy_bit_widths": {
+          "activation": [8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8],
+          "weight": [8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8]
+        }
+      }
+    },
+    {
+      "stage": "seed44/qap_w8a8/finetune-tuar",
+      "epochs": 5,
+      "selected_epoch": 3,
+      "best_validation_loss": 0.364874929189682,
+      "checkpoint_sha256": "26d5eb2e41f24deb88b7e36f292ffcb813391e5ffd3942591088244b350396ca",
+      "source_variant": "later_formal",
+      "data": {
+        "train": {
+          "dataset": "tuar",
+          "sha256": "f4b32cf4a9794c4be8eec73c663f2b31b4f373ba39c7b2a36d618bff92dbe1c5"
+        },
+        "val": {
+          "dataset": "tuar",
+          "sha256": "65cea843f613c716a6364298f2959ebee5adbfbd3188208e34b94cdb220058e9"
+        },
+        "test": {
+          "dataset": "tuar",
+          "sha256": "770bcaf65d61e31af7c94d4af9701006e4bebb6feb322306dd6dbe80657fbd2e"
+        }
+      },
+      "quantization": {
+        "quantization_enabled": true,
+        "activation_quantizers": 35,
+        "weight_quantizers": 18,
+        "dt_proj_shapes": [[1540, 96], [1540, 96], [1540, 96], [1540, 96]],
+        "configuration": {
+          "weight_bit_width": 8,
+          "activation_bit_width": 8,
+          "weight_quant_scheme": "uniform",
+          "activation_quant_scheme": "uniform"
+        },
+        "actual_proxy_bit_widths": {
+          "activation": [8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8],
+          "weight": [8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8]
+        }
+      },
+      "parent_checkpoint_sha256": "7e6d20f0169e339018715f52c508e155876d41144f448485c5fd7e61cd911565",
+      "classifier_initialization_sha256": "92ce12d49934168f0a4bc64ed655c439b3f177bafb5ed101f6708a8ecd3841de",
+      "classifier_initialization_preserved": true
+    },
+    {
+      "stage": "seed44/qap_w8a8/finetune-tuab",
+      "epochs": 5,
+      "selected_epoch": 0,
+      "best_validation_loss": 0.48993927240371704,
+      "checkpoint_sha256": "38006f3d8b676d4428af28c170f21a1f2e9ba9e89475005c315c32cb2e329a46",
+      "source_variant": "later_formal",
+      "data": {
+        "train": {
+          "dataset": "tuab-ft",
+          "sha256": "28c45e5db40000724111f85e9cd3e96ce5e27de2cb9f1c6601f50379aa686309"
+        },
+        "val": {
+          "dataset": "tuab-ft",
+          "sha256": "cb91bb2aaac4c2f7088d9e9b2c6ebdb01ede719d52b65a298c9c4c8ae31a2e36"
+        },
+        "test": {
+          "dataset": "tuab-ft",
+          "sha256": "23d7c2f4fce207661c3d5d54ef9935bca2edff9dcc851911ad1f5f7bfb8a06b5"
+        }
+      },
+      "quantization": {
+        "quantization_enabled": true,
+        "activation_quantizers": 35,
+        "weight_quantizers": 18,
+        "dt_proj_shapes": [[1540, 96], [1540, 96], [1540, 96], [1540, 96]],
+        "configuration": {
+          "weight_bit_width": 8,
+          "activation_bit_width": 8,
+          "weight_quant_scheme": "uniform",
+          "activation_quant_scheme": "uniform"
+        },
+        "actual_proxy_bit_widths": {
+          "activation": [8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8],
+          "weight": [8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8]
+        }
+      },
+      "parent_checkpoint_sha256": "7e6d20f0169e339018715f52c508e155876d41144f448485c5fd7e61cd911565",
+      "classifier_initialization_sha256": "92ce12d49934168f0a4bc64ed655c439b3f177bafb5ed101f6708a8ecd3841de",
+      "classifier_initialization_preserved": true
+    },
+    {
+      "stage": "seed44/qap_w8a8/finetune-tusl0-v2",
+      "epochs": 20,
+      "selected_epoch": 19,
+      "best_validation_loss": 0.5827970504760742,
+      "checkpoint_sha256": "9825c0c4bf7dc5ba3dc3177986aa406012360be54aae68b8b6915d24b4b7bdc5",
+      "source_variant": "later_formal",
+      "data": {
+        "train": {
+          "dataset": "tusl-v2/fold0",
+          "sha256": "08c5ef16e0babf342967ae1e508a1149406e0cbd0ed5fe02068982a7e0053488"
+        },
+        "val": {
+          "dataset": "tusl-v2/fold0",
+          "sha256": "ba569d7c5c44fb2cb3d135fce5ec1eca830e76a97b3f9a3abed7c5520bc715d0"
+        },
+        "test": {
+          "dataset": "tusl-v2/fold0",
+          "sha256": "ad4cf1173dd8c2bb4da067a7cc112668e9ee5e2e7fdced5cd41005ad9a98a161"
+        }
+      },
+      "quantization": {
+        "quantization_enabled": true,
+        "activation_quantizers": 35,
+        "weight_quantizers": 18,
+        "dt_proj_shapes": [[1540, 96], [1540, 96], [1540, 96], [1540, 96]],
+        "configuration": {
+          "weight_bit_width": 8,
+          "activation_bit_width": 8,
+          "weight_quant_scheme": "uniform",
+          "activation_quant_scheme": "uniform"
+        },
+        "actual_proxy_bit_widths": {
+          "activation": [8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8],
+          "weight": [8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8]
+        }
+      },
+      "parent_checkpoint_sha256": "7e6d20f0169e339018715f52c508e155876d41144f448485c5fd7e61cd911565",
+      "classifier_initialization_sha256": "fbe65330b0a32a69392688b1298a56cec7e435281f33f9f3e826bea31cbb75fb",
+      "classifier_initialization_preserved": true
+    },
+    {
+      "stage": "seed44/qap_w8a8/finetune-tusl1-v2",
+      "epochs": 20,
+      "selected_epoch": 7,
+      "best_validation_loss": 0.9465800523757935,
+      "checkpoint_sha256": "fcd72b6e6760fe25c244c1f141f93dded02341c2e4e53da9b4d6c37339754fc3",
+      "source_variant": "later_formal",
+      "data": {
+        "train": {
+          "dataset": "tusl-v2/fold1",
+          "sha256": "62d6f3252f67a6c8ad9ec5fa1077954a47d1eefe6e60f663cdc52161732ab618"
+        },
+        "val": {
+          "dataset": "tusl-v2/fold1",
+          "sha256": "a6970f1745bcf2622fbed692576c98fae45bb289595eee9d7a6a53075bafa0f4"
+        },
+        "test": {
+          "dataset": "tusl-v2/fold1",
+          "sha256": "8ebff8de819879f2e0d1102f7ac74ebd7e2e03aa7b3e325e133830ae60202e41"
+        }
+      },
+      "quantization": {
+        "quantization_enabled": true,
+        "activation_quantizers": 35,
+        "weight_quantizers": 18,
+        "dt_proj_shapes": [[1540, 96], [1540, 96], [1540, 96], [1540, 96]],
+        "configuration": {
+          "weight_bit_width": 8,
+          "activation_bit_width": 8,
+          "weight_quant_scheme": "uniform",
+          "activation_quant_scheme": "uniform"
+        },
+        "actual_proxy_bit_widths": {
+          "activation": [8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8],
+          "weight": [8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8]
+        }
+      },
+      "parent_checkpoint_sha256": "7e6d20f0169e339018715f52c508e155876d41144f448485c5fd7e61cd911565",
+      "classifier_initialization_sha256": "fbe65330b0a32a69392688b1298a56cec7e435281f33f9f3e826bea31cbb75fb",
+      "classifier_initialization_preserved": true
+    },
+    {
+      "stage": "seed44/qap_w8a8/finetune-tusl2-v2",
+      "epochs": 20,
+      "selected_epoch": 15,
+      "best_validation_loss": 0.6227973699569702,
+      "checkpoint_sha256": "587160668f45604ff0d8e285fa833bc4a0ceabc0aa4e4b872667ab0d4e04e67c",
+      "source_variant": "later_formal",
+      "data": {
+        "train": {
+          "dataset": "tusl-v2/fold2",
+          "sha256": "ec7e131f7f24133708fe33bd2e23f92370aab5e220efd9d01c799a9a7c175150"
+        },
+        "val": {
+          "dataset": "tusl-v2/fold2",
+          "sha256": "ee55407ec927fef10a83c74d3c9d7b3aba47b91199de836287db5a8a5dce59ac"
+        },
+        "test": {
+          "dataset": "tusl-v2/fold2",
+          "sha256": "153ee0e44de3becdc370b3c2b1ea1bbbd6ddd0fccd66fc549fa2910fae3cd82f"
+        }
+      },
+      "quantization": {
+        "quantization_enabled": true,
+        "activation_quantizers": 35,
+        "weight_quantizers": 18,
+        "dt_proj_shapes": [[1540, 96], [1540, 96], [1540, 96], [1540, 96]],
+        "configuration": {
+          "weight_bit_width": 8,
+          "activation_bit_width": 8,
+          "weight_quant_scheme": "uniform",
+          "activation_quant_scheme": "uniform"
+        },
+        "actual_proxy_bit_widths": {
+          "activation": [8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8],
+          "weight": [8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8]
+        }
+      },
+      "parent_checkpoint_sha256": "7e6d20f0169e339018715f52c508e155876d41144f448485c5fd7e61cd911565",
+      "classifier_initialization_sha256": "fbe65330b0a32a69392688b1298a56cec7e435281f33f9f3e826bea31cbb75fb",
+      "classifier_initialization_preserved": true
+    },
+    {
+      "stage": "seed44/qap_w8a8/finetune-tusl3-v2",
+      "epochs": 20,
+      "selected_epoch": 18,
+      "best_validation_loss": 0.7245954871177673,
+      "checkpoint_sha256": "845db329732c73f950faa6b5e734097bac590719f7840be8bccd613a1670dbc7",
+      "source_variant": "later_formal",
+      "data": {
+        "train": {
+          "dataset": "tusl-v2/fold3",
+          "sha256": "e0bd739696aa8e10b4d30af512727280c253eef12027657358fbf2e7f7e7bfd1"
+        },
+        "val": {
+          "dataset": "tusl-v2/fold3",
+          "sha256": "1b0ecd653c4ef8537f0534fe14cfd866d591be503771e3741206a2d64bde7b59"
+        },
+        "test": {
+          "dataset": "tusl-v2/fold3",
+          "sha256": "7dfb8f16c0ecd2f6842551815c7e8dcc1ca95abc0d64f87bf8618baa3b8e2673"
+        }
+      },
+      "quantization": {
+        "quantization_enabled": true,
+        "activation_quantizers": 35,
+        "weight_quantizers": 18,
+        "dt_proj_shapes": [[1540, 96], [1540, 96], [1540, 96], [1540, 96]],
+        "configuration": {
+          "weight_bit_width": 8,
+          "activation_bit_width": 8,
+          "weight_quant_scheme": "uniform",
+          "activation_quant_scheme": "uniform"
+        },
+        "actual_proxy_bit_widths": {
+          "activation": [8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8],
+          "weight": [8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8]
+        }
+      },
+      "parent_checkpoint_sha256": "7e6d20f0169e339018715f52c508e155876d41144f448485c5fd7e61cd911565",
+      "classifier_initialization_sha256": "fbe65330b0a32a69392688b1298a56cec7e435281f33f9f3e826bea31cbb75fb",
+      "classifier_initialization_preserved": true
+    }
+  ],
+  "ptq_sweeps": [
+    {
+      "seed": 42,
+      "task": "tuar",
+      "parent_sha256": "fc6bd3d7c3d6215fde3bd37d08a54749df9937d0b6e2bc6ecf257991b9b7156e",
+      "train_sha256": "f4b32cf4a9794c4be8eec73c663f2b31b4f373ba39c7b2a36d618bff92dbe1c5",
+      "calibration_windows": 512,
+      "calibration_indices_sha256": "b64fe1df7d5167b20fa11370885831a994dcb5955d2efd69c367a212d67a9cb3",
+      "selected_percentile": 95.0,
+      "selected_checkpoint_sha256": "a9e814980ba9d88ab583d0fdefb0c8a2345d2b4f48a6f712891ed9a13aa8bbd1",
+      "binary_inputs_unchanged": true,
+      "all_candidates_strict_reload_exact": true,
+      "candidates": [
+        {
+          "percentile": 99.999,
+          "checkpoint_sha256": "768f240b9dc4238b01141ef12feb68191e47c3465c6b859c7d673e80356addd5"
+        },
+        {
+          "percentile": 99.99,
+          "checkpoint_sha256": "6856a4395e8203312390c0d8eff5240f3c7b96f0dad2f97452a557ba4bfba3dc"
+        },
+        {
+          "percentile": 99.9,
+          "checkpoint_sha256": "9121a21bef7657da907da2f5736aff8c0cb0801cb826e781e368a6d50c16bffd"
+        },
+        {
+          "percentile": 99.0,
+          "checkpoint_sha256": "e8cd161b60d082b97f20e7a1da021ada7050cbc42bb89d37cb49f470bcbec44b"
+        },
+        {
+          "percentile": 98.0,
+          "checkpoint_sha256": "dcb786b1b1c412be156abf46ca756eb7f4227831af0291c1d31b1c75a7d45779"
+        },
+        {
+          "percentile": 95.0,
+          "checkpoint_sha256": "a9e814980ba9d88ab583d0fdefb0c8a2345d2b4f48a6f712891ed9a13aa8bbd1"
+        },
+        {
+          "percentile": 90.0,
+          "checkpoint_sha256": "8984b50c4551612bc2d1080da9593b27ea67a4861435c8436c9cf1726dd23638"
+        }
+      ]
+    },
+    {
+      "seed": 42,
+      "task": "tuab",
+      "parent_sha256": "2e4cd3144c8e165b2ce6ff16bdad711edfe681681c02e19674cebdc18dc26c3a",
+      "train_sha256": "28c45e5db40000724111f85e9cd3e96ce5e27de2cb9f1c6601f50379aa686309",
+      "calibration_windows": 512,
+      "calibration_indices_sha256": "8d2cfb157f7fbc81d422e92563e6ef99b914a5459d6547fd942d7e451bfd93da",
+      "selected_percentile": 95.0,
+      "selected_checkpoint_sha256": "73fca774060817d98a7b8e7fff3746793041c71f4684de2457669233888d09f7",
+      "binary_inputs_unchanged": true,
+      "all_candidates_strict_reload_exact": true,
+      "candidates": [
+        {
+          "percentile": 99.999,
+          "checkpoint_sha256": "8ece3d1244251b4f4b532b93c231d4df41deea0d8086663a49be12b6502104a2"
+        },
+        {
+          "percentile": 99.99,
+          "checkpoint_sha256": "35322498bb2ac97ad62a31bb9b5abd887ce00ffaeb51cf68e1be729398ad951a"
+        },
+        {
+          "percentile": 99.9,
+          "checkpoint_sha256": "58ed17465e259a82ed244826dfeac82596ddf09bfcabd80c7599c46d0ebc17a5"
+        },
+        {
+          "percentile": 99.0,
+          "checkpoint_sha256": "3635355d1caff2b0a8a599dd2b0560ac1f76d88b2a2d079de413a000dc4593e0"
+        },
+        {
+          "percentile": 98.0,
+          "checkpoint_sha256": "b46285fe268a81493e12f629bae9fda00d6aca5eaf710ee54cb582067ef5ddd3"
+        },
+        {
+          "percentile": 95.0,
+          "checkpoint_sha256": "73fca774060817d98a7b8e7fff3746793041c71f4684de2457669233888d09f7"
+        },
+        {
+          "percentile": 90.0,
+          "checkpoint_sha256": "d489cd12c32aeb98310a86a65f011d5aeda78b27c4150d8a66b8d8aa309cb098"
+        }
+      ]
+    },
+    {
+      "seed": 42,
+      "task": "tusl0-v2",
+      "parent_sha256": "bb8ab93df5ac8565effd7cadeed99b7917372468cea6e1064db47c254f9a3624",
+      "train_sha256": "08c5ef16e0babf342967ae1e508a1149406e0cbd0ed5fe02068982a7e0053488",
+      "calibration_windows": 384,
+      "calibration_indices_sha256": "9b449db81e073926d2504593e4953e566a8405666070ecdd831493e3696b19d5",
+      "selected_percentile": 99.9,
+      "selected_checkpoint_sha256": "53e71596ffb0146598e2c6151ddc216235e60196289c2d9b92978bdc942a73a1",
+      "binary_inputs_unchanged": null,
+      "all_candidates_strict_reload_exact": true,
+      "candidates": [
+        {
+          "percentile": 99.999,
+          "checkpoint_sha256": "f48ab552acf78aa1f8565a74020489fe3e0d012b1c4c74e3fede76ad3c741cea"
+        },
+        {
+          "percentile": 99.99,
+          "checkpoint_sha256": "50c5788809fd5317a8d542bea56e96085d2aeea75214f8f6da54bf5d39381589"
+        },
+        {
+          "percentile": 99.9,
+          "checkpoint_sha256": "53e71596ffb0146598e2c6151ddc216235e60196289c2d9b92978bdc942a73a1"
+        },
+        {
+          "percentile": 99.0,
+          "checkpoint_sha256": "26e788d15d7006d98474f77fe75aa94e19fdcf00cb6ae6c1b5fb5ed8a28acc1d"
+        },
+        {
+          "percentile": 98.0,
+          "checkpoint_sha256": "e3fa384f871f8fe46bf69f0fcd434185fdb94d69f303f1520363e15dce4997a1"
+        },
+        {
+          "percentile": 95.0,
+          "checkpoint_sha256": "a75bb109d29258f327fd7b77bb47215be5a59e8a5ab52fbb1f87941d6bfa06f8"
+        },
+        {
+          "percentile": 90.0,
+          "checkpoint_sha256": "61247393d5adafdcc8e40cedde45a20a14e6eb0d3eaf57dbaa762bc632d5f040"
+        }
+      ]
+    },
+    {
+      "seed": 42,
+      "task": "tusl1-v2",
+      "parent_sha256": "1ad71d9545f556990b2bc8b4b6e60dd062f4fe2cc9878096060e8fde9d07e0df",
+      "train_sha256": "62d6f3252f67a6c8ad9ec5fa1077954a47d1eefe6e60f663cdc52161732ab618",
+      "calibration_windows": 384,
+      "calibration_indices_sha256": "1dc62f6e0fc197edd1455a2ab3bc520da2ce21b0965dd9fc7b17cf32fbfc2a63",
+      "selected_percentile": 95,
+      "selected_checkpoint_sha256": "e78dc31ced8085c0c7cfea50ea9bfc3ddd5efd898c7e735ffb08e3cec7dcab2b",
+      "binary_inputs_unchanged": null,
+      "all_candidates_strict_reload_exact": true,
+      "candidates": [
+        {
+          "percentile": 99.999,
+          "checkpoint_sha256": "104e3332532805479568c9d2b989d5215bb707134720c4ff2448104d6c2fa939"
+        },
+        {
+          "percentile": 99.99,
+          "checkpoint_sha256": "f7fe8f80a883556c64c9bc328ff44db0c4a3f5eb54da99ecbf64c792c1d6db24"
+        },
+        {
+          "percentile": 99.9,
+          "checkpoint_sha256": "b6811372b841a24746fcbb42ea503411d27949ab3357292d477a76cac926b774"
+        },
+        {
+          "percentile": 99.0,
+          "checkpoint_sha256": "55bebcf69ab9cc3ec2ffc2c9e644276d8902bcbbff3aa4f2c404456298dc9f0e"
+        },
+        {
+          "percentile": 98.0,
+          "checkpoint_sha256": "f3adf37cae7d43f28025fee48e53eb7c0ceaf65b4954cc55c7c49282d729d06e"
+        },
+        {
+          "percentile": 95.0,
+          "checkpoint_sha256": "e78dc31ced8085c0c7cfea50ea9bfc3ddd5efd898c7e735ffb08e3cec7dcab2b"
+        },
+        {
+          "percentile": 90.0,
+          "checkpoint_sha256": "4a5d21c592bb54f39504f5f544a2b66e69d7383f7a4f0b9c82ffbee96e98ec91"
+        }
+      ]
+    },
+    {
+      "seed": 42,
+      "task": "tusl2-v2",
+      "parent_sha256": "d01cee82f17e8635740d29fa16780e11d558c30c8478738f598cf6b1f90ccf16",
+      "train_sha256": "ec7e131f7f24133708fe33bd2e23f92370aab5e220efd9d01c799a9a7c175150",
+      "calibration_windows": 384,
+      "calibration_indices_sha256": "d60553175ff8aaadb1322a29c42b3e80d19440091b76eede937cdde7ed246b15",
+      "selected_percentile": 98,
+      "selected_checkpoint_sha256": "f4fe18828b5f51a0855dcbe31b4fdf3880690e5fdee22d0c330d34f81825d626",
+      "binary_inputs_unchanged": null,
+      "all_candidates_strict_reload_exact": true,
+      "candidates": [
+        {
+          "percentile": 99.999,
+          "checkpoint_sha256": "463e3e57d6a8c389bb957ad15f6ffc78a55cca2fc884133227d05535a23c0ff9"
+        },
+        {
+          "percentile": 99.99,
+          "checkpoint_sha256": "bfabf4f2f038b542843b0b47b47ada6d1b45b11b703fb67766110e3147068358"
+        },
+        {
+          "percentile": 99.9,
+          "checkpoint_sha256": "91e8268c1b069b2a9221e548fa69b7e60dcfca9a1c8e22a95181a6bac8da929e"
+        },
+        {
+          "percentile": 99.0,
+          "checkpoint_sha256": "4395c3f5574780f64cabe33742c6d72579d509f67c315c29dd56eca215905775"
+        },
+        {
+          "percentile": 98.0,
+          "checkpoint_sha256": "f4fe18828b5f51a0855dcbe31b4fdf3880690e5fdee22d0c330d34f81825d626"
+        },
+        {
+          "percentile": 95.0,
+          "checkpoint_sha256": "1f934e242cf87dfa0df09dd258038a2db75934b3e9371ca315629d325529d924"
+        },
+        {
+          "percentile": 90.0,
+          "checkpoint_sha256": "487e0a5c9b9f981b91f481202ca4c3fc0fa46fdbf7245a3274b7008985871f9c"
+        }
+      ]
+    },
+    {
+      "seed": 42,
+      "task": "tusl3-v2",
+      "parent_sha256": "6403fddeae22f57801efef7371abc14cf2b96ee724b697b5b74eab55450e1c53",
+      "train_sha256": "e0bd739696aa8e10b4d30af512727280c253eef12027657358fbf2e7f7e7bfd1",
+      "calibration_windows": 384,
+      "calibration_indices_sha256": "3007cde5f354828ec36b418396ff0c17eed91fd17875dcbefe61e2df8b27a65d",
+      "selected_percentile": 99.9,
+      "selected_checkpoint_sha256": "f4a64760f067725f65780397fea8fc7b887ad912eb145ab302932ec8bf3fbe1d",
+      "binary_inputs_unchanged": null,
+      "all_candidates_strict_reload_exact": true,
+      "candidates": [
+        {
+          "percentile": 99.999,
+          "checkpoint_sha256": "6c3a13a148cab5e392870e59368fee24cbcc13385e1df070818d4cc4890f66ec"
+        },
+        {
+          "percentile": 99.99,
+          "checkpoint_sha256": "0f9897d0a43ea56ccca77d247fb716139cb8549cc8c7f2caa6c3bc561e9c429f"
+        },
+        {
+          "percentile": 99.9,
+          "checkpoint_sha256": "f4a64760f067725f65780397fea8fc7b887ad912eb145ab302932ec8bf3fbe1d"
+        },
+        {
+          "percentile": 99.0,
+          "checkpoint_sha256": "4f1ec1a631edee4e9f7bcdde1d221baef570b3a54857443975dd86f22c8cb2f4"
+        },
+        {
+          "percentile": 98.0,
+          "checkpoint_sha256": "b0857706752b04cb1291f9efbe5372e220003e44a7d69625b5a29427101fa727"
+        },
+        {
+          "percentile": 95.0,
+          "checkpoint_sha256": "2e7bdec40f0ed6345af3eec7af3bd7daa00a68ccd4484d258a829e5d41294e86"
+        },
+        {
+          "percentile": 90.0,
+          "checkpoint_sha256": "b59a1113a1e7db2347d4db667da5bd70b6905614420b8843ea9f0dea629e8bca"
+        }
+      ]
+    },
+    {
+      "seed": 43,
+      "task": "tuar",
+      "parent_sha256": "a0f48fba8cadf996c50b718e2df575c73f871075a84f9447c35d1aea8fb0ab50",
+      "train_sha256": "f4b32cf4a9794c4be8eec73c663f2b31b4f373ba39c7b2a36d618bff92dbe1c5",
+      "calibration_windows": 512,
+      "calibration_indices_sha256": "b64fe1df7d5167b20fa11370885831a994dcb5955d2efd69c367a212d67a9cb3",
+      "selected_percentile": 99.9,
+      "selected_checkpoint_sha256": "1f3bd55cf944dd759c7e8e03d5e4f93aaff4e20ba0207574ffeee3cf7f270cf2",
+      "binary_inputs_unchanged": true,
+      "all_candidates_strict_reload_exact": true,
+      "candidates": [
+        {
+          "percentile": 99.999,
+          "checkpoint_sha256": "e3d9f4c641087ae196e8d77bd8b4cd24d4e5d5c9d8e4b283931bb7e948784404"
+        },
+        {
+          "percentile": 99.99,
+          "checkpoint_sha256": "75737452e2c8d7ec39adfd28fc6ff2d1785eeaaaca819b000143a25eb979afbb"
+        },
+        {
+          "percentile": 99.9,
+          "checkpoint_sha256": "1f3bd55cf944dd759c7e8e03d5e4f93aaff4e20ba0207574ffeee3cf7f270cf2"
+        },
+        {
+          "percentile": 99.0,
+          "checkpoint_sha256": "b421f645b2201db1adb4efc0cd8bff9fea8747444a569f1d2ba558c493ef6808"
+        },
+        {
+          "percentile": 98.0,
+          "checkpoint_sha256": "b89daf992e30abfed1bd219deb9b49ff700ed582497c495c648732c66d47ecc1"
+        },
+        {
+          "percentile": 95.0,
+          "checkpoint_sha256": "7ba89d2f46b9a5528f75058c735c51853512de7c7f5abdfa861ab7197d1db3a8"
+        },
+        {
+          "percentile": 90.0,
+          "checkpoint_sha256": "5c8614555ff1f5e9dbebcd2b9c47da52c39d965fe17e2f7fbf5f6e42d4f851c5"
+        }
+      ]
+    },
+    {
+      "seed": 43,
+      "task": "tuab",
+      "parent_sha256": "aaa3040dc32d49e4a2632936599a591ce68b90ddf8f19ec6b5749b5d6d7af33c",
+      "train_sha256": "28c45e5db40000724111f85e9cd3e96ce5e27de2cb9f1c6601f50379aa686309",
+      "calibration_windows": 512,
+      "calibration_indices_sha256": "8d2cfb157f7fbc81d422e92563e6ef99b914a5459d6547fd942d7e451bfd93da",
+      "selected_percentile": 95.0,
+      "selected_checkpoint_sha256": "4d51acf744a797093dfb03aa1a1ddf3d45684c2e65e533eb14940367344b36d9",
+      "binary_inputs_unchanged": true,
+      "all_candidates_strict_reload_exact": true,
+      "candidates": [
+        {
+          "percentile": 99.999,
+          "checkpoint_sha256": "f3849e5e3b987d23d5aeb938796b7a418d426bf5530afd88eb2a382ce3898b8f"
+        },
+        {
+          "percentile": 99.99,
+          "checkpoint_sha256": "59025577fa04c6b8cb1aef7e2d54b22a694cc9dc63eb5d2b3bd8611f7fc7ff06"
+        },
+        {
+          "percentile": 99.9,
+          "checkpoint_sha256": "75324a30f013c48e3e0c7f2a7f3734582da2a26bd6ef4ffd185136b8ff40619a"
+        },
+        {
+          "percentile": 99.0,
+          "checkpoint_sha256": "aae985098072bb1fbe8dc16de492883ece9a98a847f3ce1a01e67a96efae3819"
+        },
+        {
+          "percentile": 98.0,
+          "checkpoint_sha256": "44e7e1c7402b05b43fd0d27d5fab3f8c746474c4f5b4c5d313437913e8f4c6d2"
+        },
+        {
+          "percentile": 95.0,
+          "checkpoint_sha256": "4d51acf744a797093dfb03aa1a1ddf3d45684c2e65e533eb14940367344b36d9"
+        },
+        {
+          "percentile": 90.0,
+          "checkpoint_sha256": "d58bb25bec9a3512693e870aa81f601bb07ffe309feb3bbe3299d4b3b14949b7"
+        }
+      ]
+    },
+    {
+      "seed": 43,
+      "task": "tusl0-v2",
+      "parent_sha256": "704305ba5ae9aca553f3e0d161492d62c13b1c5d1c80fe789edbad451903ce11",
+      "train_sha256": "08c5ef16e0babf342967ae1e508a1149406e0cbd0ed5fe02068982a7e0053488",
+      "calibration_windows": 384,
+      "calibration_indices_sha256": "9b449db81e073926d2504593e4953e566a8405666070ecdd831493e3696b19d5",
+      "selected_percentile": 98,
+      "selected_checkpoint_sha256": "eafd64d862a23b697be1e49c22a853459c26dfaae0031cb193b327a54118f860",
+      "binary_inputs_unchanged": null,
+      "all_candidates_strict_reload_exact": true,
+      "candidates": [
+        {
+          "percentile": 99.999,
+          "checkpoint_sha256": "fe68b9385473d2e0cf9dbdbb27d49ecfb4ead9127e02f1bb50074c35814b7126"
+        },
+        {
+          "percentile": 99.99,
+          "checkpoint_sha256": "cfc09065e0c81e91edb21b9ccbee52f7d04900cffc787697184e91ae3ffaa976"
+        },
+        {
+          "percentile": 99.9,
+          "checkpoint_sha256": "e2964ad4a2aabf8a6d66b69c9e1640fb3947f92484b0f2bc9ffcba7ea9cda9a6"
+        },
+        {
+          "percentile": 99.0,
+          "checkpoint_sha256": "122135030b8d302e9f97528226c77d97543d1f0d0cda1dda4b53a1dc38d9d92f"
+        },
+        {
+          "percentile": 98.0,
+          "checkpoint_sha256": "eafd64d862a23b697be1e49c22a853459c26dfaae0031cb193b327a54118f860"
+        },
+        {
+          "percentile": 95.0,
+          "checkpoint_sha256": "b43740cfba3a0d26d6c9389e2525ebbf303671c863882970d4d6c4d603e836d3"
+        },
+        {
+          "percentile": 90.0,
+          "checkpoint_sha256": "8af4bdb21de62fd64275ec3bdc95b35baa9bed7ff2b0461d81454221f6807af4"
+        }
+      ]
+    },
+    {
+      "seed": 43,
+      "task": "tusl1-v2",
+      "parent_sha256": "71f4cd09de7bb00e1005f0e99ed12f3168c49add84ca7deff054ad647cb9d9f0",
+      "train_sha256": "62d6f3252f67a6c8ad9ec5fa1077954a47d1eefe6e60f663cdc52161732ab618",
+      "calibration_windows": 384,
+      "calibration_indices_sha256": "1dc62f6e0fc197edd1455a2ab3bc520da2ce21b0965dd9fc7b17cf32fbfc2a63",
+      "selected_percentile": 99.99,
+      "selected_checkpoint_sha256": "68b6ebe793a5e7236e30ded71de48820600530086b163f8ade8505db7634738f",
+      "binary_inputs_unchanged": null,
+      "all_candidates_strict_reload_exact": true,
+      "candidates": [
+        {
+          "percentile": 99.999,
+          "checkpoint_sha256": "b7e243e556efeac1efe9dd6f09ed58ccd92d31546cc775b438fcf36f254bdafa"
+        },
+        {
+          "percentile": 99.99,
+          "checkpoint_sha256": "68b6ebe793a5e7236e30ded71de48820600530086b163f8ade8505db7634738f"
+        },
+        {
+          "percentile": 99.9,
+          "checkpoint_sha256": "3b8f3a0ee2be427a18df7e9cb24e7f169c71a82bacffb14cfe8f9ccf275fd79b"
+        },
+        {
+          "percentile": 99.0,
+          "checkpoint_sha256": "f41e4fc8921662703ebb865d28866da830c071bf50d765312f062ab082d403e6"
+        },
+        {
+          "percentile": 98.0,
+          "checkpoint_sha256": "52e72718020aba2a8565edb89c6b6dfe25269b760a73f9ef64fdf208d3f6bee8"
+        },
+        {
+          "percentile": 95.0,
+          "checkpoint_sha256": "62cf5283e070e0165f81e14a2af78e3e68ccd8ffb0e6f3c4375decf78e45e04d"
+        },
+        {
+          "percentile": 90.0,
+          "checkpoint_sha256": "16a2f27af5493900b6aa6b184ec9900153d5de464defd4fa01e7247ecad40a32"
+        }
+      ]
+    },
+    {
+      "seed": 43,
+      "task": "tusl2-v2",
+      "parent_sha256": "1e9dceb65633477e049abfa314453e36d577b276923e9d6262bfc91c746aed0f",
+      "train_sha256": "ec7e131f7f24133708fe33bd2e23f92370aab5e220efd9d01c799a9a7c175150",
+      "calibration_windows": 384,
+      "calibration_indices_sha256": "d60553175ff8aaadb1322a29c42b3e80d19440091b76eede937cdde7ed246b15",
+      "selected_percentile": 99.99,
+      "selected_checkpoint_sha256": "cc095d1f20e66b5bf4dc7fa6eb577bc7c2bf9b69ce67b6c64ca55fee154f66ae",
+      "binary_inputs_unchanged": null,
+      "all_candidates_strict_reload_exact": true,
+      "candidates": [
+        {
+          "percentile": 99.999,
+          "checkpoint_sha256": "cc87aa4ea7ba92a17f67f162a0c033869d8853138217138f1bc8f07dfe285239"
+        },
+        {
+          "percentile": 99.99,
+          "checkpoint_sha256": "cc095d1f20e66b5bf4dc7fa6eb577bc7c2bf9b69ce67b6c64ca55fee154f66ae"
+        },
+        {
+          "percentile": 99.9,
+          "checkpoint_sha256": "10de09ea127380b6cc7bb3959fc83bb433a02b99e63893c339ae6eb95f56307e"
+        },
+        {
+          "percentile": 99.0,
+          "checkpoint_sha256": "ef24faa5d651d9e925df2b95179423a8dc0eaa9b4e05d6007deb5a05cdcdd2d1"
+        },
+        {
+          "percentile": 98.0,
+          "checkpoint_sha256": "50e70c85d4422eca5bbb5d5d2358ccedf4bdbeb82f6e161393beed468783fc41"
+        },
+        {
+          "percentile": 95.0,
+          "checkpoint_sha256": "ec31a65f327adea5c187e8ec482312abb31adaaa3ca3a68365e308db21c89802"
+        },
+        {
+          "percentile": 90.0,
+          "checkpoint_sha256": "69152bdf18abf2e2fb1c1530b17ab2873c8f5d268ce1118cef45d8f61d528dc3"
+        }
+      ]
+    },
+    {
+      "seed": 43,
+      "task": "tusl3-v2",
+      "parent_sha256": "d76934dac2c3c82886eefe43854dbc5c6e35ae9eacd64cfd65dad9a726d2da6e",
+      "train_sha256": "e0bd739696aa8e10b4d30af512727280c253eef12027657358fbf2e7f7e7bfd1",
+      "calibration_windows": 384,
+      "calibration_indices_sha256": "3007cde5f354828ec36b418396ff0c17eed91fd17875dcbefe61e2df8b27a65d",
+      "selected_percentile": 99.99,
+      "selected_checkpoint_sha256": "caefe3fd0e7229d5e8d3a8eb29506b1d47b783ddf17deb6f3181dfc575bb680b",
+      "binary_inputs_unchanged": null,
+      "all_candidates_strict_reload_exact": true,
+      "candidates": [
+        {
+          "percentile": 99.999,
+          "checkpoint_sha256": "42e1e10f8101bc741849564b562f2f3ab2f25c440231b1b670c19e80d1a57306"
+        },
+        {
+          "percentile": 99.99,
+          "checkpoint_sha256": "caefe3fd0e7229d5e8d3a8eb29506b1d47b783ddf17deb6f3181dfc575bb680b"
+        },
+        {
+          "percentile": 99.9,
+          "checkpoint_sha256": "14c020d496e476dc6fa1d650d35a59a83a9836951cf5957043de0897340ed0c9"
+        },
+        {
+          "percentile": 99.0,
+          "checkpoint_sha256": "76b2c9bf9cc2d78dece573d38e7d8e2783940a0a8bca1209e007f345a5e0d542"
+        },
+        {
+          "percentile": 98.0,
+          "checkpoint_sha256": "1463a220548cd715bc02718582dff7992be2fa85184c0b89e8d204342d7aa3df"
+        },
+        {
+          "percentile": 95.0,
+          "checkpoint_sha256": "24589c49ca5b5999b4e60ed59e4170666a4372f9f60175e9017ae16505f15735"
+        },
+        {
+          "percentile": 90.0,
+          "checkpoint_sha256": "f2dfda0e72f2cd036f44cc97db78dbc85a0bcb5a9af08af3e5d147653f5f6648"
+        }
+      ]
+    },
+    {
+      "seed": 44,
+      "task": "tuar",
+      "parent_sha256": "54b95955a5d423f6ca6593a4f4ac8072ea1b85b2a2f267d45d8ec8a2d32073ab",
+      "train_sha256": "f4b32cf4a9794c4be8eec73c663f2b31b4f373ba39c7b2a36d618bff92dbe1c5",
+      "calibration_windows": 512,
+      "calibration_indices_sha256": "b64fe1df7d5167b20fa11370885831a994dcb5955d2efd69c367a212d67a9cb3",
+      "selected_percentile": 98.0,
+      "selected_checkpoint_sha256": "9b8aa84fd83da4e8191cad8b3506b0b9f2d4fbd5ebe5b9973cdbd19103d1975f",
+      "binary_inputs_unchanged": true,
+      "all_candidates_strict_reload_exact": true,
+      "candidates": [
+        {
+          "percentile": 99.999,
+          "checkpoint_sha256": "43a4b243a3776b2d66c1350e1bc753d3da749f1121b18713bb154c2ccf1b98fb"
+        },
+        {
+          "percentile": 99.99,
+          "checkpoint_sha256": "e03c2c027d9ab35130e7a119273687fad27dcf92860bfab96382cbd903b02db8"
+        },
+        {
+          "percentile": 99.9,
+          "checkpoint_sha256": "d9edee7c83d97c9bbad528cb59f5c786e7d766ab124bf57a2e0d78ca0c5fc053"
+        },
+        {
+          "percentile": 99.0,
+          "checkpoint_sha256": "ca35523e53fc05f44880c6eb95abaca8465e8786a71e2d2b5b5668dc4112ee16"
+        },
+        {
+          "percentile": 98.0,
+          "checkpoint_sha256": "9b8aa84fd83da4e8191cad8b3506b0b9f2d4fbd5ebe5b9973cdbd19103d1975f"
+        },
+        {
+          "percentile": 95.0,
+          "checkpoint_sha256": "1e3277cd4fcd6713fb2eafa8870543177768857c35e6215a43c4e6d03e6b3469"
+        },
+        {
+          "percentile": 90.0,
+          "checkpoint_sha256": "224c7bd97237a7aabcf963cec41de20b542cc5e0dd1dd6bec62784c91de24b82"
+        }
+      ]
+    },
+    {
+      "seed": 44,
+      "task": "tuab",
+      "parent_sha256": "67d6a76c4b11ef7a3644523eabc069a2afedbc17a70a852b927d1b9962632e56",
+      "train_sha256": "28c45e5db40000724111f85e9cd3e96ce5e27de2cb9f1c6601f50379aa686309",
+      "calibration_windows": 512,
+      "calibration_indices_sha256": "8d2cfb157f7fbc81d422e92563e6ef99b914a5459d6547fd942d7e451bfd93da",
+      "selected_percentile": 95.0,
+      "selected_checkpoint_sha256": "6d0b0a19c750402b232d11bde5a2fa85421062683d63c5ea6e8f42745aae41f9",
+      "binary_inputs_unchanged": true,
+      "all_candidates_strict_reload_exact": true,
+      "candidates": [
+        {
+          "percentile": 99.999,
+          "checkpoint_sha256": "8dc7e0af395b61c976874efc9822d7f6213e711bf4c1d08d068119df78e26dda"
+        },
+        {
+          "percentile": 99.99,
+          "checkpoint_sha256": "c987044cda1bf8e03a3fc7f4cca84bf73e404025a4016be304b17ffa7fdf24de"
+        },
+        {
+          "percentile": 99.9,
+          "checkpoint_sha256": "357ee046d1ef067f4c871f376e05cc4995687ec7c6ae671e625d3404fe5bffc9"
+        },
+        {
+          "percentile": 99.0,
+          "checkpoint_sha256": "beccb04a50eaa646a5d18b8f6e68c36a1f985ea2e7a5f845fa3aa3a1f3bf8349"
+        },
+        {
+          "percentile": 98.0,
+          "checkpoint_sha256": "dc2adda099cc641dc158061b373c4ea575883580c45d781bf280bfc46c62f9de"
+        },
+        {
+          "percentile": 95.0,
+          "checkpoint_sha256": "6d0b0a19c750402b232d11bde5a2fa85421062683d63c5ea6e8f42745aae41f9"
+        },
+        {
+          "percentile": 90.0,
+          "checkpoint_sha256": "58cd593994a5781f968b5da4f0b657843fefbfb5549f6616932eff0f77f2b9a0"
+        }
+      ]
+    },
+    {
+      "seed": 44,
+      "task": "tusl0-v2",
+      "parent_sha256": "8cae1c9db79e9ba9cac9661bce83cc0beb520fcc48800525d07b554c068469f9",
+      "train_sha256": "08c5ef16e0babf342967ae1e508a1149406e0cbd0ed5fe02068982a7e0053488",
+      "calibration_windows": 384,
+      "calibration_indices_sha256": "9b449db81e073926d2504593e4953e566a8405666070ecdd831493e3696b19d5",
+      "selected_percentile": 99.9,
+      "selected_checkpoint_sha256": "df92c2c8445032c7d6eb93fcafa9cbd658f4db21ea80125008f4085a3f86cd67",
+      "binary_inputs_unchanged": null,
+      "all_candidates_strict_reload_exact": true,
+      "candidates": [
+        {
+          "percentile": 99.999,
+          "checkpoint_sha256": "08ab28dabf222274a4b479697f42556d9e57b3e6f34199c4c39102cccbf1487e"
+        },
+        {
+          "percentile": 99.99,
+          "checkpoint_sha256": "4da1e6118401e3111556df5f0687c3b1679d36d7d00a140afd2371ba1861ac83"
+        },
+        {
+          "percentile": 99.9,
+          "checkpoint_sha256": "df92c2c8445032c7d6eb93fcafa9cbd658f4db21ea80125008f4085a3f86cd67"
+        },
+        {
+          "percentile": 99.0,
+          "checkpoint_sha256": "dab181e664c892c2a98613f7e5722ca48aac12c92aa97bc765a4f4c40ef0e355"
+        },
+        {
+          "percentile": 98.0,
+          "checkpoint_sha256": "f78e2fe527743d0afb1e2115ad396be42e56cfd0039d99743c6d4dd646ae2642"
+        },
+        {
+          "percentile": 95.0,
+          "checkpoint_sha256": "2fb5d9efaa2be057d3024cb29a45126655adbf08f4ae42210956a83304ccf866"
+        },
+        {
+          "percentile": 90.0,
+          "checkpoint_sha256": "be1c4f6b1e67d8c489d454e01dcc50a7ab3f6dbb36fe5726efcf9f2d5a4bff14"
+        }
+      ]
+    },
+    {
+      "seed": 44,
+      "task": "tusl1-v2",
+      "parent_sha256": "42a6a834e66f9d5ac2022e9de9f4d93ff5d8e235b85b72e9ee62f077e64f40ad",
+      "train_sha256": "62d6f3252f67a6c8ad9ec5fa1077954a47d1eefe6e60f663cdc52161732ab618",
+      "calibration_windows": 384,
+      "calibration_indices_sha256": "1dc62f6e0fc197edd1455a2ab3bc520da2ce21b0965dd9fc7b17cf32fbfc2a63",
+      "selected_percentile": 99.999,
+      "selected_checkpoint_sha256": "2ac58423841568b1617cdc4db797329d65c1ca59f0719860e8417a479b6f6af8",
+      "binary_inputs_unchanged": null,
+      "all_candidates_strict_reload_exact": true,
+      "candidates": [
+        {
+          "percentile": 99.999,
+          "checkpoint_sha256": "2ac58423841568b1617cdc4db797329d65c1ca59f0719860e8417a479b6f6af8"
+        },
+        {
+          "percentile": 99.99,
+          "checkpoint_sha256": "4e1d49bb1be60b1d2eddad1ef0850575dc66ed272d80a1f3bb4f98741760a758"
+        },
+        {
+          "percentile": 99.9,
+          "checkpoint_sha256": "619a14d0ff6154c8e8a03ddea2b219a558862d2c6291162c9d96e4946deaf509"
+        },
+        {
+          "percentile": 99.0,
+          "checkpoint_sha256": "bb8f9f9852030114b9b94b71759cdadcdb67bb386cf8c13b6c03fbe90c16ec81"
+        },
+        {
+          "percentile": 98.0,
+          "checkpoint_sha256": "390763b03106a1395c77c9f34a94b516275d8e3e6ea9f33ccdb08623d03cba65"
+        },
+        {
+          "percentile": 95.0,
+          "checkpoint_sha256": "08862c8b5fccf7b46d426bf61d57b0c521d93227ddbcf8510e489256a6849440"
+        },
+        {
+          "percentile": 90.0,
+          "checkpoint_sha256": "5cc9575f03fcdcf83f6577e064facc0cf012b48bbfa1208b45e4eafc1390f0f9"
+        }
+      ]
+    },
+    {
+      "seed": 44,
+      "task": "tusl2-v2",
+      "parent_sha256": "000e1cb8f7cd52c681fd056364f31b7b079b8cdbc1034c8f43cc1b32e4d02ef2",
+      "train_sha256": "ec7e131f7f24133708fe33bd2e23f92370aab5e220efd9d01c799a9a7c175150",
+      "calibration_windows": 384,
+      "calibration_indices_sha256": "d60553175ff8aaadb1322a29c42b3e80d19440091b76eede937cdde7ed246b15",
+      "selected_percentile": 99.9,
+      "selected_checkpoint_sha256": "ef5f13b54e4d166994c23cdeb685f6d623e1d41d60efc5aac6e006f1f2db608c",
+      "binary_inputs_unchanged": null,
+      "all_candidates_strict_reload_exact": true,
+      "candidates": [
+        {
+          "percentile": 99.999,
+          "checkpoint_sha256": "ec1d69812b0722f41297bf40ecba098b45082d016eea0df790e37cd018a97160"
+        },
+        {
+          "percentile": 99.99,
+          "checkpoint_sha256": "87a366b2e8987e3e9a4cc917c852c0fba694b4d1d11653f780aa97f8d569159a"
+        },
+        {
+          "percentile": 99.9,
+          "checkpoint_sha256": "ef5f13b54e4d166994c23cdeb685f6d623e1d41d60efc5aac6e006f1f2db608c"
+        },
+        {
+          "percentile": 99.0,
+          "checkpoint_sha256": "50a4b3d9ccca1603daedf79fc8f53fe5bddc16c3d68c4e08eb43034fea1f28bc"
+        },
+        {
+          "percentile": 98.0,
+          "checkpoint_sha256": "045a2d438a4cf12b130c6f1df734228fb23d21a59149e5014deba2f2076a4a2f"
+        },
+        {
+          "percentile": 95.0,
+          "checkpoint_sha256": "42e55f6c8651566324cff46cec3d463d9a01157dace9fdbcba5e8decacd5edcf"
+        },
+        {
+          "percentile": 90.0,
+          "checkpoint_sha256": "de9785263b63afc6c60432901b9bad68daae54ec9328e73eb6e7378fe77dc747"
+        }
+      ]
+    },
+    {
+      "seed": 44,
+      "task": "tusl3-v2",
+      "parent_sha256": "c0a5062a19789321ca545489ccbc267d3bbe78a225f7635e9f412fd34a7bb69e",
+      "train_sha256": "e0bd739696aa8e10b4d30af512727280c253eef12027657358fbf2e7f7e7bfd1",
+      "calibration_windows": 384,
+      "calibration_indices_sha256": "3007cde5f354828ec36b418396ff0c17eed91fd17875dcbefe61e2df8b27a65d",
+      "selected_percentile": 98,
+      "selected_checkpoint_sha256": "ff995dd14cb795bfbf8f3714621fc3977f56addf69d3911cb477a8e4b4bb9d5a",
+      "binary_inputs_unchanged": null,
+      "all_candidates_strict_reload_exact": true,
+      "candidates": [
+        {
+          "percentile": 99.999,
+          "checkpoint_sha256": "62e364d71cd67ee8cd5cd07614727b3b692ee87dace4131ea477053aa42a9d22"
+        },
+        {
+          "percentile": 99.99,
+          "checkpoint_sha256": "cc0a1bdf22019aefa13c62c3e942f191a85725054c969aa3e0f3cf300987f6c3"
+        },
+        {
+          "percentile": 99.9,
+          "checkpoint_sha256": "cd3e58f386896e27c41814b44eb6a274976d975366f0b5e965787d86c68f45c0"
+        },
+        {
+          "percentile": 99.0,
+          "checkpoint_sha256": "173118e82b1ddff68fee5e64b35bfad9898c02f8307552c2779dcfc556691110"
+        },
+        {
+          "percentile": 98.0,
+          "checkpoint_sha256": "ff995dd14cb795bfbf8f3714621fc3977f56addf69d3911cb477a8e4b4bb9d5a"
+        },
+        {
+          "percentile": 95.0,
+          "checkpoint_sha256": "bd30b2e39277cfeb273330c56d04375b1ad1aff7680859aceed26d9d64d01d10"
+        },
+        {
+          "percentile": 90.0,
+          "checkpoint_sha256": "3f2883e75cfb45c97c2a603ca87d36a4bd55cfd6e09250410adabb6980bb211c"
+        }
+      ]
+    }
+  ]
+}
