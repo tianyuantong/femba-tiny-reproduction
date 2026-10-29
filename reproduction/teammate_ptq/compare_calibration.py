@@ -66,9 +66,14 @@ def replay_split(task, data: Path, split: str) -> dict:
 
 
 def evaluate_variant(checkpoint: Path, prepare, data: Path, config: dict) -> dict:
-    """Validation picks the threshold; prepare(model) adjusts the loaded quantizers first."""
+    """prepare(model) adjusts the loaded quantizers before evaluate_task."""
     task, _ = capture.load_task(checkpoint, "ptq_original", expected_config=config)
     prepare(task.model)
+    return evaluate_task(task, data)
+
+
+def evaluate_task(task, data: Path) -> dict:
+    """Validation picks the threshold that the test metrics use."""
     val, test = replay_split(task, data, "val"), replay_split(task, data, "test")
     selection = validation_metrics(val["labels"], val["logits"])
     threshold = selection["threshold_selection"]["threshold"]
