@@ -25,6 +25,8 @@ import sys
 from evaluate import (add_quantization_arguments, argument_quantization_config, configure_runtime,
                       load_task, quantization_contract, sha256, source_record, write_json)
 
+METHODS = ("percentile", "mse", "kl")
+
 
 def validate_percentile(percentile: float) -> float:
     if isinstance(percentile, bool) or not isinstance(percentile, Real):
@@ -43,16 +45,16 @@ def calibration_indices(windows: int, count: int = 512) -> list[int]:
     return torch.randperm(windows, generator=torch.Generator().manual_seed(42))[:count].tolist()
 
 
-def set_percentile(model, percentile: float) -> None:
+def native_observers(model) -> list:
+    """The 35 fresh activation proxies whose scales still come from 99.999 percentile observers."""
     import brevitas
     from brevitas.core.scaling.standalone import ParameterFromRuntimeStatsScaling
     from brevitas.core.stats.stats_op import AbsPercentile
     from brevitas.proxy.runtime_quant import ActQuantProxyFromInjectorBase
 
-    percentile = validate_percentile(percentile)
     if brevitas.__version__ != "0.12.1":
         raise RuntimeError("Native calibration requires Brevitas 0.12.1")
-    observers = []
+    proxies = []
     for proxy in model.modules():
         if isinstance(proxy, ActQuantProxyFromInjectorBase) and proxy.fused_activation_quant_proxy is not None:
             scaling = proxy.fused_activation_quant_proxy.tensor_quant.scaling_impl
@@ -61,11 +63,28 @@ def set_percentile(model, percentile: float) -> None:
             stats = scaling.stats.stats_impl
             if type(stats) is not AbsPercentile or stats.stats_reduce_dim is not None or stats.q != 99.999:
                 raise ValueError("Expected native per-tensor 99.999 percentile observers")
-            observers.append(stats)
-    if len(observers) != 35 or len({id(stats) for stats in observers}) != 35:
+            proxies.append(proxy)
+    if len(proxies) != 35 or len({id(proxy) for proxy in proxies}) != 35:
         raise ValueError("Expected 35 distinct activation observers")
-    for stats in observers:
-        stats.q = percentile
+    return proxies
+
+
+def set_percentile(model, percentile: float) -> None:
+    percentile = validate_percentile(percentile)
+    for proxy in native_observers(model):
+        proxy.fused_activation_quant_proxy.tensor_quant.scaling_impl.stats.stats_impl.q = percentile
+
+
+def set_clip_search(model, method: str) -> None:
+    """Replace every percentile observer with a per-batch MSE or KL clipping search."""
+    from clip_search import ClipSearch
+
+    for proxy in native_observers(model):
+        tensor_quant = proxy.fused_activation_quant_proxy.tensor_quant
+        bit_width = tensor_quant.msb_clamp_bit_width_impl()  # proxies stay disabled until calibration
+        tensor_quant.scaling_impl.stats.stats_impl = ClipSearch(
+            method, int(tensor_quant.int_quant.min_int(bit_width)), int(tensor_quant.int_quant.max_int(bit_width)),
+            float(tensor_quant.int_scaling_impl(bit_width)))
 
 
 def floating_parameters(model) -> dict:
@@ -159,10 +178,15 @@ def run(args) -> dict:
         manifest = {"split": "train.h5", "seed": 42, "indices": indices, "train_sha256": train_sha}
         manifest_path = args.output / "calibration_indices.json"
         write_json(manifest_path, manifest)
-        recipe = {"activation_percentile": percentile, "seed": 42, "batch_size": 32,
+        recipe = {"activation_clipping": args.method,
+                  "activation_percentile": percentile if args.method == "percentile" else None,
+                  "seed": 42, "batch_size": 32,
                   "windows": args.calibration_windows, "indices_sha256": sha256(manifest_path),
                   "quantization_config": config}
-        set_percentile(task.model, percentile)
+        if args.method == "percentile":
+            set_percentile(task.model, percentile)
+        else:
+            set_clip_search(task.model, args.method)
         report = calibrate_quantized(task.model, batches(task, dataset, indices))
         assert report["num_batches"] == -(-args.calibration_windows // 32)
         current = floating_parameters(task.model)
@@ -185,6 +209,8 @@ def main() -> None:
     parser = argparse.ArgumentParser(description=__doc__)
     for name in ("source", "data", "checkpoint", "output"):
         parser.add_argument("--" + name, required=True, type=Path)
+    parser.add_argument("--method", choices=METHODS, default="percentile",
+                        help="Activation clipping: one percentile for every quantizer, or a per-quantizer MSE / KL search")
     parser.add_argument("--percentile", type=float, default=99.999)
     parser.add_argument("--calibration-windows", type=int, default=512,
                         help="Fixed number of seed-42 training windows used for calibration (default 512)")

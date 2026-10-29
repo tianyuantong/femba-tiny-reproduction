@@ -7,6 +7,7 @@
 | 内容 | 说明与入口 |
 | --- | --- |
 | 正式线 FP32 / INT8 结果 | 受试者划分，TUAR、TUAB、TUSL 三个任务，FP32、PTQ、C、QAP 四组各三个种子，见 [INT8 结果](reproduction/formal_line/results/int8/README.md) |
+| TUAB 上 PTQ 的掉点定位 | INT8 PTQ 的损失来自哪些激活、改用 FP16 能收回多少，另有 MSE / KL 校准和 INT4、三值权重的对照，见 [PTQ 掉点定位](reproduction/formal_line/results/ptq-diagnosis/README.md) |
 | TUAR INT8 试点结果 | 按录音划分的三个种子，包含 FP32、PTQ、C、QAP 四组及配对分析，见 [INT8 团队小结](reproduction/teammate_ptq/README.md) |
 | 正式线复现流程 | 三个任务的数据构建、环境、预训练、微调、PTQ、评估、汇总与多机分工，见 [正式线运行说明](reproduction/formal_line/README.md) |
 
