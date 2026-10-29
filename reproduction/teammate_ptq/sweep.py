@@ -148,7 +148,7 @@ def calibrate_new(args, checkpoints: dict) -> dict:
         print(f"CALIBRATE {name}", flush=True)
         # binary classifier calibrated on the protocol's 512 seed-42 training windows
         result = calibrate.run(SimpleNamespace(source=args.source, data=args.data,
-            checkpoint=args.fp32, output=directory, percentile=percentile, calibration_windows=512,
+            checkpoint=args.fp32, output=directory, method="percentile", percentile=percentile, calibration_windows=512,
             num_classes=2, classification_type="bc", **capture.argument_quantization_config(args)))
         checkpoints[name] = directory / result["checkpoint_file"]
         manifests.append(result["recipe"]["indices_sha256"])
