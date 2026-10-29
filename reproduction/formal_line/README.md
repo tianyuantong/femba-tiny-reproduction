@@ -2,7 +2,7 @@
 
 在 TUAR、TUAB、TUSL 三个任务上比较 FP32、PTQ、C、QAP 四组，位宽三档，种子 42 / 43 / 44，全部按受试者划分。源码是上游 BioFoundation `a2a4d44` 依次打三个补丁，命令见 [QUANTIZATION.md](../teammate_ptq/QUANTIZATION.md#独立准备源码)。
 
-FP32 与 INT8 三个种子的测试结果、复核脚本和学习曲线见 [INT8 结果](results/int8/README.md)。
+FP32 与 INT8 三个种子的测试结果、复核脚本和学习曲线见 [INT8 结果](results/int8/README.md)；TUAB 上 PTQ 的掉点定位见 [PTQ 掉点定位](results/ptq-diagnosis/README.md)。
 
 ## 协议
 

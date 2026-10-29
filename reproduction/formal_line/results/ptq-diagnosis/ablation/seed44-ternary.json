@@ -1,0 +1,234 @@
+{
+  "time_utc": "2026-10-29T09:43:59.788408+00:00",
+  "fp32_sha256": "67d6a76c4b11ef7a3644523eabc069a2afedbc17a70a852b927d1b9962632e56",
+  "quantization_config": {
+    "weight_bit_width": 2,
+    "activation_bit_width": 8,
+    "weight_quant_scheme": "ternary",
+    "activation_quant_scheme": "uniform"
+  },
+  "checkpoint_sha256": "735c63b7fac43e7bf12707fac7f0d7c792cfaea2a77c91b182f4e606742484ce",
+  "tail_ranking": [
+    "mamba_blocks.0.mamba_fwd.ssm.output_quant.act_quant",
+    "mamba_blocks.0.mamba_rev.ssm.output_quant.act_quant",
+    "mamba_blocks.0.mamba_fwd.output_quant.act_quant",
+    "mamba_blocks.0.scale_equalizer.act_quant",
+    "mamba_blocks.0.output_quant.act_quant",
+    "mamba_blocks.0.mamba_rev.output_quant.act_quant",
+    "mamba_blocks.0.rev_post_flip_quant.act_quant",
+    "mamba_blocks.1.mamba_fwd.ssm.output_quant.act_quant",
+    "mamba_blocks.1.mamba_rev.ssm.output_quant.act_quant",
+    "patch_embed.output_quant.act_quant",
+    "mamba_blocks.0.post_flip_quant.act_quant",
+    "scale_equalizer.act_quant",
+    "input_quant.act_quant",
+    "mamba_blocks.0.mamba_fwd.in_proj_quant.act_quant",
+    "mamba_blocks.0.mamba_rev.in_proj_quant.act_quant",
+    "mamba_blocks.1.mamba_fwd.output_quant.act_quant",
+    "mamba_blocks.1.scale_equalizer.act_quant",
+    "mamba_blocks.1.mamba_rev.output_quant.act_quant",
+    "mamba_blocks.1.rev_post_flip_quant.act_quant",
+    "mamba_blocks.1.output_quant.act_quant",
+    "mamba_blocks.0.mamba_fwd.silu.output_quant.act_quant",
+    "mamba_blocks.1.mamba_fwd.silu.output_quant.act_quant",
+    "mamba_blocks.1.mamba_rev.silu.output_quant.act_quant",
+    "mamba_blocks.0.mamba_rev.silu.output_quant.act_quant",
+    "mamba_blocks.1.mamba_rev.in_proj_quant.act_quant",
+    "pos_quant.act_quant",
+    "mamba_blocks.0.mamba_fwd.conv1d.output_quant.act_quant",
+    "mamba_blocks.0.mamba_rev.conv1d.output_quant.act_quant",
+    "mamba_blocks.1.mamba_rev.conv1d.output_quant.act_quant",
+    "mamba_blocks.1.mamba_fwd.in_proj_quant.act_quant",
+    "mamba_blocks.1.mamba_fwd.conv1d.output_quant.act_quant",
+    "mamba_blocks.1.post_flip_quant.act_quant",
+    "post_norm_quants.0.act_quant",
+    "pre_classifier_quant.act_quant",
+    "post_norm_quants.1.act_quant"
+  ],
+  "data": {
+    "val": "cb91bb2aaac4c2f7088d9e9b2c6ebdb01ede719d52b65a298c9c4c8ae31a2e36",
+    "test": "23d7c2f4fce207661c3d5d54ef9935bca2edff9dcc851911ad1f5f7bfb8a06b5"
+  },
+  "variants": [
+    {
+      "variant": "all",
+      "float_activations": [],
+      "validation": {
+        "auroc": 0.6562555540870877,
+        "ap": 0.5625891665432504,
+        "loss": 0.6766788523587663
+      },
+      "threshold": -0.0861755721271038,
+      "test": {
+        "auroc": 0.594731270574452,
+        "ap": 0.5502526569512105,
+        "default": {
+          "threshold": 0.0,
+          "confusion_matrix": [
+            [
+              37470,
+              2406
+            ],
+            [
+              29873,
+              4261
+            ]
+          ],
+          "accuracy": 0.5638562356438319,
+          "balanced_accuracy": 0.5322472507099306,
+          "predicted_positive_rate": 0.09008242129441968
+        },
+        "validation_selected": {
+          "threshold": -0.0861755721271038,
+          "confusion_matrix": [
+            [
+              27670,
+              12206
+            ],
+            [
+              18709,
+              15425
+            ]
+          ],
+          "accuracy": 0.5822861775435751,
+          "balanced_accuracy": 0.5728982820905468,
+          "predicted_positive_rate": 0.3733414403458992
+        }
+      }
+    },
+    {
+      "variant": "weights",
+      "float_activations": [],
+      "validation": {
+        "auroc": 0.6859104290947304,
+        "ap": 0.601924368133814,
+        "loss": 0.6777475678271515
+      },
+      "threshold": -0.032903388142585754,
+      "test": {
+        "auroc": 0.6428397604702074,
+        "ap": 0.5972379800094292,
+        "default": {
+          "threshold": 0.0,
+          "confusion_matrix": [
+            [
+              34590,
+              5286
+            ],
+            [
+              22901,
+              11233
+            ]
+          ],
+          "accuracy": 0.6191460613430617,
+          "balanced_accuracy": 0.5982622152578777,
+          "predicted_positive_rate": 0.2231995676259965
+        },
+        "validation_selected": {
+          "threshold": -0.032903388142585754,
+          "confusion_matrix": [
+            [
+              29927,
+              9949
+            ],
+            [
+              17810,
+              16324
+            ]
+          ],
+          "accuracy": 0.6249290636400486,
+          "balanced_accuracy": 0.6143672009173243,
+          "predicted_positive_rate": 0.3549925685718146
+        }
+      }
+    },
+    {
+      "variant": "activations",
+      "float_activations": [],
+      "validation": {
+        "auroc": 0.760297588965172,
+        "ap": 0.7068973542361056,
+        "loss": 0.6463693058190282
+      },
+      "threshold": 0.2726709134876728,
+      "test": {
+        "auroc": 0.7026510194728401,
+        "ap": 0.7151877844820687,
+        "default": {
+          "threshold": 0.0,
+          "confusion_matrix": [
+            [
+              17833,
+              22043
+            ],
+            [
+              7666,
+              26468
+            ]
+          ],
+          "accuracy": 0.5985812728009728,
+          "balanced_accuracy": 0.6113129489429183,
+          "predicted_positive_rate": 0.655465477638157
+        },
+        "validation_selected": {
+          "threshold": 0.2726709134876728,
+          "confusion_matrix": [
+            [
+              30884,
+              8992
+            ],
+            [
+              15206,
+              18928
+            ]
+          ],
+          "accuracy": 0.673044183218484,
+          "balanced_accuracy": 0.664510686238607,
+          "predicted_positive_rate": 0.3772463180651263
+        }
+      }
+    }
+  ],
+  "runtime": {
+    "seed": 42,
+    "batch_size": 32,
+    "workers": 4,
+    "precision": "32-true",
+    "matmul_precision": "high",
+    "tf32_matmul": true,
+    "tf32_cudnn": true,
+    "cudnn_benchmark": true,
+    "gpu": "NVIDIA GeForce RTX 5060 Ti",
+    "packages": {
+      "torch": "2.7.1+cu128",
+      "pytorch-lightning": "2.6.5",
+      "torchmetrics": "1.9.0",
+      "brevitas": "0.12.1",
+      "numpy": "1.26.4",
+      "h5py": "3.16.0"
+    }
+  },
+  "source": {
+    "repository": "https://github.com/berumottovv00/BioFoundation",
+    "base_commit": "a2a4d441485efd8423c44b35d7448a30ccd44437",
+    "patches": [
+      "reproduction/teammate_ptq/source.patch",
+      "reproduction/teammate_ptq/quantization-config.patch",
+      "reproduction/teammate_ptq/ternary-model.patch"
+    ],
+    "patches_as_of": "b6c9245",
+    "files_sha256": {
+      "models/FEMBA_int8.py": "0be91c15c8532c1b35f6bef38382ff37a3c1d9646ce0164ac1bb330c77e338f4",
+      "models/femba_ptq.py": "609cf70ec2ba0dc01692531d7af1b40974acc53c3b706b4988eb01db6447ecf0",
+      "tasks/finetune_task.py": "3547367acf92ffbddabe2d60610e88207e527db8815940d985909e681f02b573",
+      "models/femba_quantization.py": "e2cd0340416b3894cbc0979233a1fc9b702ff345e66305004e729143ef4d2274",
+      "models/femba_ternary.py": "42f6527bbcffbd8984e5d1d7d04ed07eb5b4d491ab61286ed7e3c605808644c9",
+      "datasets/hdf5_dataset.py": "f0461d1d4a20fe9930d3fc5d35df791899ec33d2b401ab547d01c2cd8cf92c98",
+      "data_module/finetune_data_module.py": "f5e15802a45ebc8af98165320cfb2daba4b62b742b1cf8f9cbbfba565672474a",
+      "ARES/tests/test_networks/test_25_femba_tiny_int8.py": "15bb3d7198d1fcaf604adf2389cbee81eb87850a58281efe18b2fa4e1fa370a2",
+      "ARES/tests/test_networks/brevitas_custom_layers.py": "3be16f1d62a2fbd16a06f39cf7cbb9c46314437ee23f26d205dc946acdfd8c45",
+      "util/train_utils.py": "13eba63f611af0cf8d6b58efe28eb1e7be7909735e25f2ae460b74703aab9e9b"
+    },
+    "capture_script_sha256": "811f1b5971573682777c5cbe799cd9044d0cf82ba6e202c4eaf9ac6619f249c1"
+  }
+}

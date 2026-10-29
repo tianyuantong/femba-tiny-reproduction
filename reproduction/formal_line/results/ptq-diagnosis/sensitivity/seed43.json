@@ -1,0 +1,236 @@
+{
+  "time_utc": "2026-10-29T12:01:43.370040+00:00",
+  "fp32_sha256": "aaa3040dc32d49e4a2632936599a591ce68b90ddf8f19ec6b5749b5d6d7af33c",
+  "quantization_config": {
+    "weight_bit_width": 8,
+    "activation_bit_width": 8,
+    "weight_quant_scheme": "uniform",
+    "activation_quant_scheme": "uniform"
+  },
+  "checkpoint_sha256": "4d51acf744a797093dfb03aa1a1ddf3d45684c2e65e533eb14940367344b36d9",
+  "selection_rule": "smallest k in [1, 2, 3, 4, 6, 8, 12] within 0.01 of the weights-only validation AUROC",
+  "reference_validation_auroc": {
+    "all": 0.7929523490284156,
+    "weights_only": 0.8186682099690207
+  },
+  "alone_validation_auroc": {
+    "mamba_blocks.0.mamba_fwd.ssm.output_quant.act_quant": 0.8178772730144895,
+    "mamba_blocks.0.mamba_rev.ssm.output_quant.act_quant": 0.818813495728189,
+    "mamba_blocks.0.mamba_fwd.output_quant.act_quant": 0.8185514628885262,
+    "mamba_blocks.0.scale_equalizer.act_quant": 0.8185934456215447,
+    "mamba_blocks.0.output_quant.act_quant": 0.8187406699913419,
+    "mamba_blocks.0.mamba_rev.output_quant.act_quant": 0.8187272065185268,
+    "mamba_blocks.0.rev_post_flip_quant.act_quant": 0.8187272065185268,
+    "mamba_blocks.1.mamba_fwd.ssm.output_quant.act_quant": 0.8074662898913799,
+    "mamba_blocks.1.mamba_rev.ssm.output_quant.act_quant": 0.7832558879423765,
+    "patch_embed.output_quant.act_quant": 0.8242570140453667,
+    "mamba_blocks.0.post_flip_quant.act_quant": 0.8189047851939808,
+    "scale_equalizer.act_quant": 0.8250650263082084,
+    "input_quant.act_quant": 0.822023818747583,
+    "mamba_blocks.0.mamba_rev.in_proj_quant.act_quant": 0.818787212828494,
+    "mamba_blocks.0.mamba_fwd.in_proj_quant.act_quant": 0.8183776967060954,
+    "mamba_blocks.1.mamba_rev.silu.output_quant.act_quant": 0.7998905620317664,
+    "mamba_blocks.0.mamba_rev.silu.output_quant.act_quant": 0.8190678841633351,
+    "mamba_blocks.0.mamba_fwd.silu.output_quant.act_quant": 0.8185277917731009,
+    "mamba_blocks.1.mamba_fwd.silu.output_quant.act_quant": 0.8176259915346085,
+    "mamba_blocks.1.mamba_rev.in_proj_quant.act_quant": 0.8074026944007993,
+    "mamba_blocks.1.mamba_fwd.output_quant.act_quant": 0.8200035243229222,
+    "mamba_blocks.1.scale_equalizer.act_quant": 0.8192793059962955,
+    "mamba_blocks.0.mamba_fwd.conv1d.output_quant.act_quant": 0.8185664248199743,
+    "mamba_blocks.0.mamba_rev.conv1d.output_quant.act_quant": 0.818844918049718,
+    "mamba_blocks.1.mamba_rev.output_quant.act_quant": 0.8183309888119447,
+    "mamba_blocks.1.rev_post_flip_quant.act_quant": 0.8183309888119447,
+    "mamba_blocks.1.mamba_rev.conv1d.output_quant.act_quant": 0.8045236893234777,
+    "mamba_blocks.1.output_quant.act_quant": 0.8184720283989174,
+    "mamba_blocks.1.mamba_fwd.in_proj_quant.act_quant": 0.8205265931874336,
+    "mamba_blocks.1.mamba_fwd.conv1d.output_quant.act_quant": 0.8207826451382112,
+    "pos_quant.act_quant": 0.8185633275739445,
+    "mamba_blocks.1.post_flip_quant.act_quant": 0.8173686320734902,
+    "post_norm_quants.0.act_quant": 0.8196369942211797,
+    "pre_classifier_quant.act_quant": 0.8183021976931556,
+    "post_norm_quants.1.act_quant": 0.8186647761361705
+  },
+  "ranking": [
+    "mamba_blocks.1.mamba_rev.ssm.output_quant.act_quant",
+    "mamba_blocks.1.mamba_rev.silu.output_quant.act_quant",
+    "mamba_blocks.1.mamba_rev.conv1d.output_quant.act_quant",
+    "mamba_blocks.1.mamba_rev.in_proj_quant.act_quant",
+    "mamba_blocks.1.mamba_fwd.ssm.output_quant.act_quant",
+    "mamba_blocks.1.post_flip_quant.act_quant",
+    "mamba_blocks.1.mamba_fwd.silu.output_quant.act_quant",
+    "mamba_blocks.0.mamba_fwd.ssm.output_quant.act_quant",
+    "pre_classifier_quant.act_quant",
+    "mamba_blocks.1.mamba_rev.output_quant.act_quant",
+    "mamba_blocks.1.rev_post_flip_quant.act_quant",
+    "mamba_blocks.0.mamba_fwd.in_proj_quant.act_quant",
+    "mamba_blocks.1.output_quant.act_quant",
+    "mamba_blocks.0.mamba_fwd.silu.output_quant.act_quant",
+    "mamba_blocks.0.mamba_fwd.output_quant.act_quant",
+    "pos_quant.act_quant",
+    "mamba_blocks.0.mamba_fwd.conv1d.output_quant.act_quant",
+    "mamba_blocks.0.scale_equalizer.act_quant",
+    "post_norm_quants.1.act_quant",
+    "mamba_blocks.0.mamba_rev.output_quant.act_quant",
+    "mamba_blocks.0.rev_post_flip_quant.act_quant",
+    "mamba_blocks.0.output_quant.act_quant",
+    "mamba_blocks.0.mamba_rev.in_proj_quant.act_quant",
+    "mamba_blocks.0.mamba_rev.ssm.output_quant.act_quant",
+    "mamba_blocks.0.mamba_rev.conv1d.output_quant.act_quant",
+    "mamba_blocks.0.post_flip_quant.act_quant",
+    "mamba_blocks.0.mamba_rev.silu.output_quant.act_quant",
+    "mamba_blocks.1.scale_equalizer.act_quant",
+    "post_norm_quants.0.act_quant",
+    "mamba_blocks.1.mamba_fwd.output_quant.act_quant",
+    "mamba_blocks.1.mamba_fwd.in_proj_quant.act_quant",
+    "mamba_blocks.1.mamba_fwd.conv1d.output_quant.act_quant",
+    "input_quant.act_quant",
+    "patch_embed.output_quant.act_quant",
+    "scale_equalizer.act_quant"
+  ],
+  "fp16_fallback_validation_auroc": {
+    "1": 0.7947768017062052,
+    "2": 0.792447646800497,
+    "3": 0.790636589630876,
+    "4": 0.801752434102029,
+    "6": 0.8184900811035719,
+    "8": 0.8211385403909945,
+    "12": 0.8222627986264617
+  },
+  "chosen_k": 6,
+  "fp16_quantizers": [
+    "mamba_blocks.1.mamba_rev.ssm.output_quant.act_quant",
+    "mamba_blocks.1.mamba_rev.silu.output_quant.act_quant",
+    "mamba_blocks.1.mamba_rev.conv1d.output_quant.act_quant",
+    "mamba_blocks.1.mamba_rev.in_proj_quant.act_quant",
+    "mamba_blocks.1.mamba_fwd.ssm.output_quant.act_quant",
+    "mamba_blocks.1.post_flip_quant.act_quant"
+  ],
+  "fp16_variant": {
+    "validation": {
+      "auroc": 0.8184900811035719,
+      "ap": 0.8132776769109867,
+      "loss": 0.5042491469539009
+    },
+    "threshold": -0.5132402777671814,
+    "test": {
+      "auroc": 0.8167113159777557,
+      "ap": 0.8139152483642408,
+      "default": {
+        "threshold": 0.0,
+        "confusion_matrix": [
+          [
+            36058,
+            3818
+          ],
+          [
+            15717,
+            18417
+          ]
+        ],
+        "accuracy": 0.7360491825428996,
+        "balanced_accuracy": 0.7219015968309987,
+        "predicted_positive_rate": 0.300432374003513
+      },
+      "validation_selected": {
+        "threshold": -0.5132402777671814,
+        "confusion_matrix": [
+          [
+            33020,
+            6856
+          ],
+          [
+            11987,
+            22147
+          ]
+        ],
+        "accuracy": 0.7453992703688691,
+        "balanced_accuracy": 0.7384461129907001,
+        "predicted_positive_rate": 0.39187947574652077
+      }
+    }
+  },
+  "fp16_element_share": 0.25529276609712065,
+  "elements_per_window": {
+    "input_quant.act_quant": 28160,
+    "patch_embed.output_quant.act_quant": 30800,
+    "pos_quant.act_quant": 30800,
+    "scale_equalizer.act_quant": 30800,
+    "mamba_blocks.0.mamba_fwd.in_proj_quant.act_quant": 246400,
+    "mamba_blocks.0.mamba_fwd.conv1d.output_quant.act_quant": 123200,
+    "mamba_blocks.0.mamba_fwd.silu.output_quant.act_quant": 123200,
+    "mamba_blocks.0.mamba_fwd.ssm.output_quant.act_quant": 123200,
+    "mamba_blocks.0.mamba_fwd.output_quant.act_quant": 30800,
+    "mamba_blocks.0.post_flip_quant.act_quant": 30800,
+    "mamba_blocks.0.mamba_rev.in_proj_quant.act_quant": 246400,
+    "mamba_blocks.0.mamba_rev.conv1d.output_quant.act_quant": 123200,
+    "mamba_blocks.0.mamba_rev.silu.output_quant.act_quant": 123200,
+    "mamba_blocks.0.mamba_rev.ssm.output_quant.act_quant": 123200,
+    "mamba_blocks.0.mamba_rev.output_quant.act_quant": 30800,
+    "mamba_blocks.0.rev_post_flip_quant.act_quant": 30800,
+    "mamba_blocks.0.scale_equalizer.act_quant": 30800,
+    "mamba_blocks.0.output_quant.act_quant": 30800,
+    "post_norm_quants.0.act_quant": 30800,
+    "mamba_blocks.1.mamba_fwd.in_proj_quant.act_quant": 246400,
+    "mamba_blocks.1.mamba_fwd.conv1d.output_quant.act_quant": 123200,
+    "mamba_blocks.1.mamba_fwd.silu.output_quant.act_quant": 123200,
+    "mamba_blocks.1.mamba_fwd.ssm.output_quant.act_quant": 123200,
+    "mamba_blocks.1.mamba_fwd.output_quant.act_quant": 30800,
+    "mamba_blocks.1.post_flip_quant.act_quant": 30800,
+    "mamba_blocks.1.mamba_rev.in_proj_quant.act_quant": 246400,
+    "mamba_blocks.1.mamba_rev.conv1d.output_quant.act_quant": 123200,
+    "mamba_blocks.1.mamba_rev.silu.output_quant.act_quant": 123200,
+    "mamba_blocks.1.mamba_rev.ssm.output_quant.act_quant": 123200,
+    "mamba_blocks.1.mamba_rev.output_quant.act_quant": 30800,
+    "mamba_blocks.1.rev_post_flip_quant.act_quant": 30800,
+    "mamba_blocks.1.scale_equalizer.act_quant": 30800,
+    "mamba_blocks.1.output_quant.act_quant": 30800,
+    "post_norm_quants.1.act_quant": 30800,
+    "pre_classifier_quant.act_quant": 385
+  },
+  "data": {
+    "val": "cb91bb2aaac4c2f7088d9e9b2c6ebdb01ede719d52b65a298c9c4c8ae31a2e36",
+    "test": "23d7c2f4fce207661c3d5d54ef9935bca2edff9dcc851911ad1f5f7bfb8a06b5"
+  },
+  "runtime": {
+    "seed": 42,
+    "batch_size": 32,
+    "workers": 4,
+    "precision": "32-true",
+    "matmul_precision": "high",
+    "tf32_matmul": true,
+    "tf32_cudnn": true,
+    "cudnn_benchmark": true,
+    "gpu": "NVIDIA GeForce RTX 5060 Ti",
+    "packages": {
+      "torch": "2.7.1+cu128",
+      "pytorch-lightning": "2.6.5",
+      "torchmetrics": "1.9.0",
+      "brevitas": "0.12.1",
+      "numpy": "1.26.4",
+      "h5py": "3.16.0"
+    }
+  },
+  "source": {
+    "repository": "https://github.com/berumottovv00/BioFoundation",
+    "base_commit": "a2a4d441485efd8423c44b35d7448a30ccd44437",
+    "patches": [
+      "reproduction/teammate_ptq/source.patch",
+      "reproduction/teammate_ptq/quantization-config.patch",
+      "reproduction/teammate_ptq/ternary-model.patch"
+    ],
+    "patches_as_of": "b6c9245",
+    "files_sha256": {
+      "models/FEMBA_int8.py": "0be91c15c8532c1b35f6bef38382ff37a3c1d9646ce0164ac1bb330c77e338f4",
+      "models/femba_ptq.py": "609cf70ec2ba0dc01692531d7af1b40974acc53c3b706b4988eb01db6447ecf0",
+      "tasks/finetune_task.py": "3547367acf92ffbddabe2d60610e88207e527db8815940d985909e681f02b573",
+      "models/femba_quantization.py": "e2cd0340416b3894cbc0979233a1fc9b702ff345e66305004e729143ef4d2274",
+      "models/femba_ternary.py": "42f6527bbcffbd8984e5d1d7d04ed07eb5b4d491ab61286ed7e3c605808644c9",
+      "datasets/hdf5_dataset.py": "f0461d1d4a20fe9930d3fc5d35df791899ec33d2b401ab547d01c2cd8cf92c98",
+      "data_module/finetune_data_module.py": "f5e15802a45ebc8af98165320cfb2daba4b62b742b1cf8f9cbbfba565672474a",
+      "ARES/tests/test_networks/test_25_femba_tiny_int8.py": "15bb3d7198d1fcaf604adf2389cbee81eb87850a58281efe18b2fa4e1fa370a2",
+      "ARES/tests/test_networks/brevitas_custom_layers.py": "3be16f1d62a2fbd16a06f39cf7cbb9c46314437ee23f26d205dc946acdfd8c45",
+      "util/train_utils.py": "13eba63f611af0cf8d6b58efe28eb1e7be7909735e25f2ae460b74703aab9e9b"
+    },
+    "capture_script_sha256": "811f1b5971573682777c5cbe799cd9044d0cf82ba6e202c4eaf9ac6619f249c1"
+  }
+}
