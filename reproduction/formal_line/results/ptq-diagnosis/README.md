@@ -18,8 +18,9 @@ TUAB，受试者划分，种子 42 / 43 / 44。FP32 微调模型和 W8A8 PTQ 检
 2. **敏感的位置集中在第二个 Mamba 块的扫描路径。** 每次只量化一处激活：第二个块单处在验证集上最多掉 0.026–0.041，第一个块每处都不超过 0.005；三个种子排第一的都是第二个块的扫描输出。扫描（SSM，状态空间模型）是 Mamba 块里按时间顺序更新内部状态、逐步给出输出的那一步，FEMBA 每个块有正向、反向两条。
 3. **把挑出的几处改用 FP16，可以收回 79% 的损失。** 回退哪几处、回退几处，都只用验证集决定。三个种子分别回退 1、6、4 处，占激活元素的 4.1%、25.5%、20.4%（平均 16.7%）。测试 AUROC 从 0.756 回到 0.822，离只量化权重的 0.839 还差 0.017。
 4. **尾巴重的地方不一定敏感。** 尾巴最重的 7 处全在第一个块，单独量化几乎不掉点。把尾巴最重的 8 处留在浮点能收回 66%，靠的是排第 8 的那一处，它是第二个块的扫描输出。
-5. **按单个张量的误差选截断阈值（MSE、KL），不如按验证集选的 95 百分位。** 两者均值分别是 0.715、0.748，95 百分位是 0.756，而且种子之间忽高忽低。
-6. **INT4 权重只多掉 0.009；三值的损失来自权重。** 三值只量化权重就降到 0.60（三个种子 0.567–0.643），三值下 PTQ 不可用。
+5. **第二个块扫描输出的大值集中在固定的少数几个通道。** 最大的 0.1% 的值里，90% 落在 1,540 个通道中的 15–42 个，在时间步上没有集中；第一个块的要分散到 88–543 个通道。这些通道可以单独处理，这几处有望也用 INT8。
+6. **按单个张量的误差选截断阈值（MSE、KL），不如按验证集选的 95 百分位。** 两者均值分别是 0.715、0.748，95 百分位是 0.756，而且种子之间忽高忽低。
+7. **INT4 权重只多掉 0.009；三值的损失来自权重。** 三值只量化权重就降到 0.60（三个种子 0.567–0.643），三值下 PTQ 不可用。
 
 ## 逐层敏感度与 FP16 回退
 
@@ -68,6 +69,19 @@ TUAB，受试者划分，种子 42 / 43 / 44。FP32 微调模型和 W8A8 PTQ 检
 
 FP16 有指数位，大值和小值都能表示。第一个块的尾巴更重（99.999 百分位是 95 百分位的 25 万–53 万倍），却不敏感，原因还没有查。
 
+## 大值集中在少数通道
+
+每个种子取验证集里固定的 1,024 个片段，让激活保持浮点（权重仍是 INT8），记录四处扫描输出在进入量化器之前的值。下表的范围合计了三个种子和正反两个方向：
+
+| 扫描输出 | 最大 0.1% 的值里 90% 落在几个通道 | 前 16 个通道的占比 | 前 4 个时间步的占比 | 最大通道峰值 ÷ 中位通道峰值 |
+| --- | ---: | ---: | ---: | ---: |
+| 第一个块 | 88–543 | 39%–83% | 5.7%–6.5% | 25–73 |
+| 第二个块 | 15–42 | 75%–92% | 5.8%–6.8% | 364–989 |
+
+每个扫描输出有 1,540 个通道、80 个时间步。大值如果在时间步上均匀分布，前 4 个时间步占 5%。
+
+第二个块的大值集中在十几到几十个固定通道，和时间步无关。这和 [LLM.int8()](https://arxiv.org/abs/2208.07339) 在大语言模型里报告的离群维度是同一种形态。所以可以考虑逐通道处理：给这些通道单独定尺度，或者把它们的缩放挪进下一层的权重，这几处就有望也用 INT8。
+
 ## 校准方法：MSE、KL
 
 MSE 按量化前后的均方误差选阈值，KL 按 TensorRT 的熵校准选阈值。两者都逐个激活量化器、在同样 512 个训练片段上选截断阈值，实现见 [clip_search.py](../../../teammate_ptq/clip_search.py)。W8A8 测试 AUROC：
@@ -100,7 +114,7 @@ INT8、INT4 的损失约等于权重、激活两部分之和。三档的“只�
 - **只量化权重 / 只量化激活**：关掉另一类量化器。只量化权重时，各层改为传递普通张量。
 - **FP16 回退**：关掉被选中的激活量化器，在它的输出上做一次 FP16 往返（`half().float()`），其余激活照常走 INT8。
 - **代价怎么算**：只统计存成 FP16 的激活元素占多少（每个片段共 3,016,145 个激活元素），近似显存和带宽开销。Brevitas 是模拟量化，没有测延迟。
-- **运行环境**：与 INT8 结果相同，一张 RTX 5060 Ti 16 GB（WSL2，驱动 591.86），torch 2.7.1+cu128，Brevitas 0.12.1。源码是上游 BioFoundation `a2a4d44` 加上本仓库 `b6c9245` 时的三个补丁。脚本在 [reproduction/teammate_ptq](../../../teammate_ptq/)：`compare_calibration.py`、`ptq_ablation.py`、`sensitivity.py`；MSE、KL 校准由 `calibrate.py --method` 和 `clip_search.py` 实现。
+- **运行环境**：与 INT8 结果相同，一张 RTX 5060 Ti 16 GB（WSL2，驱动 591.86），torch 2.7.1+cu128，Brevitas 0.12.1。源码是上游 BioFoundation `a2a4d44` 加上本仓库 `b6c9245` 时的三个补丁。脚本在 [reproduction/teammate_ptq](../../../teammate_ptq/)：`compare_calibration.py`、`ptq_ablation.py`、`sensitivity.py`、`outlier_channels.py`；MSE、KL 校准由 `calibrate.py --method` 和 `clip_search.py` 实现。
 
 ## 复现
 
@@ -115,6 +129,7 @@ for seed in 42 43 44; do
   python ptq_ablation.py "${common[@]}" --tail-sweep "$sweep" --percentile 95 --weight-bit-width 4 --output "$OUT/ablation/seed$seed-w4a8"
   python ptq_ablation.py "${common[@]}" --tail-sweep "$sweep" --percentile 95 --weight-bit-width 2 --weight-quant-scheme ternary --output "$OUT/ablation/seed$seed-ternary"
   python sensitivity.py "${common[@]}" --tail-sweep "$sweep" --checkpoint "$sweep/p95/ptq_int8.ckpt" --output "$OUT/sensitivity/seed$seed"
+  python outlier_channels.py --source "$SRC" --data "$DATA" --checkpoint "$sweep/p95/ptq_int8.ckpt" --output "$OUT/channels/seed$seed"
 done
 ```
 
@@ -140,5 +155,6 @@ python reproduction/formal_line/results/ptq-diagnosis/summarize.py
 | `calibration/seed*.json` | 95 百分位（全量化、只量化权重、只量化激活）和 MSE、KL 的验证、测试指标，以及 MSE、KL 选出的 35 个激活尺度 |
 | `ablation/seed*-{w8a8,w4a8,ternary}.json` | 三档权重的全量化、只量化权重、只量化激活，W8A8 下尾巴最重的 2 / 4 / 8 处留在浮点，以及尾巴排名 |
 | `sensitivity/seed*.json` | 35 处单独量化的验证 AUROC 和名次、回退曲线、选中的 FP16 组合及其测试指标、每处的激活元素数 |
+| `channels/seed*.json` | 四处扫描输出的大值在通道和时间步上的集中程度（验证集 1,024 个片段） |
 | `sweep-scales.json` | 正式扫描 7 个百分位下的 35 个激活尺度和检查点哈希 |
 | [summarize.py](summarize.py) | 从上面这些文件重算本页的数字 |

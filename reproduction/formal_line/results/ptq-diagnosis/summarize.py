@@ -25,6 +25,7 @@ class Records:
     split: dict        # (seed, setting) -> variant name -> variant
     sensitivity: dict  # seed -> record
     scales: dict       # seed -> percentile -> checkpoint and activation scales
+    channels: dict     # seed -> where the largest scan-output activations sit
 
 
 def load(name: str) -> dict:
@@ -40,7 +41,8 @@ def load_records() -> Records:
         ablation=ablation,
         split={key: {v["variant"]: v for v in record["variants"]} for key, record in ablation.items()},
         sensitivity={seed: load(f"sensitivity/seed{seed}.json") for seed in SEEDS},
-        scales=load("sweep-scales.json"))
+        scales=load("sweep-scales.json"),
+        channels={seed: load(f"channels/seed{seed}.json") for seed in SEEDS})
 
 
 def short(name: str) -> str:
@@ -138,12 +140,26 @@ def print_tails(records: Records) -> None:
         print(f"| {seed} | 99.99: {over['99.99']:.0f} | 99.999: {over['99.999']:.0f} | block 0 max: {block0:.3g} |")
 
 
+def print_channels(records: Records) -> None:
+    print("\nScan outputs, ranges over seeds and directions: channels holding 90% of the largest 0.1% | "
+          "top 16 channels' share | top 4 steps' share | channels never above the threshold | "
+          "largest over median channel maximum | share above the threshold")
+    for block in (0, 1):
+        stats = [record["scan_outputs"][f"mamba_blocks.{block}.mamba_{direction}.ssm.output_quant.act_quant"]
+                 for record in records.channels.values() for direction in ("fwd", "rev")]
+        columns = ([s["channels_for_90_percent_of_top"] for s in stats], [s["top_share_by_channels"]["16"] for s in stats],
+                   [s["top_share_by_steps"]["4"] for s in stats], [s["channels_never_above_threshold"] for s in stats],
+                   [s["max_over_median_channel_max"] for s in stats], [s["fraction_above_threshold"] for s in stats])
+        print(f"| block {block} | " + " | ".join(f"{min(values):.3g}–{max(values):.3g}" for values in columns) + " |")
+
+
 def main() -> None:
     records = load_records()
     print_overview(records)
     print_clipping_and_bit_widths(records)
     print_sensitivity(records)
     print_tails(records)
+    print_channels(records)
 
 
 if __name__ == "__main__":
