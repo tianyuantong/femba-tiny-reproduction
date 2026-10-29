@@ -1,0 +1,273 @@
+{
+  "time_utc": "2026-10-29T15:04:30.061225+00:00",
+  "fp32_sha256": "2e4cd3144c8e165b2ce6ff16bdad711edfe681681c02e19674cebdc18dc26c3a",
+  "quantization_config": {
+    "weight_bit_width": 8,
+    "activation_bit_width": 8,
+    "weight_quant_scheme": "uniform",
+    "activation_quant_scheme": "uniform"
+  },
+  "activation_percentile": 95.0,
+  "migrated": [
+    "mamba_blocks.1.mamba_fwd",
+    "mamba_blocks.1.mamba_rev"
+  ],
+  "calibration": {
+    "split": "train",
+    "windows": 512,
+    "train_sha256": "28c45e5db40000724111f85e9cd3e96ce5e27de2cb9f1c6601f50379aa686309"
+  },
+  "selection_rule": "highest validation AUROC among no migration and alpha in [0.25, 0.5, 0.75, 0.85, 1.0]",
+  "candidates": [
+    {
+      "alpha": null,
+      "migrated_scales": {
+        "mamba_blocks.1.mamba_fwd": 0.010472740046679974,
+        "mamba_blocks.1.mamba_rev": 0.01163894310593605
+      },
+      "validation_auroc": 0.7629201084125435
+    },
+    {
+      "alpha": 0.25,
+      "float_logit_change": 0.00019466876983642578,
+      "factors": {
+        "mamba_blocks.1.mamba_fwd": {
+          "min": 4.392062187194824,
+          "median": 10.764132499694824,
+          "max": 48.06135940551758
+        },
+        "mamba_blocks.1.mamba_rev": {
+          "min": 4.6603474617004395,
+          "median": 11.074711799621582,
+          "max": 49.72987747192383
+        }
+      },
+      "migrated_scales": {
+        "mamba_blocks.1.mamba_fwd": 0.000739092065487057,
+        "mamba_blocks.1.mamba_rev": 0.0007565415580756962
+      },
+      "validation_auroc": 0.7839401948394948
+    },
+    {
+      "alpha": 0.5,
+      "float_logit_change": 0.0002391040325164795,
+      "factors": {
+        "mamba_blocks.1.mamba_fwd": {
+          "min": 1.1998531818389893,
+          "median": 7.634260177612305,
+          "max": 162.64808654785156
+        },
+        "mamba_blocks.1.mamba_rev": {
+          "min": 1.771532416343689,
+          "median": 7.822366237640381,
+          "max": 199.99703979492188
+        }
+      },
+      "migrated_scales": {
+        "mamba_blocks.1.mamba_fwd": 0.0007227477035485208,
+        "mamba_blocks.1.mamba_rev": 0.0006995598669163883
+      },
+      "validation_auroc": 0.8057296799008851
+    },
+    {
+      "alpha": 0.75,
+      "float_logit_change": 0.00026885420083999634,
+      "factors": {
+        "mamba_blocks.1.mamba_fwd": {
+          "min": 0.27480190992355347,
+          "median": 5.418748378753662,
+          "max": 550.4297485351562
+        },
+        "mamba_blocks.1.mamba_rev": {
+          "min": 0.5732417106628418,
+          "median": 5.441705226898193,
+          "max": 804.3216552734375
+        }
+      },
+      "migrated_scales": {
+        "mamba_blocks.1.mamba_fwd": 0.0008389988215640187,
+        "mamba_blocks.1.mamba_rev": 0.0007992216851562262
+      },
+      "validation_auroc": 0.8154042272430706
+    },
+    {
+      "alpha": 0.85,
+      "float_logit_change": 0.00020800530910491943,
+      "factors": {
+        "mamba_blocks.1.mamba_fwd": {
+          "min": 0.15239699184894562,
+          "median": 4.754834175109863,
+          "max": 896.3613891601562
+        },
+        "mamba_blocks.1.mamba_rev": {
+          "min": 0.35854554176330566,
+          "median": 4.785845756530762,
+          "max": 1468.2613525390625
+        }
+      },
+      "migrated_scales": {
+        "mamba_blocks.1.mamba_fwd": 0.0009512324468232691,
+        "mamba_blocks.1.mamba_rev": 0.0009111136896535754
+      },
+      "validation_auroc": 0.8145390178756471
+    },
+    {
+      "alpha": 1.0,
+      "float_logit_change": 0.00021564960479736328,
+      "factors": {
+        "mamba_blocks.1.mamba_fwd": {
+          "min": 0.06293777376413345,
+          "median": 3.82771897315979,
+          "max": 1862.7510986328125
+        },
+        "mamba_blocks.1.mamba_rev": {
+          "min": 0.17735940217971802,
+          "median": 3.919713258743286,
+          "max": 3675.174560546875
+        }
+      },
+      "migrated_scales": {
+        "mamba_blocks.1.mamba_fwd": 0.0012540702009573579,
+        "mamba_blocks.1.mamba_rev": 0.0012130065588280559
+      },
+      "validation_auroc": 0.8170671538476088
+    }
+  ],
+  "chosen_alpha": 1.0,
+  "chosen": {
+    "all": {
+      "validation": {
+        "auroc": 0.8170671538476088,
+        "ap": 0.8172412267166853,
+        "loss": 0.5109400134581733
+      },
+      "threshold": 0.4026610180735588,
+      "test": {
+        "auroc": 0.8391785952048703,
+        "ap": 0.8428813700239356,
+        "default": {
+          "threshold": 0.0,
+          "confusion_matrix": [
+            [
+              30999,
+              8877
+            ],
+            [
+              9308,
+              24826
+            ]
+          ],
+          "accuracy": 0.7542899608161059,
+          "balanced_accuracy": 0.7523474533225614,
+          "predicted_positive_rate": 0.4553844075124983
+        },
+        "validation_selected": {
+          "threshold": 0.4026610180735588,
+          "confusion_matrix": [
+            [
+              35390,
+              4486
+            ],
+            [
+              13136,
+              20998
+            ]
+          ],
+          "accuracy": 0.7618970409404134,
+          "balanced_accuracy": 0.7513325101098693,
+          "predicted_positive_rate": 0.34433184704769626
+        }
+      }
+    },
+    "weights_only": {
+      "validation": {
+        "auroc": 0.8271701503208391,
+        "ap": 0.8212818440607186,
+        "loss": 0.4824106793018336
+      },
+      "threshold": -0.05156617797911167,
+      "test": {
+        "auroc": 0.8462041323532729,
+        "ap": 0.8476443592958455,
+        "default": {
+          "threshold": 0.0,
+          "confusion_matrix": [
+            [
+              32812,
+              7064
+            ],
+            [
+              9781,
+              24353
+            ]
+          ],
+          "accuracy": 0.7723956222132145,
+          "balanced_accuracy": 0.7681518499226667,
+          "predicted_positive_rate": 0.4244966896365356
+        },
+        "validation_selected": {
+          "threshold": -0.05156617797911167,
+          "confusion_matrix": [
+            [
+              32430,
+              7446
+            ],
+            [
+              9374,
+              24760
+            ]
+          ],
+          "accuracy": 0.772733414403459,
+          "balanced_accuracy": 0.7693237990133626,
+          "predicted_positive_rate": 0.435157411160654
+        }
+      }
+    }
+  },
+  "data": {
+    "val": "cb91bb2aaac4c2f7088d9e9b2c6ebdb01ede719d52b65a298c9c4c8ae31a2e36",
+    "test": "23d7c2f4fce207661c3d5d54ef9935bca2edff9dcc851911ad1f5f7bfb8a06b5"
+  },
+  "runtime": {
+    "seed": 42,
+    "batch_size": 32,
+    "workers": 4,
+    "precision": "32-true",
+    "matmul_precision": "high",
+    "tf32_matmul": true,
+    "tf32_cudnn": true,
+    "cudnn_benchmark": true,
+    "gpu": "NVIDIA GeForce RTX 5060 Ti",
+    "packages": {
+      "torch": "2.7.1+cu128",
+      "pytorch-lightning": "2.6.5",
+      "torchmetrics": "1.9.0",
+      "brevitas": "0.12.1",
+      "numpy": "1.26.4",
+      "h5py": "3.16.0"
+    }
+  },
+  "source": {
+    "repository": "https://github.com/berumottovv00/BioFoundation",
+    "base_commit": "a2a4d441485efd8423c44b35d7448a30ccd44437",
+    "patches": [
+      "reproduction/teammate_ptq/source.patch",
+      "reproduction/teammate_ptq/quantization-config.patch",
+      "reproduction/teammate_ptq/ternary-model.patch"
+    ],
+    "patches_as_of": "b6c9245",
+    "files_sha256": {
+      "models/FEMBA_int8.py": "0be91c15c8532c1b35f6bef38382ff37a3c1d9646ce0164ac1bb330c77e338f4",
+      "models/femba_ptq.py": "609cf70ec2ba0dc01692531d7af1b40974acc53c3b706b4988eb01db6447ecf0",
+      "tasks/finetune_task.py": "3547367acf92ffbddabe2d60610e88207e527db8815940d985909e681f02b573",
+      "models/femba_quantization.py": "e2cd0340416b3894cbc0979233a1fc9b702ff345e66305004e729143ef4d2274",
+      "models/femba_ternary.py": "42f6527bbcffbd8984e5d1d7d04ed07eb5b4d491ab61286ed7e3c605808644c9",
+      "datasets/hdf5_dataset.py": "f0461d1d4a20fe9930d3fc5d35df791899ec33d2b401ab547d01c2cd8cf92c98",
+      "data_module/finetune_data_module.py": "f5e15802a45ebc8af98165320cfb2daba4b62b742b1cf8f9cbbfba565672474a",
+      "ARES/tests/test_networks/test_25_femba_tiny_int8.py": "15bb3d7198d1fcaf604adf2389cbee81eb87850a58281efe18b2fa4e1fa370a2",
+      "ARES/tests/test_networks/brevitas_custom_layers.py": "3be16f1d62a2fbd16a06f39cf7cbb9c46314437ee23f26d205dc946acdfd8c45",
+      "util/train_utils.py": "13eba63f611af0cf8d6b58efe28eb1e7be7909735e25f2ae460b74703aab9e9b"
+    },
+    "capture_script_sha256": "811f1b5971573682777c5cbe799cd9044d0cf82ba6e202c4eaf9ac6619f249c1"
+  }
+}
