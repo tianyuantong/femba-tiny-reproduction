@@ -14,6 +14,9 @@
 # FP32_PARENTS=given (a machine running only quantized settings): the seed's FP32 stages
 # and their evaluations must already be in $ART, copied from the machine that ran them;
 # a missing one is an error rather than trained again, so all settings share one FP32.
+# ABITS sets the activation width (default 8). RUN_QAP=no stops at the FP32 and C stages and
+# the PTQ sweep, so a width can be screened before its QAP pretraining exists; running the
+# same command later with RUN_QAP=yes skips what is done and adds the QAP stages.
 set -u
 PY=${PY:-/root/envs/femba/bin/python}
 STUDY=${STUDY:-/root/work/femba-formal-study}
@@ -26,11 +29,13 @@ TUSL_EPOCHS=${TUSL_EPOCHS:-20}
 ART=${ART:-/root/work/femba-artifacts/formal-20261025}
 SEED=${SEED:-42}
 BITS=${BITS:-8}
+ABITS=${ABITS:-8}
 SCHEME=${SCHEME:-uniform}
 TASKS=${TASKS:-tuar tuab}
 FP32_PARENTS=${FP32_PARENTS:-run}
-arm=qap_w${BITS}a8; [ "$SCHEME" = ternary ] && arm=qap_ternary_a8
-quant=(--weight-bit-width "$BITS" --activation-bit-width 8 --weight-quant-scheme "$SCHEME")
+RUN_QAP=${RUN_QAP:-yes}
+arm=qap_w${BITS}a$ABITS; [ "$SCHEME" = ternary ] && arm=qap_ternary_a$ABITS
+quant=(--weight-bit-width "$BITS" --activation-bit-width "$ABITS" --weight-quant-scheme "$SCHEME")
 log="$ART/logs/seed$SEED-finetune-${arm#qap_}${LOG_SUFFIX:-}.log"
 
 field() { "$PY" -c 'import json,sys; print(json.load(open(sys.argv[1]))[sys.argv[2]])' "$1" "$2"; }
@@ -116,10 +121,12 @@ for task in $TASKS; do
   stage "$ART/seed$SEED/fp32/finetune-$task" fp32 "$fp32_pre" "$task" || exit 2
   stage "$ART/seed$SEED/c_${arm#qap_}/finetune-$task" c "$fp32_pre" "$task" "${quant[@]}" || exit 3
 done
-echo "[$(date '+%F %T')] waiting for $qap_pre"; wait_for "$qap_pre"
-for task in $TASKS; do
-  stage "$ART/seed$SEED/$arm/finetune-$task" qap_b "$qap_pre" "$task" "${quant[@]}" || exit 4
-done
+if [ "$RUN_QAP" = yes ]; then
+  echo "[$(date '+%F %T')] waiting for $qap_pre"; wait_for "$qap_pre"
+  for task in $TASKS; do
+    stage "$ART/seed$SEED/$arm/finetune-$task" qap_b "$qap_pre" "$task" "${quant[@]}" || exit 4
+  done
+fi
 for task in $TASKS; do
   out=$ART/seed$SEED/ptq_${arm#qap_}/sweep-$task
   if is_tusl "$task"; then
@@ -131,6 +138,6 @@ for task in $TASKS; do
   fi
   evaluate "$ART/seed$SEED/fp32/finetune-$task" fp32 "$task" || exit 6
   evaluate "$ART/seed$SEED/c_${arm#qap_}/finetune-$task" c "$task" || exit 7
-  evaluate "$ART/seed$SEED/$arm/finetune-$task" qap_b "$task" || exit 8
+  if [ "$RUN_QAP" = yes ]; then evaluate "$ART/seed$SEED/$arm/finetune-$task" qap_b "$task" || exit 8; fi
 done
 echo "[$(date '+%F %T')] FINETUNE_QUEUE_DONE seed$SEED $arm"
