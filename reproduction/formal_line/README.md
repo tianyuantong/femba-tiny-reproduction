@@ -34,6 +34,8 @@ SMOKE_QUEUE=./finetune_queue.sh nohup ./pretrain_queue_ternary.sh > "$ART/logs/p
 SEED=42 BITS=2 SCHEME=ternary TASKS="tuar tuab tusl0-v2 tusl1-v2 tusl2-v2 tusl3-v2" LOG_SUFFIX=-all ./finetune_queue.sh
 # 多个批次依次跑，预训练之外 GPU 上只有一个微调
 BATCHES="42:4:uniform 43:8:uniform" QUEUE=./finetune_queue.sh nohup ./launch_batches.sh >> "$ART/logs/launch-batches.log" 2>&1 &
+# QAP 预训练还没到时：RUN_QAP=no 只跑 C 和 PTQ，到了以后用 RUN_QAP=yes 重跑同一命令
+FP32_PARENTS=given RUN_QAP=no SEED=43 BITS=4 TASKS=tuab ./finetune_queue.sh
 # 汇总
 python summarize_formal.py --artifacts "$ART" --output <输出目录>
 ```
