@@ -27,6 +27,9 @@ class Records:
     scales: dict       # seed -> percentile -> checkpoint and activation scales
     channels: dict     # seed -> where the largest scan-output activations sit
     migration: dict    # seed -> channel migration of the second block's scan outputs
+    migration_w4a8: dict  # seed -> the same migration under INT4 weights
+    migration_tuar: dict  # seed -> the same migration on the TUAR FP32 parents
+    tuar: dict         # arm -> seed -> TUAR formal-line row
 
 
 def load(name: str) -> dict:
@@ -44,7 +47,10 @@ def load_records() -> Records:
         sensitivity={seed: load(f"sensitivity/seed{seed}.json") for seed in SEEDS},
         scales=load("sweep-scales.json"),
         channels={seed: load(f"channels/seed{seed}.json") for seed in SEEDS},
-        migration={seed: load(f"migration/seed{seed}.json") for seed in SEEDS})
+        migration={seed: load(f"migration/seed{seed}.json") for seed in SEEDS},
+        migration_w4a8={seed: load(f"migration-w4a8/seed{seed}.json") for seed in SEEDS},
+        migration_tuar={seed: load(f"migration-tuar/seed{seed}.json") for seed in SEEDS},
+        tuar=load("../int8/summary.json")["w8a8"]["tuar"])
 
 
 def short(name: str) -> str:
@@ -180,6 +186,41 @@ def print_migration(records: Records) -> None:
               f"no-migration validation minus formal checkpoint {by_alpha[None]['validation_auroc'] - formal:.1e}")
 
 
+def validation_row(record: dict) -> str:
+    candidates = " ".join(f"{candidate['validation_auroc']:.4f}" for candidate in record["candidates"])
+    return f"{candidates} | {record['chosen_alpha']}"
+
+
+def print_migration_w4a8(records: Records) -> None:
+    print("\nW4A8 migration, validation AUROC per alpha | chosen alpha")
+    for seed in SEEDS:
+        print(seed, validation_row(records.migration_w4a8[seed]))
+    every, upper = ([auroc(records.split[seed, "w4a8"][role]) for seed in SEEDS] for role in ("all", "weights"))
+    migrated = [auroc(records.migration_w4a8[seed]["chosen"]["all"]) for seed in SEEDS]
+    print(row("W4A8 PTQ", every))
+    print(row("W4A8 migrated", migrated))
+    print(row("W4A8 weights only", upper))
+    print(row("W4A8 migrated, weights only", [auroc(records.migration_w4a8[seed]["chosen"]["weights_only"]) for seed in SEEDS]))
+    fp32 = mean(records.fp32)
+    print(f"share of the FP32 loss recovered {(mean(migrated) - mean(every)) / (fp32 - mean(every)):.0%}")
+
+
+def print_migration_tuar(records: Records) -> None:
+    print("\nTUAR migration, validation AUROC per alpha | chosen alpha")
+    for seed in SEEDS:
+        print(seed, validation_row(records.migration_tuar[seed]))
+    arms = {arm: [records.tuar[arm][str(seed)] for seed in SEEDS] for arm in ("fp32", "ptq")}
+    chosen = [records.migration_tuar[seed]["chosen"] for seed in SEEDS]
+    print(row("TUAR FP32", [entry["auroc"] for entry in arms["fp32"]]))
+    print(row("TUAR PTQ", [entry["auroc"] for entry in arms["ptq"]]))
+    print(row("TUAR migrated", [auroc(entry["all"]) for entry in chosen]))
+    print(row("TUAR migrated, weights only", [auroc(entry["weights_only"]) for entry in chosen]))
+    print(row("BAcc default PTQ", [entry["bacc_default"] for entry in arms["ptq"]], 3))
+    print(row("BAcc default migrated", [entry["all"]["test"]["default"]["balanced_accuracy"] for entry in chosen], 3))
+    print(row("BAcc validation threshold PTQ", [entry["bacc_val_thr"] for entry in arms["ptq"]], 3))
+    print(row("BAcc validation threshold migrated", [entry["all"]["test"]["validation_selected"]["balanced_accuracy"] for entry in chosen], 3))
+
+
 def main() -> None:
     records = load_records()
     print_overview(records)
@@ -188,6 +229,8 @@ def main() -> None:
     print_tails(records)
     print_channels(records)
     print_migration(records)
+    print_migration_w4a8(records)
+    print_migration_tuar(records)
 
 
 if __name__ == "__main__":
