@@ -36,6 +36,7 @@ import subprocess
 import sys
 from types import MethodType
 
+import calibrate
 from evaluate import add_quantization_arguments, argument_quantization_config
 
 BASE_COMMIT = "a2a4d441485efd8423c44b35d7448a30ccd44437"
@@ -357,6 +358,8 @@ class StageAudit:
             def on_fit_start(self, trainer, task):
                 audit.fit_started = True
                 assert audit.load_count == (0 if audit.args.stage == "pretrain" else 1)
+                if audit.args.activation_percentile is not None:
+                    calibrate.set_percentile(task.model, audit.args.activation_percentile)
                 if audit.args.stage == "finetune":
                     assert all(parameter.requires_grad for parameter in task.model.parameters())
 
@@ -455,6 +458,9 @@ def arguments(argv=None):
                         help="Override the native epoch count (default 10 for pretraining, 5 for fine-tuning)")
     parser.add_argument("--save-every-epoch", action="store_true",
                         help="Keep every epoch checkpoint instead of only the best validation loss")
+    parser.add_argument("--activation-percentile", type=float, default=None,
+                        help="Group C: percentile of the observers that set the first activation scales "
+                             "(default: the native 99.999)")
     parser.add_argument("--plan-only", action="store_true",
                         help="Resolve and validate the fixed Hydra recipe, without training or creating outputs")
     add_quantization_arguments(parser)
@@ -463,6 +469,8 @@ def arguments(argv=None):
         args.max_epochs = 10 if args.stage == "pretrain" else 5
     if args.max_epochs < 1:
         raise ValueError("--max-epochs must be at least 1")
+    if args.activation_percentile is not None and args.group != "c":
+        raise ValueError("--activation-percentile needs group C, whose activation scales all start fresh")
     args.split_table = {split: {"windows": w, "bytes": b, "sha256": d} for split, (w, b, d) in SPLITS.items()}
     for name in ("source", "data_root", "data_manifest", "output"):
         setattr(args, name, getattr(args, name).expanduser().resolve())
@@ -520,7 +528,8 @@ def main():
     torch.backends.cudnn.allow_tf32 = True
     torch.backends.cudnn.benchmark = True
     write_json(args.output / "run_manifest.json", {"group": args.group, "stage": args.stage,
-        "seed": args.seed, "started_at": timestamp(), "hydra_overrides": overrides, **inputs,
+        "seed": args.seed, "started_at": timestamp(), "activation_percentile": args.activation_percentile,
+        "hydra_overrides": overrides, **inputs,
         "source_base_commit": commit, "source_dirty": bool(subprocess.check_output(
             ["git", "-C", str(args.source), "status", "--porcelain"], text=True).strip()),
         "executed_files_sha256": {name: sha256(args.source / name) for name in SOURCE_FILES},
