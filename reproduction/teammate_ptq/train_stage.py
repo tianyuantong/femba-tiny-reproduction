@@ -210,7 +210,7 @@ def compose_config(args):
     else:
         overrides.extend(["data_module=finetune_data_module_tuar", "gpus=1", "trainer.strategy=auto",
                           "batch_size=32", "num_workers=4", "scheduler.warmup_epochs=1",
-                          f"pretrained_checkpoint_path={json.dumps(str(args.pretrained))}",
+                          f"pretrained_checkpoint_path={'null' if args.random_init else json.dumps(str(args.pretrained))}",
                           f"model.num_classes={args.num_classes}", f"model.classification_type={args.classification_type}"])
         for split in SPLITS:
             overrides.extend([f"+data_module.{split}.use_cache=false",
@@ -312,6 +312,9 @@ class StageAudit:
         write_json(self.args.output / "initialization.json", {"seed": self.args.seed, "group": self.args.group,
                    "stage": self.args.stage, "hashes": self.initial, "contract": contract,
                    "observers": observer_state(task.model)})
+        if self.args.random_init:  # the pretrained load is what makes every parameter trainable
+            for parameter in task.model.parameters():
+                parameter.requires_grad = True
         original_load = task.load_state_dict
 
         def audited_load(_task, state, *args, **kwargs):
@@ -356,7 +359,7 @@ class StageAudit:
         class AuditCallback(pl.Callback):
             def on_fit_start(self, trainer, task):
                 audit.fit_started = True
-                assert audit.load_count == (0 if audit.args.stage == "pretrain" else 1)
+                assert audit.load_count == (0 if audit.args.stage == "pretrain" or audit.args.random_init else 1)
                 if audit.args.stage == "finetune":
                     assert all(parameter.requires_grad for parameter in task.model.parameters())
 
@@ -451,6 +454,8 @@ def arguments(argv=None):
     parser.add_argument("--pretrained", type=Path,
                         help="Selected pretraining checkpoint for fine-tuning, including group C")
     parser.add_argument("--pretrained-sha256", help="SHA256 of --pretrained")
+    parser.add_argument("--random-init", action="store_true",
+                        help="Group C fine-tuning from the native random initialization, with no pretrained parent")
     parser.add_argument("--max-epochs", type=int, default=None,
                         help="Override the native epoch count (default 10 for pretraining, 5 for fine-tuning)")
     parser.add_argument("--save-every-epoch", action="store_true",
@@ -477,7 +482,10 @@ def arguments(argv=None):
         raise ValueError("Output already exists; choose a new directory instead of resuming a stage")
     if args.group == "c" and args.stage != "finetune":
         raise ValueError("This protocol defines C as FP32-pretrained quantized fine-tuning")
-    if args.stage == "finetune":
+    if args.random_init:
+        if args.group != "c" or args.stage != "finetune" or args.pretrained is not None or args.pretrained_sha256:
+            raise ValueError("--random-init means group C fine-tuning with no pretrained parent")
+    elif args.stage == "finetune":
         if args.pretrained is None or not args.pretrained_sha256:
             raise ValueError("Fine-tuning requires an explicit pretrained checkpoint and SHA256")
         args.pretrained = args.pretrained.expanduser().resolve()
@@ -519,7 +527,7 @@ def main():
     torch.backends.cuda.matmul.allow_tf32 = True
     torch.backends.cudnn.allow_tf32 = True
     torch.backends.cudnn.benchmark = True
-    write_json(args.output / "run_manifest.json", {"group": args.group, "stage": args.stage,
+    write_json(args.output / "run_manifest.json", {"group": args.group, "stage": args.stage, "random_init": args.random_init,
         "seed": args.seed, "started_at": timestamp(), "hydra_overrides": overrides, **inputs,
         "source_base_commit": commit, "source_dirty": bool(subprocess.check_output(
             ["git", "-C", str(args.source), "status", "--porcelain"], text=True).strip()),

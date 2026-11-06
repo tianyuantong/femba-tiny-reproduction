@@ -14,7 +14,7 @@ import json
 import statistics
 from pathlib import Path
 
-SETTINGS = ("w8a8", "w4a8", "ternary_a8")
+SETTINGS = ("w8a8", "w4a8", "ternary_a8", "random_w8a8")
 BINARY_TASKS = ("tuar", "tuab")
 BINARY_METRICS = ("auroc", "ap", "bacc_default", "bacc_val_thr")
 TUSL_METRICS = ("macro_auroc", "macro_ap", "bacc")
