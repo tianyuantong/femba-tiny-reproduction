@@ -29,7 +29,7 @@
 <rect class="card" x="0.5" y="0.5" width="759" height="267" rx="6"/>
 
 <text class="ttl" x="24" y="30">FP32 复现 vs 2025 论文 Table IV</text>
-<text class="sub" x="24" y="49">TUAR 二分类 · AUROC · seed 42 · 7,090 个测试窗口</text>
+<text class="sub" x="24" y="49">TUAR 二分类 · AUROC · seed 42 · 7,090 个测试片段</text>
 
 <!-- paper band -->
 <rect class="band" x="535" y="66" width="125.7" height="118"/>
@@ -63,7 +63,7 @@
 <!-- row 3 -->
 <line class="conn" x1="150" y1="166" x2="297.9" y2="166"/>
 <circle class="dot2" cx="297.9" cy="166" r="5"/>
-<text class="lab" x="24" y="163">精度母模型</text>
+<text class="lab" x="24" y="163">量化起点模型</text>
 <text class="rol" x="24" y="177">13 类任一 · lr 1e-4 · 量化起点</text>
 <text class="val" x="311" y="170">0.898821</text>
 

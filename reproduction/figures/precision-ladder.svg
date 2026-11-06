@@ -29,7 +29,7 @@
 <rect class="card" x="0.5" y="0.5" width="759" height="329" rx="6"/>
 
 <text class="ttl" x="24" y="30">不同量化配置的测试 AUROC</text>
-<text class="sub" x="24" y="49">全部从同一个 FP32 母模型加载 · AUROC · FP32 QDQ 模拟 · † = 仅量化 22 个 Linear 输入边界</text>
+<text class="sub" x="24" y="49">全部从同一个 FP32 基线模型加载 · AUROC · FP32 QDQ 模拟 · † = 仅量化 22 个 Linear 输入边界</text>
 
 <!-- grid -->
 <line class="grid" x1="100" y1="67.6" x2="716" y2="67.6"/>
@@ -44,7 +44,7 @@
 
 <!-- reference lines -->
 <line class="base" x1="100" y1="68.1" x2="716" y2="68.1"/>
-<text class="anno" x="716" y="64" text-anchor="end">FP32 母模型 0.8988</text>
+<text class="anno" x="716" y="64" text-anchor="end">FP32 基线 0.8988</text>
 <line class="chance" x1="100" y1="240.4" x2="716" y2="240.4"/>
 
 <!-- group A: weight-only -->

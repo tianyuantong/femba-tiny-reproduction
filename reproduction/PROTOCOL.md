@@ -1,17 +1,14 @@
-# 复现步骤与实验口径
+# 历史实验归档：2025 公开权重 TUAR 复现步骤
 
-精度实验采用论文的 13 类、任一伪迹出现即为正类的标签；归一化、AdamW 和模型实现
-沿用 2025 公开代码。母模型按最低验证交叉熵选择，各精度版本固定使用同一检查点。
+> **正式线（按受试者划分，覆盖 TUAR / TUAB / TUSL 三任务与 INT8 / INT4 / 三值）见 [reproduction/formal_line/](formal_line/README.md)。** 本页与 [RESULTS.md](RESULTS.md) 归档最早基于 2025 公开代码（`d885965`）与 `mamba-ssm` 的 TUAR 单种子（seed 42，按录音划分）复现步骤。
+
+本实验采用论文的 13 类伪迹定义（5 秒片段内任一伪迹出现即为正类）；输入归一化、AdamW 优化器和模型结构沿用 2025 公开代码。FP32 基线模型按最低验证交叉熵损失选择，后续各量化与旋转配置共用同一个 FP32 检查点。
 
 ## 环境与输入
 
-从仓库根目录运行。参考环境：WSL、RTX 5060 Ti、Python 3.11、PyTorch 2.7.1+cu128、
-Lightning 2.6.5、TorchMetrics 1.9.0、mamba-ssm 2.3.2.post1。
-当前环境有 selective-scan CUDA 扩展，未安装可选 causal-conv1d 扩展。
-精度套件直接导入 `einops`（已列在 `requirements.txt`）。
+从仓库根目录运行。环境：WSL、RTX 5060 Ti、Python 3.11、PyTorch 2.7.1+cu128、Lightning 2.6.5、TorchMetrics 1.9.0、`mamba-ssm` 2.3.2.post1（含 `selective-scan` CUDA 扩展）。
 
-训练适配器读取官方提交 `d88596590f3bd3fce573be07646b7d3977ce7bcc` 的模型、task、
-loader、归一化和 scheduler。先确认本地 Git 对象存在，并设置已有文件路径：
+训练脚本直接复用官方提交 `d88596590f3bd3fce573be07646b7d3977ce7bcc` 的模型、数据加载器、归一化和学习率调度器。运行前先确认本地存在该提交，并设置路径变量：
 
 ```bash
 git cat-file -e d88596590f3bd3fce573be07646b7d3977ce7bcc^{commit}
@@ -21,11 +18,7 @@ export LR_ROOT=/path/to/new-lr-run
 export PRECISION_ROOT=/path/to/new-precision-run
 ```
 
-`PAPER_ROOT` 应包含 `results/upstream2025-data.json` 和
-`data/TUAR_data/upstream2025_{train,val,test}.h5`。标签 H5 通过相对 ExternalLink
-引用原始信号，需同时保留其源 H5。`LR_ROOT`、`PRECISION_ROOT` 使用新目录。
-
-若已有经过核验的论文标签数据，直接继续训练；尚未生成时运行一次：
+`PAPER_ROOT` 包含 `results/upstream2025-data.json` 和 `data/TUAR_data/upstream2025_{train,val,test}.h5`（通过 HDF5 ExternalLink 指向原始信号文件）。如尚未生成论文 13 类标签数据，先运行一次转换脚本：
 
 ```bash
 python scripts/femba_paper_labels_prepare.py \
@@ -33,10 +26,7 @@ python scripts/femba_paper_labels_prepare.py \
   --output-root "$PAPER_ROOT"
 ```
 
-`PARENT_MANIFEST` 指向已有公开代码数据清单，`PROCESSED_ROOT` 指向对应预处理 PKL。
-脚本先核对原标签与信号身份，再生成论文标签和映射证据。
-
-## FP32 训练
+## FP32 基线训练
 
 ```bash
 FEMBA_RUN_ROOT="$PAPER_ROOT" python scripts/femba_upstream_2025_train.py probe \
@@ -46,42 +36,26 @@ FEMBA_RUN_ROOT="$PAPER_ROOT" python scripts/femba_upstream_2025_train.py train \
 FEMBA_RUN_ROOT="$LR_ROOT" python scripts/femba_upstream_2025_audit.py
 ```
 
-| 设置 | 固定值 |
+| 设置 | 数值 |
 | --- | --- |
-| 模型 | Tiny，embed_dim=35，2 个双向 Mamba 块，原版分类头 |
-| 初始化 | 发布的 TUAR Tiny 编码器，43 个张量逐项一致加载 |
-| 随机种子与精度 | seed 42，`32-true`，matmul／cuDNN TF32 均关闭 |
-| 优化器 | AdamW，betas=(0.9,0.999)，weight_decay=0.5，layer decay=0.75 |
-| 调度 | cosine，30 轮，预热 10 轮，初始预热 LR=2.5e-7，最低 LR=2.5e-6 |
-| 全局批次 | 单卡 batch 256 × 累积 4，每轮 216 个微批次／54 次更新 |
-| 更新预算 | 共 1,620 步，预热 540 步；每轮舍去末尾 876 个训练窗口 |
+| 模型结构 | FEMBA-Tiny，`embed_dim=35`，2 个双向 Mamba 块，原版分类头 |
+| 预训练初始化 | 官方发布的 `FEMBA_tiny.safetensors`（43 个编码器张量） |
+| 随机种子与精度 | seed 42，FP32（关闭 matmul 与 cuDNN 的 TF32） |
+| 优化器 | AdamW，`betas=(0.9, 0.999)`，`weight_decay=0.5`，逐层衰减 `0.75` |
+| 学习率调度 | 余弦退火 30 轮，预热 10 轮，初始学习率 `2.5e-7`，最低学习率 `2.5e-6` |
+| 全局批次与步数 | 单卡 batch 256 × 梯度累积 4，每轮 54 步，共 1,620 步（每轮末尾不足一整批的 876 个训练片段丢弃） |
 
-学习率对照使用 5e-4 和 1e-4，分别写入不同输出目录。每次训练取最低验证
-交叉熵检查点，再比较两组最低验证损失；完全相同时保留原 5e-4 组。
-本次选中 1e-4、第 7 轮／378 步，检查点 SHA256 为
-`233b15df818d93b964a3d5c305a184de2ef1e62c2d50119a4349fb13b30c8890`。
-测试分数只用于报告，final 检查点用于观察训练后期变化。
+对比 `5e-4` 和 `1e-4` 两个学习率后，按最低验证交叉熵选出 `1e-4` 组第 7 轮（378 步）的检查点作为后续量化实验的共用 FP32 基线（SHA256：`233b15df818d93b964a3d5c305a184de2ef1e62c2d50119a4349fb13b30c8890`）。
 
-审计从保存的 config 重建模型，检查完整测试预测与指标。
+## 数据与指标口径
 
-## 固定数据和指标
+- **预处理与划分**：0.1–75 Hz 带通、60 Hz 陷波、256 Hz 采样、22 通道双极导联、5 秒不重叠片段。seed 42 按录音划分得到训练 56,172、验证 5,899、测试 7,090 个片段（正类数分别为 28,746、3,374、4,094；训练与测试之间有 11 名受试者重叠）。
+- **归一化**：按公开代码的固定上下界公式 `(x + 20) / (40 + 1e-8)` 归一化。
+- **评估指标**：沿用公开代码的 TorchMetrics 计算方式——分类预测取 `softmax(logits).argmax`，AUROC 与平均精度（AP）传入正类原始 logit `z1`。
 
-处理采用 0.1–75 Hz 带通、60 Hz 陷波、256 Hz 采样、22 通道双极导联、5 秒不重叠窗口。
-seed 42 记录级划分得到 56,172／5,899／7,090 个训练／验证／测试窗口。
-标签为 13 类伪迹任一出现，沿用 256 Hz 网格上的 Python round（恰好半数取偶）和半开区间。
-训练／验证／测试正类数为 28,746／3,374／4,094。
+## 量化与旋转实验
 
-输入在 FP32 中按原版固定上下界公式 `(x+20)/(40+1e-8)` 归一化。
-论文采用 IQR 归一化和 Adam；本轮保留公开代码的归一化及 AdamW。
-实际受试者交叉数为 train–val 10、train–test 11、val–test 3，作者划分名单未公开。
-
-验证和测试保留全部样本，batch_size=256。主指标逐批复用原版 TorchMetrics：
-分类标签取 `softmax(logits).argmax`，AUROC／AP 输入正类原始 logit，保留其逐批
-自动 sigmoid 行为。所有版本的评分张量转为 FP32；全局 softmax 指标单独保存为诊断值。
-
-## 精度实验
-
-将审计后冻结的母模型目录和 SHA256 填入变量，再执行完整矩阵：
+将选定的 FP32 基线检查点目录与哈希填入环境变量，运行各量化配置：
 
 ```bash
 export SELECTED_PARENT_ROOT=/path/to/selected-audited-run
@@ -92,10 +66,7 @@ python scripts/femba_precision_suite.py \
   --rotation-parity vector-rms-2026-09-22
 ```
 
-以上哈希对应已报告的母模型；重新训练时使用新审计输出的实际哈希。
-每一行严格加载同一母模型，再应用自己的精度配置。
-
-单独复现 22 个 Linear 输入边界组时，另用新目录：
+单独运行“只量化 22 个线性层输入”的对照：
 
 ```bash
 export LINEAR_PRECISION_ROOT=/path/to/new-linear-input-run
@@ -105,10 +76,7 @@ python scripts/femba_precision_suite.py \
   --variants fp32 w8a8-linear w4a8-linear
 ```
 
-首行重复 FP32，核对其完整 logits 和指标与冻结母模型一致，再比较两行 A8。
-两种激活边界分别采集未量化 FP32 统计，均使用同一校准集合；各组内部 W8／W4 共用统计。
-
-单独运行修订协议下的四个旋转版本，使用新的 `ROTATION_ROOT`：
+单独运行四个 Hadamard 旋转（H128）配置：
 
 ```bash
 export ROTATION_ROOT=/path/to/new-rotation-rms-run
@@ -119,56 +87,28 @@ python scripts/femba_precision_suite.py \
   --variants fp32 rot-w8a32 rot-w4a32 rot-w8a8-float rot-w4a8-float
 ```
 
-FP32 同样作为重复锚点。Rot-A8 沿用原 57 处量化位置，与现有 57 处未旋转组比较；
-校准集合和尺度规则保持不变。省略 `--rotation-parity` 时保留原逐元素协议。
+各配置的具体规则：
 
-- **权重：** 28 个 Linear／Conv 张量，逐输出通道对称量化。W8 范围 [-127,127]，
-  W4 范围 [-7,7]，round→clamp→dequantize，偏置保留浮点。
-- **57 处激活组：** 57 个固定位置，A8 逐张量对称量化。校准取 seed 42 固定的 2,048 个训练窗口，
-  每类 1,024 个；关闭 W/A 量化，采集一次 FP32 统计，W8／W4 及两种尺度共用。
-  `s_float=max_abs/127`，全零时取 1；`s_pot=2**ceil(log2(s_float))`。评估期间尺度冻结。
-- **22 个 Linear 输入边界组：** 五个 Mamba 的 `in_proj`、`x_proj`、`dt_proj`、
-  `out_proj` 输入，加上分类头 `fc1`、`fc3` 输入，共 22 处。固定同一母模型、
-  权重量化、校准集合和尺度规则，仅改变激活量化位置。`x_proj` 使用独立的量化
-  临时输入，保留传入 scan 的原始 x；不直接量化 scan 的 x／B／C／delta。
-- **FP16：** direct 直接转换；state-safe 将 `A_log`、`D`、`dt_proj.bias` 保留 FP32；
-  AMP 使用 FP16 autocast。检测到非有限输出时保存失败位置并停止该版本。
-- **旋转：** 五个 Mamba 输出投影采用 seed 42 固定的置换／符号／H128 变换，先变换再量化。
-  使用单独的旋转 FP32 校准统计，Rot-A8 保留 57 处激活边界。数值门槛按下述修订协议验收。
-  固定 h/W 的 FP64 隔离对照仅用于检查变换公式；正式推理、校准和评分保持 FP32，
-  详见[数值诊断](rotation_numeric_results.json)。
+- **权重量化**：覆盖 28 个线性层与卷积层权重，逐输出通道对称量化（W8 范围 `[-127, 127]`，W4 范围 `[-7, 7]`，偏置保持 FP32）。
+- **57 处激活量化**：逐张量对称量化。校准集固定取训练集中 2,048 个片段（正负类各 1,024 个），先关掉量化统计一次 FP32 最大绝对值 `max_abs`。浮点步长 `s_float = max_abs / 127`，2 的幂次步长 `s_pot = 2 ** ceil(log2(s_float))`。
+- **22 处线性层输入激活量化**：只量化五个 Mamba 块的 `in_proj`、`x_proj`、`dt_proj`、`out_proj` 输入与分类头 `fc1`、`fc3` 输入，不再直接量化状态空间扫描内部的 `x / B / C / delta`。
+- **FP16 三种路径**：`FP16-direct`（全模型转 FP16）、`FP16-state-safe`（保持 `A_log`、`D`、`dt_proj.bias` 为 FP32）、`AMP-FP16`（PyTorch 自动混合精度）。一旦检测到 `NaN` 或 `Inf`，记录首次出现的位置并停止该配置。
+- **Hadamard 旋转（H128）**：在五个 Mamba 输出投影的激活与权重两侧配对乘上正交变换矩阵（随机置换 + 随机正负号 + 分块 128 维 Hadamard 矩阵），压低激活峰值后再做量化（数值核对见 [rotation_numeric_results.json](rotation_numeric_results.json)）。
 
-QDQ 运算在 FP32 中模拟，selective scan、状态参数、归一化和非线性保留浮点。
-W4A8 表示 4 位权重、8 位激活。
+量化通过 FP32 里的量化-反量化（QDQ）模拟，状态空间扫描、归一化与激活函数保持浮点。
 
-## 核验
-
-32 个训练和 32 个验证探针用于检查原生／显式图：五个 Mamba 输出投影和 logits
-逐元素满足 `rtol=1e-4, atol=1e-5`。A8 同时依赖未量化权重和对应 W8／W4 路径的检查。
+## 数值核对
 
 ### 2026-09-22：旋转数值检查修订
 
-固定 h/W 的诊断中，10 组 FP64 旋转结果均与参考吻合，而原生 FP32 自身相对
-FP64 参考也有逐元素超限。大数抵消使接近零的单个分量对运算顺序敏感，故将旋转
-中间张量的检查改为逐特征向量的误差范数：对五个输出投影的每个 `[B,T]` 位置，要求
+未量化时，激活与权重两侧配对正交旋转在数学上不改变输出，但 FP32 浮点加法的重排会在接近 0 的单个元素上产生大数相消误差。因此，五个输出投影的等价性检查按每个时间步的特征向量均方根（RMS）误差验收：
 
 ```text
 RMS(rotated - reference) <= 1e-5 + 1e-4 * RMS(reference)
 RMS(v) = sqrt(mean(v ** 2))  # mean over the feature dimension only
 ```
 
-每个特征向量都须满足门槛；最终 logits 仍使用原 `rtol=1e-4, atol=1e-5` 逐元素检查。
-旋转基、seed 和探针样本固定，identity、H128 正对照必须通过；完整单位基结构检查
-须与固定的置换／符号／分块 Hadamard 一致。H4-only 负对照分别覆盖四个 1540 维目标：
-每次只把一个目标末尾的 H4 在激活和权重两侧同时换成 I4，保持置换、符号和 12 个 H128 块。
-即使输出仍线性等价，也必须被结构检查拒绝。激活单侧转置、双侧交换置换／符号顺序
-负对照同样必须失败。旧逐元素检查和 FP64 诊断保留在结果中。
-
-通过数值检查的版本须完成全部验证／测试窗口和有限性检查。模型与尺度保存／重载后，
-探针 logits 须逐位一致；独立按原 batch 重放指标，并核对完整预测顺序、标签、输入、
-母模型和校准集合哈希。
-原生 Accuracy、Balanced Accuracy、AUROC、AP 任一项下降超过 0.005 标为精度退化；
-数值失败与一致性失败单独记录。结果见[RESULTS.md](RESULTS.md)。
+最终分类 logits 仍按逐元素 `rtol=1e-4, atol=1e-5` 核对。单元测试同时包含单位阵与合法 H128 的正向验证，以及单侧漏转置、局部替换为单位块等 6 项反向拦截测试（详见 [RESULTS.md](RESULTS.md)）：
 
 ```bash
 python -m unittest discover -s tests -p 'test_*.py' -v
