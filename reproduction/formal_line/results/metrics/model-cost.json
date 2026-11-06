@@ -1,0 +1,47 @@
+{
+  "parameters": 8670626,
+  "quantized_weights": 8496530,
+  "other_parameters": 174096,
+  "quantized_weight_tensors": 18,
+  "macs_quantized_layers": 680557570,
+  "macs_float_layers": 1971200,
+  "scan_multiplies": 39424000,
+  "scan_exponentials": 7884800,
+  "scan": {
+    "blocks": 4,
+    "steps": 80,
+    "width": 1540,
+    "state": 16
+  },
+  "settings": {
+    "fp32": {
+      "weight_bits": 32,
+      "activation_bits": 32,
+      "storage_megabytes": 34.682504,
+      "effective_bits_per_parameter": 32.0,
+      "bops": 696890951680
+    },
+    "w8a8": {
+      "weight_bits": 8,
+      "activation_bits": 8,
+      "storage_megabytes": 9.192986,
+      "effective_bits_per_parameter": 8.481958280751586,
+      "bops": 43555684480
+    },
+    "w4a8": {
+      "weight_bits": 4,
+      "activation_bits": 8,
+      "storage_megabytes": 4.944721,
+      "effective_bits_per_parameter": 4.562273589011912,
+      "bops": 21777842240
+    },
+    "ternary_a8": {
+      "weight_bits": 2,
+      "activation_bits": 8,
+      "storage_megabytes": 2.8205885,
+      "effective_bits_per_parameter": 2.6024312431420755,
+      "bops": 10888921120,
+      "effective_bits_entropy_coded": 2.1957272100367753
+    }
+  }
+}
