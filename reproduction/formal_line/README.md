@@ -38,6 +38,8 @@ BATCHES="42:4:uniform 43:8:uniform" QUEUE=./finetune_queue.sh nohup ./launch_bat
 FP32_PARENTS=given RUN_QAP=no SEED=43 BITS=4 TASKS=tuab ./finetune_queue.sh
 # 随机初始化基线（W8A8，不加载预训练，三个任务），在 STUDY 目录里运行
 SEEDS="42 43 44" ./run_random_init.sh
+# FP16 和 BF16 重放（FP32 微调检查点，不重新训练），在 STUDY 目录里运行
+DTYPES="bfloat16 float16" ./run_half_precision.sh
 # 汇总
 python summarize_formal.py --artifacts "$ART" --output <输出目录>
 ```
