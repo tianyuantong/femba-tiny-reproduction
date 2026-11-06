@@ -43,6 +43,7 @@
 - **PTQ 的 AUROC 和校准在三个任务上都最差**：TUAB 上 PTQ 的 AUROC 比 FP32 低 0.08（`0.7560` vs `0.8391`）；TUAR 上 PTQ 虽有 `0.86` AUROC，但种子 42 在默认阈值下把全部片段判为阳性（默认 BAcc 跌至 `0.50`，ECE 达 `0.33`），用验证集重选阈值后恢复到 `0.73`。
 - **带量化的微调（C 与 QAP）能把精度拉回 FP32 水平**：C 与 QAP 在三个任务上的 AUROC 离 FP32 都不超过 `0.03`；TUAB 和 TUSL v2 上 QAP 在三个种子上都高于 PTQ（平均高 `+0.10` 和 `+0.04`）。
 - **INT8 下量化预训练（QAP）没有比只做量化微调（C）更好**：TUAR 上差 `−0.003`，TUAB 上差 `+0.012`，跨种子有正有负；TUSL v2 上 QAP 对 C 的 `+0.03` 优势全部来自第 0 测试组（单名受试者占该组 55 个测试事件中的 46 个，不计这一组后差值为 `0.00`）。
+- **预训练在标注少的 TUSL 上收益明显，在标注多的 TUAB、TUAR 上主要加速收敛**：不加载预训练权重直接做 INT8 量化微调（随机初始化），在每轮仅约 400 个片段的 TUSL v2（不计第 0 测试组）上 AUROC 为 `0.83`，比 FP32、C、QAP（`0.90–0.91`）低约 `0.08`，三个种子与三个测试组同向；在每轮 12.3 万 / 5.5 万个片段的 TUAB（`0.85`）、TUAR（`0.87`）上与 C 和 QAP 无稳定差距，但预训练把验证损失见底从第 2–5 轮提前到第 1 轮，详见 [评测指标与成本](reproduction/formal_line/results/metrics/README.md#随机初始化)。
 
 ## 2. TUAB 上 PTQ 掉点定位
 
@@ -101,7 +102,7 @@ FP32_PARENTS=given SEED=42 BITS=4 SCHEME=uniform \
 | --- | --- |
 | [reproduction/formal_line/README.md](reproduction/formal_line/README.md) | 正式线三任务受试者独立划分协议、队列脚本（`finetune_queue.sh`、`run_random_init.sh`）与多机分跑手册 |
 | [reproduction/formal_line/results/int8/](reproduction/formal_line/results/int8/README.md) | 正式线 FP32 与 INT8 三种子完整指标、`summary.json`、`provenance.json`、TUSL 重抽样检验与独立复核脚本 |
-| [reproduction/formal_line/results/metrics/](reproduction/formal_line/results/metrics/README.md) | 平衡准确率（BAcc）、校准误差（ECE）、每参数有效位数、BOPs 推理计算量与预训练耗时汇总 |
+| [reproduction/formal_line/results/metrics/](reproduction/formal_line/results/metrics/README.md) | 平衡准确率（BAcc）、校准误差（ECE）、BF16/FP16 基线、随机初始化对照、有效位数、BOPs 与训练耗时 |
 | [reproduction/formal_line/results/ptq-diagnosis/](reproduction/formal_line/results/ptq-diagnosis/README.md) | TUAB 上 PTQ 掉点拆解、35 处激活敏感度排序，以及 FP16 回退和通道迁移两个修复实验 |
 | [reproduction/formal_line/results/layers/](reproduction/formal_line/results/layers/README.md) | TUAB INT8 上 QAP 帮助最大的位置：按 Mamba 块和第二块逐处对比 PTQ 与 QAP 的掉点 |
 | [reproduction/subject_split/](reproduction/subject_split/) | 按受试者切分 TUAR / TUAB 并从预训练语料剔除下游测试受试者的数据构建工具 |
