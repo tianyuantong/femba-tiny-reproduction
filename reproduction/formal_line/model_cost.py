@@ -1,11 +1,11 @@
 """Storage and operation counts of the classifier at each weight setting, from the model itself.
 
-Effective bits per parameter: quantized weights at their stored width; everything else (biases,
-state-space parameters, positional terms, depthwise convolutions, normalization, scales) at 32
-bits, plus one 32-bit scale per quantized weight tensor. Operations for one 5 s window: MACs of
-the Linear and Conv layers from forward hooks, plus the state-space scan counted from its loop.
-BOPs multiply each Linear or Conv MAC by weight bits and activation bits; the scan stays separate
-because the fake-quantized model computes it in floating point.
+Effective bits per parameter: quantized weights at their stored width; the positional embedding
+at the activation width, because it passes through pos_quant; everything else (biases, state-space
+parameters, depthwise convolutions, normalization, scales) at 32 bits, plus one 32-bit scale per
+quantized weight tensor. Operations for one 5 s window: MACs of the Linear and Conv layers from
+forward hooks, plus the state-space scan counted from its loop. BOPs multiply each quantized MAC by
+weight bits and activation bits, and every floating-point operation by 32 x 32.
     usage: model_cost.py --source <pinned source> --output <json>
 """
 import argparse
@@ -16,7 +16,7 @@ import sys
 
 SETTINGS = {"fp32": (32, 32, "uniform"), "w8a8": (8, 8, "uniform"), "w4a8": (4, 8, "uniform"),
             "ternary_a8": (2, 8, "ternary")}
-SCAN_MULTIPLIES = 5  # per state element and step: dt*A, dt*B, dA*h, dB*x, h*C
+SCAN_MULTIPLIES = 5  # per state element and step: dt*A, dt*B, dA*h, dB*x, h*C; plus D*x per width element
 
 
 def linear_macs(model, torch) -> dict:
@@ -63,20 +63,24 @@ def main() -> None:
     other_macs = sum(macs.values()) - quantized_macs
     ssm = [module for module in model.modules() if hasattr(module, "d_state") and hasattr(module, "A_log")]
     length, width, state = model.seq_len, model.mamba_blocks[0].mamba_fwd.ssm.A_log.shape[1], ssm[0].d_state
-    scan = len(ssm) * length * width * state * SCAN_MULTIPLIES
+    scan = len(ssm) * length * width * (state * SCAN_MULTIPLIES + 1)
+    positional = model.pos_embed.numel()
     exponentials = len(ssm) * length * width * state
     result = {"parameters": total, "quantized_weights": weights, "other_parameters": total - weights,
               "quantized_weight_tensors": len(quantized), "macs_quantized_layers": quantized_macs,
               "macs_float_layers": other_macs, "scan_multiplies": scan, "scan_exponentials": exponentials,
+              "positional_embedding": positional,
               "scan": {"blocks": len(ssm), "steps": length, "width": width, "state": state}, "settings": {}}
     for setting, (weight, activation, scheme) in SETTINGS.items():
         fp32 = setting == "fp32"
-        bits = 32 * total if fp32 else weight * weights + 32 * (total - weights) + 32 * len(quantized)
+        fixed = activation * positional + 32 * (total - weights - positional) + 32 * len(quantized)
+        bits = 32 * total if fp32 else weight * weights + fixed
         result["settings"][setting] = {
             "weight_bits": weight, "activation_bits": activation, "storage_megabytes": bits / 8e6,
-            "effective_bits_per_parameter": bits / total, "bops": quantized_macs * weight * activation}
+            "effective_bits_per_parameter": bits / total, "bops_quantized_layers": quantized_macs * weight * activation,
+            "bops_total": quantized_macs * weight * activation + (other_macs + scan) * 32 * 32}
         if scheme == "ternary":  # three levels need log2(3) bits at best
-            entropy = math.log2(3) * weights + 32 * (total - weights) + 32 * len(quantized)
+            entropy = math.log2(3) * weights + fixed
             result["settings"][setting]["effective_bits_entropy_coded"] = entropy / total
     args.output.write_text(json.dumps(result, indent=2) + "\n")
     print(json.dumps(result, indent=1))

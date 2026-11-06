@@ -5,8 +5,9 @@
   "quantized_weight_tensors": 18,
   "macs_quantized_layers": 680557570,
   "macs_float_layers": 1971200,
-  "scan_multiplies": 39424000,
+  "scan_multiplies": 39916800,
   "scan_exponentials": 7884800,
+  "positional_embedding": 30800,
   "scan": {
     "blocks": 4,
     "steps": 80,
@@ -19,29 +20,33 @@
       "activation_bits": 32,
       "storage_megabytes": 34.682504,
       "effective_bits_per_parameter": 32.0,
-      "bops": 696890951680
+      "bops_quantized_layers": 696890951680,
+      "bops_total": 739784263680
     },
     "w8a8": {
       "weight_bits": 8,
       "activation_bits": 8,
-      "storage_megabytes": 9.192986,
-      "effective_bits_per_parameter": 8.481958280751586,
-      "bops": 43555684480
+      "storage_megabytes": 9.100586,
+      "effective_bits_per_parameter": 8.396704920728906,
+      "bops_quantized_layers": 43555684480,
+      "bops_total": 86448996480
     },
     "w4a8": {
       "weight_bits": 4,
       "activation_bits": 8,
-      "storage_megabytes": 4.944721,
-      "effective_bits_per_parameter": 4.562273589011912,
-      "bops": 21777842240
+      "storage_megabytes": 4.852321,
+      "effective_bits_per_parameter": 4.477020228989233,
+      "bops_quantized_layers": 21777842240,
+      "bops_total": 64671154240
     },
     "ternary_a8": {
       "weight_bits": 2,
       "activation_bits": 8,
-      "storage_megabytes": 2.8205885,
-      "effective_bits_per_parameter": 2.6024312431420755,
-      "bops": 10888921120,
-      "effective_bits_entropy_coded": 2.1957272100367753
+      "storage_megabytes": 2.7281885,
+      "effective_bits_per_parameter": 2.5171778831193965,
+      "bops_quantized_layers": 10888921120,
+      "bops_total": 53782233120,
+      "effective_bits_entropy_coded": 2.1104738500140967
     }
   }
 }
