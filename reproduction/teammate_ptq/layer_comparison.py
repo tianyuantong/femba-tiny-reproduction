@@ -28,7 +28,8 @@ SIGNAL_WINDOWS = 512
 def activation_names(model) -> list[str]:
     from brevitas.proxy.runtime_quant import ActQuantProxyFromInjectorBase
 
-    return [name for name, module in model.named_modules() if isinstance(module, ActQuantProxyFromInjectorBase)]
+    return [name for name, module in model.named_modules()
+            if isinstance(module, ActQuantProxyFromInjectorBase) and module.is_quant_enabled]
 
 
 def group(name: str) -> str:
