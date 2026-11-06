@@ -3,7 +3,8 @@
 With the weights quantized, one group of activation quantizers stays on and the rest run in float;
 the drop from the weights-only model is compared between the two models, block by block and, inside
 the second block, site by site. Every pass runs on one device, so the references and drops stay
-comparable; sensitivity.py's numbers are kept as a cross-check. On the first 512 validation windows with everything on, each activation site also records its
+comparable; sensitivity.py's numbers, when given, are kept as a cross-check. On the first 512
+validation windows with everything on, each activation site also records its
 signal-to-quantization-noise ratio and its shares of zeroed and clipped values.
 """
 
@@ -22,6 +23,12 @@ from sweep import validation_metrics
 from threshold_control import timestamp
 
 SIGNAL_WINDOWS = 512
+
+
+def activation_names(model) -> list[str]:
+    from brevitas.proxy.runtime_quant import ActQuantProxyFromInjectorBase
+
+    return [name for name, module in model.named_modules() if isinstance(module, ActQuantProxyFromInjectorBase)]
 
 
 def group(name: str) -> str:
@@ -77,29 +84,34 @@ def run(args) -> dict:
     capture.use_data_splits(args.data)
     sys.path.insert(0, str(args.source))
     config = capture.argument_quantization_config(args)
-    reference = json.loads(args.ptq_sensitivity.read_text())
-    if capture.sha256(args.ptq) != reference["checkpoint_sha256"]:
-        raise ValueError("The PTQ checkpoint is not the one the sensitivity results came from")
-    names = list(reference["alone_validation_auroc"])
-    groups = {key: [name for name in names if group(name) == key] for key in ("other", "block0", "block1")}
-    assert [len(groups[key]) for key in ("other", "block0", "block1")] == [7, 14, 14]
-    capture.configure_runtime()
-    args.output.mkdir(parents=True, exist_ok=True)
-    path = args.output / "results.json"
-    with np.load(args.qap_val_logits, allow_pickle=False) as stored:
-        qap_stored = validation_metrics(stored["labels"], stored["logits"])["auroc"]
-    result = json.loads(path.read_text()) if path.is_file() else {
-        "quantization_config": config, "split": "val", "groups": groups,
-        "device": capture.configure_runtime().get("gpu"),
-        "ptq_checkpoint_sha256": reference["checkpoint_sha256"], "qap_checkpoint_sha256": capture.sha256(args.qap),
-        "stored": {"qap_all": qap_stored, "ptq": reference["reference_validation_auroc"],
-                   "ptq_alone": reference["alone_validation_auroc"]},
-        "ptq": {"alone": {}, "groups": {}}, "qap": {"alone": {}, "groups": {}}}
     capture.configure_runtime()
 
     def load(kind):
         checkpoint = args.qap if kind == "qap_b" else args.ptq
         return capture.load_task(checkpoint, kind, expected_config=config)[0]
+
+    stored = {}
+    if args.ptq_sensitivity is None:
+        names = activation_names(load("ptq_original").model)
+    else:
+        reference = json.loads(args.ptq_sensitivity.read_text())
+        if capture.sha256(args.ptq) != reference["checkpoint_sha256"]:
+            raise ValueError("The PTQ checkpoint is not the one the sensitivity results came from")
+        names = list(reference["alone_validation_auroc"])
+        stored.update(ptq=reference["reference_validation_auroc"], ptq_alone=reference["alone_validation_auroc"])
+    if args.qap_val_logits is not None:
+        with np.load(args.qap_val_logits, allow_pickle=False) as logits:
+            stored["qap_all"] = validation_metrics(logits["labels"], logits["logits"])["auroc"]
+    groups = {key: [name for name in names if group(name) == key] for key in ("other", "block0", "block1")}
+    assert [len(groups[key]) for key in ("other", "block0", "block1")] == [7, 14, 14]
+    args.output.mkdir(parents=True, exist_ok=True)
+    path = args.output / "results.json"
+    result = json.loads(path.read_text()) if path.is_file() else {
+        "quantization_config": config, "split": "val", "groups": groups,
+        "device": capture.configure_runtime().get("gpu"),
+        "ptq_checkpoint_sha256": capture.sha256(args.ptq), "qap_checkpoint_sha256": capture.sha256(args.qap),
+        "stored": stored, "ptq": {"alone": {}, "groups": {}}, "qap": {"alone": {}, "groups": {}}}
+    capture.configure_runtime()
 
     def score(kind, prepare):
         """AUROC, balanced accuracy at threshold 0 and at the threshold chosen on this split."""
@@ -151,8 +163,10 @@ def run(args) -> dict:
 
 def main() -> None:
     parser = argparse.ArgumentParser(description=__doc__)
-    for name in ("source", "data", "qap", "ptq", "ptq-sensitivity", "qap-val-logits", "output"):
+    for name in ("source", "data", "qap", "ptq", "output"):
         parser.add_argument("--" + name, type=Path, required=True)
+    for name in ("ptq-sensitivity", "qap-val-logits"):
+        parser.add_argument("--" + name, type=Path, help="Cross-check only")
     capture.add_quantization_arguments(parser)
     parser.add_argument("--signal-windows", type=int, default=SIGNAL_WINDOWS)
     parser.add_argument("--signal-only", action="store_true", help="Stop after the signal statistics")
