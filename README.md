@@ -2,29 +2,29 @@
 
 # FEMBA-Tiny 脑电基础模型量化与位宽临界点研究
 
-在可穿戴脑电基础模型 FEMBA-Tiny（双向 Mamba 架构，867 万参数）上对比训练后量化（PTQ）、FP32 预训练 + 量化微调（C 组）与量化感知预训练（QAP），覆盖 TUAR、TUAB、TUSL 三个下游任务与 INT8 / INT4 / 三值权重。
+在可穿戴脑电基础模型 FEMBA-Tiny（双向 Mamba 架构，867 万参数）上对比训练后量化（PTQ）、FP32 预训练 + 量化微调（C 组）与量化感知预训练（QAP）。下游任务是 TUAR、TUAB、TUSL，位宽分 INT8、INT4、三值三档，本页结果是 INT8。
 
-**INT8 存储 9.19 MB（3.8×）· INT4 存储 4.94 MB（7.0×）· 三值存储 2.82 MB（12.3×）· 通道迁移纯 INT8 收回 82% PTQ 掉点**
+**TUAB 上 QAP 0.85、PTQ 0.76 · TUSL v2 上 QAP 0.86、PTQ 0.82 · INT8 存储 9.19 MB（3.8×）**
 
 ![Python 3.11](https://img.shields.io/badge/python-3.11-blue)
 ![PyTorch 2.7](https://img.shields.io/badge/pytorch-2.7.1%2Bcu128-ee4c2c)
 ![Brevitas 0.12.1](https://img.shields.io/badge/brevitas-0.12.1-008080)
 [![License: Apache-2.0](https://img.shields.io/badge/license-Apache--2.0-lightgrey.svg)](LICENSE)
 
-[快速复现与分工](#快速复现与多机分工) · [INT8 完整结果](reproduction/formal_line/results/int8/README.md) · [评测指标与硬件成本](reproduction/formal_line/results/metrics/README.md) · [PTQ 掉点定位与恢复](reproduction/formal_line/results/ptq-diagnosis/README.md)
+[快速复现与分工](#快速复现与多机分工) · [INT8 完整结果](reproduction/formal_line/results/int8/README.md) · [评测指标与成本](reproduction/formal_line/results/metrics/README.md) · [PTQ 掉点定位](reproduction/formal_line/results/ptq-diagnosis/README.md)
 
 <picture>
   <source media="(prefers-color-scheme: dark)" srcset="reproduction/figures/formal-overview-dark.svg">
-  <img alt="左图：TUAR、TUAB、TUSL v2 三任务 INT8 测试集 AUROC（3 个随机种子均值与范围），PTQ 分别为 0.86、0.76、0.82，QAP 分别为 0.86、0.85、0.86。右图：TUAB 上 PTQ 掉点恢复，W8A8 PTQ 从 0.76 经 FP16 回退升至 0.82，经 SmoothQuant 通道迁移在纯 INT8 下升至 0.82；W4A8 PTQ 从 0.75 升至 0.80。" src="reproduction/figures/formal-overview-light.svg" width="780">
+  <img alt="TUAR、TUAB、TUSL v2 三任务 INT8 测试 AUROC（3 个随机种子均值与范围）：FP32 为 0.87、0.84、0.83，PTQ 为 0.86、0.76、0.82，C 为 0.86、0.84、0.83，QAP 为 0.86、0.85、0.86。" src="reproduction/figures/formal-overview-light.svg" width="780">
 </picture>
 
 </div>
 
-所有正式线实验采用受试者独立划分（预训练语料为 TUAB 官方训练集并剔除全部下游测试受试者），固定随机种子 42 / 43 / 44，在单张 RTX 5060 Ti（16 GB）上使用 Brevitas 伪量化完成。
+本页的正式线实验采用受试者独立划分（预训练语料为 TUAB 官方训练集并剔除全部下游测试受试者），固定随机种子 42 / 43 / 44，在单张 RTX 5060 Ti（16 GB）上使用 Brevitas 伪量化完成。
 
 ## 1. 正式线主结果：三任务 INT8（W8A8）对比
 
-下表汇总三个随机种子的测试集均值（两位小数）：包含 ROC 曲线下面积（AUROC）、平衡准确率（BAcc，括号外为验证集选定阈值，TUSL 按最大概率分类）与期望校准误差（ECE，15 等宽分箱，越低越好）。
+下表汇总三个随机种子的测试集均值（两位小数）：包含 ROC 曲线下面积（AUROC）、平衡准确率（BAcc，斜杠前是默认阈值，斜杠后是验证集选定的阈值，TUSL 按最大概率分类）与期望校准误差（ECE，15 等宽分箱，越低越好）。
 
 | 任务 | 指标 | FP32 基线 | 训练后量化 (PTQ) | FP32 预训练 + 量化微调 (C) | 量化预训练 + 量化微调 (QAP) |
 | --- | --- | ---: | ---: | ---: | ---: |
@@ -40,42 +40,38 @@
 
 四位小数明细、逐种子标准差与配对差值见 [INT8 完整结果](reproduction/formal_line/results/int8/README.md) 与 [评测指标与成本](reproduction/formal_line/results/metrics/README.md)。
 
-- **PTQ 在三任务上精度与校准均垫底**：TUAB 上 PTQ 的 AUROC 比 FP32 低 0.08（`0.7560` vs `0.8391`）；TUAR 上 PTQ 虽有 `0.86` AUROC，但种子 42 在默认阈值下把全部片段判为阳性（默认 BAcc 跌至 `0.50`，ECE 达 `0.33`），必须用验证集重选决策阈值才能恢复到 `0.75` BAcc。
+- **PTQ 的 AUROC 和校准在三个任务上都最差**：TUAB 上 PTQ 的 AUROC 比 FP32 低 0.08（`0.7560` vs `0.8391`）；TUAR 上 PTQ 虽有 `0.86` AUROC，但种子 42 在默认阈值下把全部片段判为阳性（默认 BAcc 跌至 `0.50`，ECE 达 `0.33`），用验证集重选阈值后恢复到 `0.73`。
 - **量化微调（C 与 QAP）即可抹平 INT8 掉点**：在 TUAB 和 TUSL v2 上，QAP 在全部三个种子上均优于 PTQ（AUROC 平均高 `+0.10` 和 `+0.04`）。
-- **INT8 下尚无 QAP 稳定优于 C 组的证据**：TUAR 与 TUAB 上两组均值差在 `±0.01` 以内且跨种子正负不一；TUSL v2 上 QAP 对 C 的 `+0.03` AUROC 优势全部来自第 0 测试组（其中 1 名受试者贡献了 55 个测试事件中的 46 个，剔除该测试组后两组差值为 `0.00`）。
+- **INT8 下尚无 QAP 稳定优于 C 组的证据**：TUAR 上差 `−0.003`，TUAB 上差 `+0.012`，都跨种子正负不一；TUSL v2 上 QAP 对 C 的 `+0.03` AUROC 优势全部来自第 0 测试组（其中 1 名受试者贡献了 55 个测试事件中的 46 个，剔除该测试组后两组差值为 `0.00`）。
 
-## 2. TUAB 上 PTQ 掉点定位与无损恢复
+## 2. TUAB 上 PTQ 掉点定位
 
-针对 TUAB 上 W8A8 PTQ 掉点 `0.08`（`0.8391 → 0.7560`），通过解耦权重/激活量化器与逐层敏感度扫描定位根因，并验证了两种无需重训的恢复手段：
+针对 TUAB 上 W8A8 PTQ 掉点 `0.08`（`0.8391 → 0.7560`），通过解耦权重、激活量化器和逐层敏感度扫描定位来源：
 
-| TUAB 设置（3 种子均值） | 权重位宽 | 激活位宽 | 测试 AUROC | 相对 FP32 变化 | 收回 PTQ 掉点比例 |
-| --- | --- | --- | ---: | ---: | ---: |
-| **FP32 基线** | FP32 | FP32 | 0.84 | — | — |
-| **只量化权重（W8 / W4 / 三值）** | 8 / 4 / 2 | FP32 | 0.84 / 0.83 / 0.60 | 0.00 / −0.01 / −0.24 | — |
-| **只量化激活（FP32 权重 + A8）** | FP32 | 8 | 0.76 | −0.08 | 0% |
-| **标准 W8A8 PTQ（95 百分位）** | 8 | 8 | 0.76 | −0.08 | 0% |
-| **敏感激活回退 FP16（占激活元素 16.7%）** | 8 | 8 + FP16 | **0.82** | −0.02 | **79%** |
-| **SmoothQuant 离群通道迁移（全程纯 INT8）** | 8 | 8 | **0.82** | −0.02 | **82%** |
-| **标准 W4A8 PTQ vs 通道迁移后 W4A8** | 4 | 8 | 0.75 → **0.80** | −0.09 → −0.04 | **57%** |
+| TUAB 设置（3 种子均值） | 权重位宽 | 激活位宽 | 测试 AUROC | 相对 FP32 变化 |
+| --- | --- | --- | ---: | ---: |
+| **FP32 基线** | FP32 | FP32 | 0.84 | — |
+| **只量化权重（W8 / W4 / 三值）** | 8 / 4 / 2 | FP32 | 0.84 / 0.83 / 0.60 | 0.00 / −0.01 / −0.24 |
+| **只量化激活（FP32 权重 + A8）** | FP32 | 8 | 0.76 | −0.08 |
+| **标准 W8A8 PTQ（95 百分位）** | 8 | 8 | 0.76 | −0.08 |
 
-逐层排名、长尾比值与通道集中度数据见 [PTQ 掉点定位与通道迁移](reproduction/formal_line/results/ptq-diagnosis/README.md)。
+逐层排名、长尾比值和不重训的修复实验见 [PTQ 掉点定位](reproduction/formal_line/results/ptq-diagnosis/README.md)。
 
 - **掉点 100% 来自 8 位激活，三值瓶颈则在权重**：W8A8 下只量化权重几乎无损（`0.8390`），W4A8 权重仅多掉 `0.01`（`0.8305`）；而三值只量化权重即跌至 `0.60`，说明三值必须依赖量化训练（C / QAP）。
 - **长尾最重不等于对量化敏感**：全模型长尾最极端的 7 处张量（全部位于第 1 个 Mamba 块，99.999 与 90 百分位比值高达 35 万–75 万倍）单独量化时验证集掉点均小于 `0.005`；真正敏感的是**第 2 个 Mamba 块的双向状态空间扫描（SSM）输出**。
-- **离群值集中在固定通道，支持纯 INT8 静态迁移**：第 2 个块扫描输出最大的 `0.1%` 激活值中，`90%` 落在 1,540 个通道里的 `15–42` 个固定通道上（与时间步无关）。按 SmoothQuant 将通道缩放系数并入下一层 `out_proj` 权重后，两处激活量化器的步长缩小 `8–17` 倍，在不引入任何浮点激活的情况下收回 **82%** 的精度损失。
 
 ## 3. 位宽压缩率、推理计算量与预训练成本
 
-FEMBA-Tiny 共 `8,670,626` 个参数，其中 `8,496,840` 个（98.0%）为量化卷积与线性层权重，其余 `173,786` 个（2.0%，含 4 个 depthwise 卷积、归一化层、状态空间参数与偏置）及 18 个权重量化尺度保持 FP32。单次 5 秒脑电片段（`22 × 1280`）的硬件开销与 RTX 5060 Ti（16 GB）上的训练耗时如下：
+FEMBA-Tiny 共 `8,670,626` 个参数，其中 `8,496,530` 个（98.0%）为量化卷积与线性层权重，其余 `174,096` 个（2.0%，含 4 个 depthwise 卷积、归一化层、状态空间参数与偏置）及 18 个权重量化尺度保持 FP32。单次 5 秒脑电片段（`22 × 1280`）的计算量与 RTX 5060 Ti（16 GB）上的预训练耗时如下：
 
 | 位宽设置 | 权重 × 激活 | 每参数有效位数 | 模型存储体积 | 压缩比 | 单片段比特操作数 (BOPs) | 预训练耗时（2 轮 TUAB） |
 | --- | --- | ---: | ---: | ---: | ---: | --- |
 | **FP32** | 32 × 32 | 32.00 bit | 34.68 MB | 1.0× | 696.9 G | 2.59 h（独占 GPU） |
-| **INT8** | 8 × 8 | 8.48 bit | 9.19 MB | **3.8×** | 43.6 G（16.0×） | ~3.0 h（独占折算；双任务并发实测 6.69 h） |
-| **INT4** | 4 × 8 | 4.56 bit | 4.94 MB | **7.0×** | 21.8 G（32.0×） | 6.24 h（双任务并发实测） |
-| **三值 (Ternary)** | 2 × 8 | 2.60 bit | 2.82 MB | **12.3×** | 10.9 G（64.0×） | 见三值队列记录 |
+| **INT8** | 8 × 8 | 8.48 bit | 9.19 MB | **3.8×** | 43.6 G（16.0×） | 约 3.0 h（独占折算；和微调同跑时 6.60–6.77 h） |
+| **INT4** | 4 × 8 | 4.56 bit | 4.94 MB | **7.0×** | 21.8 G（32.0×） | 6.24 h（和微调同跑） |
+| **三值 (Ternary)** | 2 × 8 | 2.60 bit | 2.82 MB | **12.3×** | 10.9 G（64.0×） | — |
 
-计算公式与脚本见 [评测指标与成本](reproduction/formal_line/results/metrics/README.md)（可由 `reproduction/formal_line/model_cost.py` 与 `calibration_error.py` 直接复算）。
+Brevitas 是浮点模拟，这里比较的是计算量，不是部署延迟。计算公式与脚本见 [评测指标与成本](reproduction/formal_line/results/metrics/README.md)（可由 `reproduction/formal_line/model_cost.py` 与 `calibration_error.py` 直接复算）。
 
 ## 4. 快速复现与多机分工
 
@@ -104,7 +100,7 @@ FP32_PARENTS=given SEED=42 BITS=4 SCHEME=uniform \
 | [reproduction/formal_line/README.md](reproduction/formal_line/README.md) | 正式线三任务受试者独立划分协议、队列脚本（`finetune_queue.sh`、`run_random_init.sh`）与多机分跑手册 |
 | [reproduction/formal_line/results/int8/](reproduction/formal_line/results/int8/README.md) | 正式线 FP32 与 INT8 三种子完整指标、`summary.json`、`provenance.json`、TUSL 重抽样检验与独立复核脚本 |
 | [reproduction/formal_line/results/metrics/](reproduction/formal_line/results/metrics/README.md) | 平衡准确率（BAcc）、校准误差（ECE）、每参数有效位数、BOPs 推理计算量与预训练耗时汇总 |
-| [reproduction/formal_line/results/ptq-diagnosis/](reproduction/formal_line/results/ptq-diagnosis/README.md) | TUAB 上 PTQ 掉点拆解、35 处激活敏感度排序、FP16 回退与 SmoothQuant 离群通道迁移实验 |
+| [reproduction/formal_line/results/ptq-diagnosis/](reproduction/formal_line/results/ptq-diagnosis/README.md) | TUAB 上 PTQ 掉点拆解、35 处激活敏感度排序，以及 FP16 回退和通道迁移两个修复实验 |
 | [reproduction/subject_split/](reproduction/subject_split/) | 按受试者切分 TUAR / TUAB 并从预训练语料剔除下游测试受试者的数据构建工具 |
 | [reproduction/tusl_events/](reproduction/tusl_events/) | TUSL 事件级三分类构建、四组交叉验证划分与事件级评估脚本 |
 | [reproduction/teammate_ptq/](reproduction/teammate_ptq/README.md) | 核心训练与评估驱动（`train_stage.py`、`calibrate.py`、`evaluate_one.py`、三个源码补丁）及早期按录音划分的 TUAR INT8 试点记录 |
