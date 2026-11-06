@@ -26,6 +26,7 @@ class Records:
     sensitivity: dict  # seed -> record
     scales: dict       # seed -> percentile -> checkpoint and activation scales
     channels: dict     # seed -> where the largest scan-output activations sit
+    migration: dict    # seed -> channel migration of the second block's scan outputs
 
 
 def load(name: str) -> dict:
@@ -42,7 +43,8 @@ def load_records() -> Records:
         split={key: {v["variant"]: v for v in record["variants"]} for key, record in ablation.items()},
         sensitivity={seed: load(f"sensitivity/seed{seed}.json") for seed in SEEDS},
         scales=load("sweep-scales.json"),
-        channels={seed: load(f"channels/seed{seed}.json") for seed in SEEDS})
+        channels={seed: load(f"channels/seed{seed}.json") for seed in SEEDS},
+        migration={seed: load(f"migration/seed{seed}.json") for seed in SEEDS})
 
 
 def short(name: str) -> str:
@@ -153,6 +155,31 @@ def print_channels(records: Records) -> None:
         print(f"| block {block} | " + " | ".join(f"{min(values):.3g}–{max(values):.3g}" for values in columns) + " |")
 
 
+def print_migration(records: Records) -> None:
+    alphas = [candidate["alpha"] for candidate in records.migration[SEEDS[0]]["candidates"]]
+    print(f"\nChannel migration, validation AUROC for alpha = {alphas} | chosen alpha")
+    for seed in SEEDS:
+        record = records.migration[seed]
+        print(row(str(seed), [c["validation_auroc"] for c in record["candidates"]], should_add_mean=False)
+              + f" {record['chosen_alpha']} |")
+    every, upper = ([auroc(records.split[seed, "w8a8"][role]) for seed in SEEDS] for role in ("all", "weights"))
+    migrated = [auroc(records.migration[seed]["chosen"]["all"]) for seed in SEEDS]
+    print(row("migrated W8A8", migrated))
+    print(row("migrated, weights only", [auroc(records.migration[seed]["chosen"]["weights_only"]) for seed in SEEDS]))
+    print(f"recovered {(mean(migrated) - mean(every)) / (mean(upper) - mean(every)):.1%} of the loss; "
+          f"gap to weights only {mean(upper) - mean(migrated):.4f}")
+    print("largest float logit change", max(c.get("float_logit_change", 0.0)
+                                            for record in records.migration.values() for c in record["candidates"]))
+    for seed in SEEDS:
+        record = records.migration[seed]
+        by_alpha = {c["alpha"]: c for c in record["candidates"]}
+        before, after = by_alpha[None]["migrated_scales"], by_alpha[record["chosen_alpha"]]["migrated_scales"]
+        formal = records.split[seed, "w8a8"]["all"]["validation"]["auroc"]
+        print(f"{seed}: scale shrinks {[round(before[p] / after[p], 1) for p in before]}, largest factor "
+              f"{[round(by_alpha[record['chosen_alpha']]['factors'][p]['max']) for p in before]}, "
+              f"no-migration validation minus formal checkpoint {by_alpha[None]['validation_auroc'] - formal:.1e}")
+
+
 def main() -> None:
     records = load_records()
     print_overview(records)
@@ -160,6 +187,7 @@ def main() -> None:
     print_sensitivity(records)
     print_tails(records)
     print_channels(records)
+    print_migration(records)
 
 
 if __name__ == "__main__":
