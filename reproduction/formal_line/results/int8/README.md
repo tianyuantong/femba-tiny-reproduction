@@ -32,7 +32,7 @@ PTQ：在 FP32 微调检查点上做训练后量化。C：FP32 预训练 + 量�
 | QAP − C | TUAB | +0.0308 | +0.0120 | −0.0075 | +0.0118 |
 | QAP − C | TUSL v2 | +0.0499 | +0.0448 | +0.0090 | +0.0346 |
 
-AP（平均精度）和两种阈值下的 BAcc 见 [summary.json](summary.json)。
+AP（平均精度）和两种阈值下的 BAcc 见 [summary.json](summary.json)；BAcc 对比表、ECE 校准误差、每参数有效位数、BOPs 与预训练耗时见 [评测指标与成本](../metrics/README.md)；TUAB 上 PTQ 掉点归因与修复见 [PTQ 掉点定位](../ptq-diagnosis/README.md)。
 
 ## 测试数据规模与受试者分布
 

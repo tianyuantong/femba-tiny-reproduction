@@ -1,63 +1,116 @@
-# FEMBA-Tiny 复现与量化实验
+<div align="center">
 
-比较训练后量化（PTQ）、FP32 预训练后量化微调（C），以及量化预训练后量化微调（QAP）。正式线方案覆盖 TUAR、TUAB、TUSL 三个任务，采用受试者划分，设置 int8（W8A8）、int4（W4A8）和三值权重（−1 / 0 / +1，激活 8 位），每档与共用的 FP32 基线对照，种子为 42 / 43 / 44。W/A 表示权重／激活位宽，量化实验使用 Brevitas 伪量化。
+# FEMBA-Tiny 脑电基础模型量化与位宽临界点研究
 
-## 仓库已有内容
+在可穿戴脑电基础模型 FEMBA-Tiny（双向 Mamba 架构，867 万参数）上对比训练后量化（PTQ）、FP32 预训练 + 量化微调（C 组）与量化感知预训练（QAP），覆盖 TUAR、TUAB、TUSL 三个下游任务与 INT8 / INT4 / 三值权重。
 
-| 内容 | 说明与入口 |
+**INT8 存储 9.19 MB（3.8×）· INT4 存储 4.94 MB（7.0×）· 三值存储 2.82 MB（12.3×）· 通道迁移纯 INT8 收回 82% PTQ 掉点**
+
+![Python 3.11](https://img.shields.io/badge/python-3.11-blue)
+![PyTorch 2.7](https://img.shields.io/badge/pytorch-2.7.1%2Bcu128-ee4c2c)
+![Brevitas 0.12.1](https://img.shields.io/badge/brevitas-0.12.1-008080)
+[![License: Apache-2.0](https://img.shields.io/badge/license-Apache--2.0-lightgrey.svg)](LICENSE)
+
+[快速复现与分工](#快速复现与多机分工) · [INT8 完整结果](reproduction/formal_line/results/int8/README.md) · [评测指标与硬件成本](reproduction/formal_line/results/metrics/README.md) · [PTQ 掉点定位与恢复](reproduction/formal_line/results/ptq-diagnosis/README.md)
+
+<picture>
+  <source media="(prefers-color-scheme: dark)" srcset="reproduction/figures/formal-overview-dark.svg">
+  <img alt="左图：TUAR、TUAB、TUSL v2 三任务 INT8 测试集 AUROC（3 个随机种子均值与范围），PTQ 分别为 0.86、0.76、0.82，QAP 分别为 0.86、0.85、0.86。右图：TUAB 上 PTQ 掉点恢复，W8A8 PTQ 从 0.76 经 FP16 回退升至 0.82，经 SmoothQuant 通道迁移在纯 INT8 下升至 0.82；W4A8 PTQ 从 0.75 升至 0.80。" src="reproduction/figures/formal-overview-light.svg" width="780">
+</picture>
+
+</div>
+
+所有正式线实验采用受试者独立划分（预训练语料为 TUAB 官方训练集并剔除全部下游测试受试者），固定随机种子 42 / 43 / 44，在单张 RTX 5060 Ti（16 GB）上使用 Brevitas 伪量化完成。
+
+## 1. 正式线主结果：三任务 INT8（W8A8）对比
+
+下表汇总三个随机种子的测试集均值（两位小数）：包含 ROC 曲线下面积（AUROC）、平衡准确率（BAcc，括号外为验证集选定阈值，TUSL 按最大概率分类）与期望校准误差（ECE，15 等宽分箱，越低越好）。
+
+| 任务 | 指标 | FP32 基线 | 训练后量化 (PTQ) | FP32 预训练 + 量化微调 (C) | 量化预训练 + 量化微调 (QAP) |
+| --- | --- | ---: | ---: | ---: | ---: |
+| **TUAR**（伪迹检测） | AUROC | 0.87 | 0.86 | 0.86 | 0.86 |
+| | BAcc（默认 / 验证阈值） | 0.75 / 0.75 | 0.63 / 0.75 | 0.76 / 0.75 | 0.76 / 0.75 |
+| | 校准误差 ECE ↓ | 0.10 | 0.17 | **0.08** | 0.09 |
+| **TUAB**（异常检测） | AUROC | 0.84 | 0.76 | 0.84 | **0.85** |
+| | BAcc（默认 / 验证阈值） | 0.76 / 0.76 | 0.65 / 0.70 | 0.76 / 0.76 | **0.77 / 0.77** |
+| | 校准误差 ECE ↓ | 0.03 | 0.06 | **0.02** | **0.02** |
+| **TUSL v2**（慢波三分类） | 宏平均 AUROC | 0.83 | 0.82 | 0.83 | **0.86** |
+| | 宏平均 BAcc | 0.68 | 0.51 | 0.67 | **0.70** |
+| | 校准误差 ECE ↓ | 0.11 | 0.16 | 0.12 | **0.05** |
+
+四位小数明细、逐种子标准差与配对差值见 [INT8 完整结果](reproduction/formal_line/results/int8/README.md) 与 [评测指标与成本](reproduction/formal_line/results/metrics/README.md)。
+
+- **PTQ 在三任务上精度与校准均垫底**：TUAB 上 PTQ 的 AUROC 比 FP32 低 0.08（`0.7560` vs `0.8391`）；TUAR 上 PTQ 虽有 `0.86` AUROC，但种子 42 在默认阈值下把全部片段判为阳性（默认 BAcc 跌至 `0.50`，ECE 达 `0.33`），必须用验证集重选决策阈值才能恢复到 `0.75` BAcc。
+- **量化微调（C 与 QAP）即可抹平 INT8 掉点**：在 TUAB 和 TUSL v2 上，QAP 在全部三个种子上均优于 PTQ（AUROC 平均高 `+0.10` 和 `+0.04`）。
+- **INT8 下尚无 QAP 稳定优于 C 组的证据**：TUAR 与 TUAB 上两组均值差在 `±0.01` 以内且跨种子正负不一；TUSL v2 上 QAP 对 C 的 `+0.03` AUROC 优势全部来自第 0 测试组（其中 1 名受试者贡献了 55 个测试事件中的 46 个，剔除该测试组后两组差值为 `0.00`）。
+
+## 2. TUAB 上 PTQ 掉点定位与无损恢复
+
+针对 TUAB 上 W8A8 PTQ 掉点 `0.08`（`0.8391 → 0.7560`），通过解耦权重/激活量化器与逐层敏感度扫描定位根因，并验证了两种无需重训的恢复手段：
+
+| TUAB 设置（3 种子均值） | 权重位宽 | 激活位宽 | 测试 AUROC | 相对 FP32 变化 | 收回 PTQ 掉点比例 |
+| --- | --- | --- | ---: | ---: | ---: |
+| **FP32 基线** | FP32 | FP32 | 0.84 | — | — |
+| **只量化权重（W8 / W4 / 三值）** | 8 / 4 / 2 | FP32 | 0.84 / 0.83 / 0.60 | 0.00 / −0.01 / −0.24 | — |
+| **只量化激活（FP32 权重 + A8）** | FP32 | 8 | 0.76 | −0.08 | 0% |
+| **标准 W8A8 PTQ（95 百分位）** | 8 | 8 | 0.76 | −0.08 | 0% |
+| **敏感激活回退 FP16（占激活元素 16.7%）** | 8 | 8 + FP16 | **0.82** | −0.02 | **79%** |
+| **SmoothQuant 离群通道迁移（全程纯 INT8）** | 8 | 8 | **0.82** | −0.02 | **82%** |
+| **标准 W4A8 PTQ vs 通道迁移后 W4A8** | 4 | 8 | 0.75 → **0.80** | −0.09 → −0.04 | **57%** |
+
+逐层排名、长尾比值与通道集中度数据见 [PTQ 掉点定位与通道迁移](reproduction/formal_line/results/ptq-diagnosis/README.md)。
+
+- **掉点 100% 来自 8 位激活，三值瓶颈则在权重**：W8A8 下只量化权重几乎无损（`0.8390`），W4A8 权重仅多掉 `0.01`（`0.8305`）；而三值只量化权重即跌至 `0.60`，说明三值必须依赖量化训练（C / QAP）。
+- **长尾最重不等于对量化敏感**：全模型长尾最极端的 7 处张量（全部位于第 1 个 Mamba 块，99.999 与 90 百分位比值高达 35 万–75 万倍）单独量化时验证集掉点均小于 `0.005`；真正敏感的是**第 2 个 Mamba 块的双向状态空间扫描（SSM）输出**。
+- **离群值集中在固定通道，支持纯 INT8 静态迁移**：第 2 个块扫描输出最大的 `0.1%` 激活值中，`90%` 落在 1,540 个通道里的 `15–42` 个固定通道上（与时间步无关）。按 SmoothQuant 将通道缩放系数并入下一层 `out_proj` 权重后，两处激活量化器的步长缩小 `8–17` 倍，在不引入任何浮点激活的情况下收回 **82%** 的精度损失。
+
+## 3. 位宽压缩率、推理计算量与预训练成本
+
+FEMBA-Tiny 共 `8,670,626` 个参数，其中 `8,496,840` 个（98.0%）为量化卷积与线性层权重，其余 `173,786` 个（2.0%，含 4 个 depthwise 卷积、归一化层、状态空间参数与偏置）及 18 个权重量化尺度保持 FP32。单次 5 秒脑电片段（`22 × 1280`）的硬件开销与 RTX 5060 Ti（16 GB）上的训练耗时如下：
+
+| 位宽设置 | 权重 × 激活 | 每参数有效位数 | 模型存储体积 | 压缩比 | 单片段比特操作数 (BOPs) | 预训练耗时（2 轮 TUAB） |
+| --- | --- | ---: | ---: | ---: | ---: | --- |
+| **FP32** | 32 × 32 | 32.00 bit | 34.68 MB | 1.0× | 696.9 G | 2.59 h（独占 GPU） |
+| **INT8** | 8 × 8 | 8.48 bit | 9.19 MB | **3.8×** | 43.6 G（16.0×） | ~3.0 h（独占折算；双任务并发实测 6.69 h） |
+| **INT4** | 4 × 8 | 4.56 bit | 4.94 MB | **7.0×** | 21.8 G（32.0×） | 6.24 h（双任务并发实测） |
+| **三值 (Ternary)** | 2 × 8 | 2.60 bit | 2.82 MB | **12.3×** | 10.9 G（64.0×） | 见三值队列记录 |
+
+计算公式与脚本见 [评测指标与成本](reproduction/formal_line/results/metrics/README.md)（可由 `reproduction/formal_line/model_cost.py` 与 `calibration_error.py` 直接复算）。
+
+## 4. 快速复现与多机分工
+
+正式线完整协议、环境变量与多机分跑步骤以 **[reproduction/formal_line/README.md](reproduction/formal_line/README.md)** 为准。
+
+```bash
+# 1. 安装正式线依赖（Python 3.11，PyTorch 2.7.1+cu128，Brevitas 0.12.1）
+pip install --extra-index-url https://download.pytorch.org/whl/cu128 -r reproduction/formal_line/requirements-formal.txt
+
+# 2. 检出上游模型源码（a2a4d44）并依次打入三个量化与三值补丁
+git clone https://github.com/berumottovv00/BioFoundation.git "$SRC"
+git -C "$SRC" checkout a2a4d441485efd8423c44b35d7448a30ccd44437
+git -C "$SRC" apply "$PWD/reproduction/teammate_ptq/source.patch" \
+                    "$PWD/reproduction/teammate_ptq/quantization-config.patch" \
+                    "$PWD/reproduction/teammate_ptq/ternary-model.patch"
+
+# 3. 运行单种子微调、PTQ 七档校准与评估队列（以 INT4 为例，复用共享 FP32 父模型）
+FP32_PARENTS=given SEED=42 BITS=4 SCHEME=uniform \
+  TASKS="tuar tuab tusl0-v2 tusl1-v2 tusl2-v2 tusl3-v2" LOG_SUFFIX=-all ./finetune_queue.sh
+```
+
+## 5. 仓库目录与历史实验归档
+
+| 路径 | 一句话说明 |
 | --- | --- |
-| 正式线 FP32 / INT8 结果 | 受试者划分，TUAR、TUAB、TUSL 三个任务，FP32、PTQ、C、QAP 四组各三个种子，见 [INT8 结果](reproduction/formal_line/results/int8/README.md) |
-| TUAB 上 PTQ 的掉点定位 | INT8 PTQ 的损失来自哪些激活，改用 FP16 或把离群通道挪进权重能收回多少，另有 MSE / KL 校准和 INT4、三值权重的对照，见 [PTQ 掉点定位](reproduction/formal_line/results/ptq-diagnosis/README.md) |
-| TUAR INT8 试点结果 | 按录音划分的三个种子，包含 FP32、PTQ、C、QAP 四组及配对分析，见 [INT8 团队小结](reproduction/teammate_ptq/README.md) |
-| 正式线复现流程 | 三个任务的数据构建、环境、预训练、微调、PTQ、评估、汇总与多机分工，见 [正式线运行说明](reproduction/formal_line/README.md) |
+| [reproduction/formal_line/README.md](reproduction/formal_line/README.md) | 正式线三任务受试者独立划分协议、队列脚本（`finetune_queue.sh`、`run_random_init.sh`）与多机分跑手册 |
+| [reproduction/formal_line/results/int8/](reproduction/formal_line/results/int8/README.md) | 正式线 FP32 与 INT8 三种子完整指标、`summary.json`、`provenance.json`、TUSL 重抽样检验与独立复核脚本 |
+| [reproduction/formal_line/results/metrics/](reproduction/formal_line/results/metrics/README.md) | 平衡准确率（BAcc）、校准误差（ECE）、每参数有效位数、BOPs 推理计算量与预训练耗时汇总 |
+| [reproduction/formal_line/results/ptq-diagnosis/](reproduction/formal_line/results/ptq-diagnosis/README.md) | TUAB 上 PTQ 掉点拆解、35 处激活敏感度排序、FP16 回退与 SmoothQuant 离群通道迁移实验 |
+| [reproduction/subject_split/](reproduction/subject_split/) | 按受试者切分 TUAR / TUAB 并从预训练语料剔除下游测试受试者的数据构建工具 |
+| [reproduction/tusl_events/](reproduction/tusl_events/) | TUSL 事件级三分类构建、四组交叉验证划分与事件级评估脚本 |
+| [reproduction/teammate_ptq/](reproduction/teammate_ptq/README.md) | 核心训练与评估驱动（`train_stage.py`、`calibrate.py`、`evaluate_one.py`、三个源码补丁）及早期按录音划分的 TUAR INT8 试点记录 |
+| [reproduction/RESULTS.md](reproduction/RESULTS.md) | 早期基于 2025 公开权重与 `mamba-ssm` 的 TUAR 单种子复现记录（含 FP16 首 batch 溢出 NaN 诊断与 Hadamard 旋转对照） |
 
-## 从哪里开始
+## 上游来源与致谢
 
-从 **`baseline-2025` 分支的 [reproduction/formal_line/README.md](reproduction/formal_line/README.md)** 开始。
-
-1. **准备环境和数据**：按[环境与数据](reproduction/formal_line/README.md#环境与数据)安装依赖、生成数据并核对清单。仓库提供数据构建与校验脚本，数据文件和检查点另行交付，不随 Git 仓库分发。
-2. **准备模型源码**：按[独立准备源码](reproduction/teammate_ptq/QUANTIZATION.md#独立准备源码)检出上游 `a2a4d44`，依次应用 `source.patch`、`quantization-config.patch`、`ternary-model.patch`。正式线训练参数以正式线运行说明为准。
-3. **运行自己负责的位宽**：按[多台机器分跑](reproduction/formal_line/README.md#多台机器分跑)设置路径、接收共用 FP32 父检查点，再运行 INT4 或三值的预训练、微调和评估；三值先做冒烟测试。结果用 [summarize_formal.py](reproduction/formal_line/summarize_formal.py) 汇总。
-
-TUSL 使用标注事件三分类和四折评估；v2 验证集规则是看过 v1 测试结果后的探索性修订，协议要求保留 v1 对照。具体划分和指标见[正式线协议](reproduction/formal_line/README.md#协议)。
-
-## 已完成：正式线 FP32 与 INT8
-
-受试者划分，种子 42 / 43 / 44。下表是测试 AUROC 的均值 ± 样本标准差；TUSL 是协议 v2 下事件级宏平均 AUROC 的四折平均。
-
-| 任务 | FP32 | PTQ INT8 | C INT8 | QAP INT8 |
-| --- | ---: | ---: | ---: | ---: |
-| TUAR | 0.8663 ± 0.0064 | 0.8552 ± 0.0177 | 0.8642 ± 0.0051 | 0.8608 ± 0.0133 |
-| TUAB | 0.8391 ± 0.0083 | 0.7560 ± 0.0473 | 0.8392 ± 0.0126 | 0.8510 ± 0.0069 |
-| TUSL v2 | 0.8339 ± 0.0292 | 0.8194 ± 0.0228 | 0.8263 ± 0.0324 | 0.8609 ± 0.0280 |
-
-PTQ 在三个任务上均值都最低，TUAB 上比 FP32 低 0.083。QAP 对 PTQ 在 TUAB、TUSL v2 上三个种子都领先，TUAR 上基本持平。三个任务都没有 QAP 稳定优于 C 的证据：TUSL v2 上的 +0.035 全部来自一名受试者主导的一折。
-
-[完整结果与结论](reproduction/formal_line/results/int8/README.md) · [逐种子结果](reproduction/formal_line/results/int8/summary.json) · [来源记录](reproduction/formal_line/results/int8/provenance.json)
-
-## 已完成：TUAR INT8 试点
-
-**本节只有一个 TUAR 数据集，按录音划分，未按受试者划分。** 测试集为 7,211 个窗口；下表是 seeds 42 / 43 / 44 的均值 ± 样本标准差。
-
-| 方法 | 测试 AUROC |
-| --- | ---: |
-| FP32 | 0.9045 ± 0.0095 |
-| PTQ INT8 | 0.8707 ± 0.0082 |
-| C：FP32 预训练＋量化微调 | 0.8940 ± 0.0168 |
-| QAP B：量化预训练＋量化微调 | 0.9021 ± 0.0055 |
-
-QAP B 在三个种子上均优于 PTQ。与 C 的严格同初始化配对只有 seed43/44，QAP B−C 的 AUROC 差为 **−0.0013 ± 0.0036**，未观察到量化预训练的一致收益；QAP42 使用队友检查点的完整复测值。
-
-[完整指标与结论](reproduction/teammate_ptq/README.md) · [逐种子结果与来源](reproduction/teammate_ptq/c-seed-results.json) · [试点复现命令](reproduction/teammate_ptq/TRAINING.md)
-
-## 历史实验：2025 公开模型复现
-
-早期实验使用 FEMBA 2025 公开代码和预训练权重，在 TUAR 的 7,090 个测试窗口上进行单种子 seed42 对照，包括 FP32 标签／学习率复现、FP16、PTQ 和 H128 Hadamard 旋转。该阶段使用 FP32 QDQ 模拟，其量化位置和评估口径与上述 INT8 试点不同，结果分别保留。
-
-在该阶段的配置下，W8A32 精度接近 FP32，57 处激活量化的 W8A8 / W4A8 得到 AUROC 0.5；FP16 三种路径均在首批验证出现 NaN。完整数值、曲线与诊断见[历史实验结果](reproduction/RESULTS.md)，运行步骤见[历史复现协议](reproduction/PROTOCOL.md)。
-
-## 上游来源
-
-- **INT8 试点与正式线**：模型及 QAP 流水线来自 [berumottovv00/BioFoundation](https://github.com/berumottovv00/BioFoundation/tree/a2a4d441485efd8423c44b35d7448a30ccd44437)，本仓库提供复现脚本、量化配置补丁、数据划分与评估流程。
-- **早期公开模型复现**：基于 [pulp-bio/BioFoundation 的 2025 快照](https://github.com/pulp-bio/BioFoundation/tree/d88596590f3bd3fce573be07646b7d3977ce7bcc)和 [PulpBio/FEMBA 预训练权重](https://huggingface.co/PulpBio/FEMBA)。
-- **论文与许可证**：[FEMBA（2025）](https://arxiv.org/abs/2502.06438v2) · [Apache-2.0](LICENSE)。
+- **量化模型与 QAP 基线**：基于 [berumottovv00/BioFoundation](https://github.com/berumottovv00/BioFoundation/tree/a2a4d441485efd8423c44b35d7448a30ccd44437)（`a2a4d44`）。
+- **FEMBA 原始论文与公开实现**：[pulp-bio/BioFoundation](https://github.com/pulp-bio/BioFoundation/tree/d88596590f3bd3fce573be07646b7d3977ce7bcc) · [FEMBA（EMBC 2025）](https://arxiv.org/abs/2502.06438v2) · [FEMBA on the Edge（IEEE TBME 2026）](https://arxiv.org/abs/2603.26716v1) · [Apache-2.0 License](LICENSE)。
