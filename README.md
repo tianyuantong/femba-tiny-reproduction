@@ -103,6 +103,7 @@ FP32_PARENTS=given SEED=42 BITS=4 SCHEME=uniform \
 | [reproduction/formal_line/results/int8/](reproduction/formal_line/results/int8/README.md) | 正式线 FP32 与 INT8 三种子完整指标、`summary.json`、`provenance.json`、TUSL 重抽样检验与独立复核脚本 |
 | [reproduction/formal_line/results/metrics/](reproduction/formal_line/results/metrics/README.md) | 平衡准确率（BAcc）、校准误差（ECE）、每参数有效位数、BOPs 推理计算量与预训练耗时汇总 |
 | [reproduction/formal_line/results/ptq-diagnosis/](reproduction/formal_line/results/ptq-diagnosis/README.md) | TUAB 上 PTQ 掉点拆解、35 处激活敏感度排序，以及 FP16 回退和通道迁移两个修复实验 |
+| [reproduction/formal_line/results/layers/](reproduction/formal_line/results/layers/README.md) | TUAB INT8 上 QAP 帮助最大的位置：按 Mamba 块和第二块逐处对比 PTQ 与 QAP 的掉点 |
 | [reproduction/subject_split/](reproduction/subject_split/) | 按受试者切分 TUAR / TUAB 并从预训练语料剔除下游测试受试者的数据构建工具 |
 | [reproduction/tusl_events/](reproduction/tusl_events/) | TUSL 事件级三分类构建、四组交叉验证划分与事件级评估脚本 |
 | [reproduction/teammate_ptq/](reproduction/teammate_ptq/README.md) | 核心训练与评估驱动（`train_stage.py`、`calibrate.py`、`evaluate_one.py`、三个源码补丁）及早期按录音划分的 TUAR INT8 试点记录 |
