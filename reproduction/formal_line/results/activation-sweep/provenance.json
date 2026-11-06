@@ -1,0 +1,164 @@
+{
+  "scope": "TUAB, subject split, seeds 42 / 43 / 44. Fine-tuning and PTQ at W8A6, W8A5, W8A4; group C from the 95th percentile at W8A6, W8A4. The FP32 parents and the W8A8 rows are those of results/int8.",
+  "source_repository": "https://github.com/berumottovv00/BioFoundation",
+  "source_base_commit": "a2a4d441485efd8423c44b35d7448a30ccd44437",
+  "source_patches": [
+    "reproduction/teammate_ptq/source.patch",
+    "reproduction/teammate_ptq/quantization-config.patch",
+    "reproduction/teammate_ptq/ternary-model.patch"
+  ],
+  "runner_commits": {
+    "default start": "3aece87",
+    "95th percentile start": "ed48412"
+  },
+  "runners_sha256": {
+    "finetune_queue.sh": "099e8af357ef292ba60b3ecb9b353da95b3e723f3bf75750a53a500543faaa3c",
+    "run_c_start.sh": "17ab3d522efadf1c935c366bbbc456be8fe57029391930c185a06fdaa8fd5e17",
+    "train_stage.py (95th percentile start)": "5afb3aeb6e54fd6f4e3efc0a262adc290d77264d28464ea39a448065f0f799de"
+  },
+  "training_stages": {
+    "seed42/c_w8a6/finetune-tuab": {
+      "best_checkpoint_sha256": "71a2b0dca794892a69f4d0f81a85e5a509e7e4ce4c1b24e0781c2de55b63f5fe",
+      "selected_epoch": 4,
+      "best_validation_loss": 0.5571324825286865,
+      "completed_at": "2026-11-05T00:09:27.228928+00:00",
+      "activation_percentile": null
+    },
+    "seed42/c_w8a5/finetune-tuab": {
+      "best_checkpoint_sha256": "2e598e08f407d4b03c0703d280f9c4d3be91632a602aa3b8ead2ba240a413304",
+      "selected_epoch": 4,
+      "best_validation_loss": 0.6584832668304443,
+      "completed_at": "2026-11-05T22:29:58.047496+00:00",
+      "activation_percentile": null
+    },
+    "seed42/c_w8a4/finetune-tuab": {
+      "best_checkpoint_sha256": "42850a6f9c5f45639810931bd4514f84be0db9fc3ee748c85c5379b0ca11f790",
+      "selected_epoch": 0,
+      "best_validation_loss": 0.6932588815689087,
+      "completed_at": "2026-11-04T16:14:59.664052+00:00",
+      "activation_percentile": null
+    },
+    "seed42/c_p95_w8a6/finetune-tuab": {
+      "best_checkpoint_sha256": "8aea0ff29fcef9b3839581e38a144a974d1efc99dd8ec02bd597b2bb5d803f93",
+      "selected_epoch": 0,
+      "best_validation_loss": 0.49350810050964355,
+      "completed_at": "2026-11-05T15:19:32.143546+00:00",
+      "activation_percentile": 95.0
+    },
+    "seed42/c_p95_w8a4/finetune-tuab": {
+      "best_checkpoint_sha256": "ad6cd8cd12c1ee4ee2e7b0028e419f890a97554600c7d75a2a70b63de7fab2a4",
+      "selected_epoch": 0,
+      "best_validation_loss": 0.4984249174594879,
+      "completed_at": "2026-11-05T08:05:28.366318+00:00",
+      "activation_percentile": 95.0
+    },
+    "seed43/c_w8a6/finetune-tuab": {
+      "best_checkpoint_sha256": "b3ff703d3d94feaf152074b8397cf9e6f2a1f35b66ead1609e127f5f3fb19bac",
+      "selected_epoch": 4,
+      "best_validation_loss": 0.5810557007789612,
+      "completed_at": "2026-11-05T02:47:33.102391+00:00",
+      "activation_percentile": null
+    },
+    "seed43/c_w8a5/finetune-tuab": {
+      "best_checkpoint_sha256": "70b20dfc332a1c6ad93e003c1529ca94e67f67b45ede820e49d27886e8b1cf7e",
+      "selected_epoch": 1,
+      "best_validation_loss": 0.6741291284561157,
+      "completed_at": "2026-11-06T01:08:37.895090+00:00",
+      "activation_percentile": null
+    },
+    "seed43/c_w8a4/finetune-tuab": {
+      "best_checkpoint_sha256": "ec273da062f6f04f15cda8695605eb1bf1a32bc3a5f759fd0153d6b441e8920a",
+      "selected_epoch": 0,
+      "best_validation_loss": 0.6896518468856812,
+      "completed_at": "2026-11-04T18:53:30.334845+00:00",
+      "activation_percentile": null
+    },
+    "seed43/c_p95_w8a6/finetune-tuab": {
+      "best_checkpoint_sha256": "b3666febb4a2e9f55011802b10fe44219e07c59f384b56bd7bd8f911d9d404ae",
+      "selected_epoch": 0,
+      "best_validation_loss": 0.48739975690841675,
+      "completed_at": "2026-11-05T17:42:54.315332+00:00",
+      "activation_percentile": 95.0
+    },
+    "seed43/c_p95_w8a4/finetune-tuab": {
+      "best_checkpoint_sha256": "53abd0c3be4ffbc3eb8bc0d67b57425e66b6540d35fa35d38d766dc5fb8f88ca",
+      "selected_epoch": 0,
+      "best_validation_loss": 0.49158015847206116,
+      "completed_at": "2026-11-05T10:31:57.297556+00:00",
+      "activation_percentile": 95.0
+    },
+    "seed44/c_w8a6/finetune-tuab": {
+      "best_checkpoint_sha256": "63e047c13a424e957a53d2ba168f135fbc49fe44bd9d9eb22c0acd315931f295",
+      "selected_epoch": 2,
+      "best_validation_loss": 0.5411373972892761,
+      "completed_at": "2026-11-05T05:26:40.172780+00:00",
+      "activation_percentile": null
+    },
+    "seed44/c_w8a5/finetune-tuab": {
+      "best_checkpoint_sha256": "38221e09da42c9f776cb3bfa397516b094a4076f379a8e8e29cfc27187949682",
+      "selected_epoch": 4,
+      "best_validation_loss": 0.6323188543319702,
+      "completed_at": "2026-11-06T03:47:30.005945+00:00",
+      "activation_percentile": null
+    },
+    "seed44/c_w8a4/finetune-tuab": {
+      "best_checkpoint_sha256": "7a815a8ae29ed535b46df5fe9be44e1853b1cb39961964ec091bd793774eceac",
+      "selected_epoch": 2,
+      "best_validation_loss": 0.6898326873779297,
+      "completed_at": "2026-11-04T21:31:44.297430+00:00",
+      "activation_percentile": null
+    },
+    "seed44/c_p95_w8a6/finetune-tuab": {
+      "best_checkpoint_sha256": "7ecdfc079e0e9f12d7bedefbdf11994a278816fc83cb083735084f4cf0a7c831",
+      "selected_epoch": 0,
+      "best_validation_loss": 0.497206449508667,
+      "completed_at": "2026-11-05T20:06:49.451380+00:00",
+      "activation_percentile": 95.0
+    },
+    "seed44/c_p95_w8a4/finetune-tuab": {
+      "best_checkpoint_sha256": "1c8423072128c33bfeab176679c50f5f8ab539a8149120e54f90041e6497c8bd",
+      "selected_epoch": 0,
+      "best_validation_loss": 0.5121880173683167,
+      "completed_at": "2026-11-05T12:55:45.016309+00:00",
+      "activation_percentile": 95.0
+    }
+  },
+  "ptq_sweeps": {
+    "seed42/ptq_w8a6/sweep-tuab": {
+      "selected": "p95",
+      "selected_validation_auroc": 0.7616162325622298
+    },
+    "seed42/ptq_w8a5/sweep-tuab": {
+      "selected": "p95",
+      "selected_validation_auroc": 0.7625388267461156
+    },
+    "seed42/ptq_w8a4/sweep-tuab": {
+      "selected": "p95",
+      "selected_validation_auroc": 0.7466701789501373
+    },
+    "seed43/ptq_w8a6/sweep-tuab": {
+      "selected": "p95",
+      "selected_validation_auroc": 0.7928005872093669
+    },
+    "seed43/ptq_w8a5/sweep-tuab": {
+      "selected": "p95",
+      "selected_validation_auroc": 0.7892451073513241
+    },
+    "seed43/ptq_w8a4/sweep-tuab": {
+      "selected": "p95",
+      "selected_validation_auroc": 0.7844103062987964
+    },
+    "seed44/ptq_w8a6/sweep-tuab": {
+      "selected": "p95",
+      "selected_validation_auroc": 0.7557173705324944
+    },
+    "seed44/ptq_w8a5/sweep-tuab": {
+      "selected": "p95",
+      "selected_validation_auroc": 0.7483832246267942
+    },
+    "seed44/ptq_w8a4/sweep-tuab": {
+      "selected": "p95",
+      "selected_validation_auroc": 0.7305047554345275
+    }
+  }
+}
