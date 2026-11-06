@@ -4,14 +4,14 @@
 
 在脑电基础模型 FEMBA-Tiny（双向 Mamba，867 万参数）上比较三种量化方案：训练后量化（PTQ）、FP32 预训练 + 量化微调（C）、量化预训练 + 量化微调（QAP）。下游任务覆盖 TUAR、TUAB、TUSL，位宽分 INT8、INT4、三值三档，本页汇总已完成的 INT8 结果。
 
-**TUAB 上 QAP 0.85、PTQ 0.76 · TUSL v2 上 QAP 0.86、PTQ 0.82 · INT8 存储 9.19 MB（3.8×）**
+**TUAB 上 QAP 0.85、PTQ 0.76 · TUSL v2 上 QAP 0.86、PTQ 0.82 · INT8 存储 9.10 MB（3.8×）**
 
 ![Python 3.11](https://img.shields.io/badge/python-3.11-blue)
 ![PyTorch 2.7](https://img.shields.io/badge/pytorch-2.7.1%2Bcu128-ee4c2c)
 ![Brevitas 0.12.1](https://img.shields.io/badge/brevitas-0.12.1-008080)
 [![License: Apache-2.0](https://img.shields.io/badge/license-Apache--2.0-lightgrey.svg)](LICENSE)
 
-[快速复现与分工](#快速复现与多机分工) · [INT8 完整结果](reproduction/formal_line/results/int8/README.md) · [评测指标与成本](reproduction/formal_line/results/metrics/README.md) · [PTQ 掉点定位](reproduction/formal_line/results/ptq-diagnosis/README.md)
+[快速复现与分工](#快速复现与多机分工) · [INT8 完整结果](reproduction/formal_line/results/int8/README.md) · [评测指标与成本](reproduction/formal_line/results/metrics/README.md) · [PTQ 掉点定位](reproduction/formal_line/results/ptq-diagnosis/README.md) · [QAP 逐层分析](reproduction/formal_line/results/layers/README.md)
 
 <picture>
   <source media="(prefers-color-scheme: dark)" srcset="reproduction/figures/formal-overview-dark.svg">
@@ -57,10 +57,10 @@ TUAB 上 W8A8 PTQ 比 FP32 低 `0.08`（`0.8391 → 0.7560`）。分别关掉权
 | **只量化 8 位激活（W32A8）** | FP32 | 8 bit | 0.76 | −0.08 |
 | **标准 W8A8 PTQ（95 百分位）** | 8 bit | 8 bit | 0.76 | −0.08 |
 
-逐层排名、长尾比值和不重训的修复实验见 [PTQ 掉点定位](reproduction/formal_line/results/ptq-diagnosis/README.md)。
+逐层排名、长尾比值和不重训的修复实验见 [PTQ 掉点定位](reproduction/formal_line/results/ptq-diagnosis/README.md)，与 QAP 的逐块、逐处掉点对比见 [QAP 逐层分析](reproduction/formal_line/results/layers/README.md)。
 
 - **8 位和 4 位掉在激活，三值掉在权重**：只量化 8 位权重几乎不掉点（`0.8390`），4 位权重只多掉 `0.01`（`0.8305`）；三值只量化权重就跌到 `0.60`，必须靠量化训练（C 或 QAP）恢复。
-- **离群值最大的地方不一定敏感**：长尾最重的 7 处激活都在第 1 个 Mamba 块（99.999 与 90 百分位相差 35 万–75 万倍），单独量化时验证 AUROC 掉点都不超过 `0.005`；真正引起掉点的是**第 2 个 Mamba 块的双向状态空间扫描（SSM）输出**。
+- **离群值最大的地方不一定敏感**：长尾最重的 7 处激活都在第 1 个 Mamba 块（99.999 与 90 百分位相差 35 万–75 万倍），单独量化时验证 AUROC 掉点都不超过 `0.005`；真正引起掉点的是**第 2 个 Mamba 块的双向状态空间扫描（SSM）输出**，QAP 相对 PTQ 减小的掉点也有 76% 集中在第 2 个 Mamba 块。
 
 ## 3. 位宽压缩率、推理计算量与预训练成本
 
@@ -73,7 +73,7 @@ FEMBA-Tiny 共 `8,670,626` 个参数，其中 `8,496,530` 个（98.0%）为量�
 | **INT4** | 4 × 8 | 4.48 bit | 4.85 MB | **7.1×** | 64.7 G | 6.24 h（并发） |
 | **三值** | 2 × 8 | 2.52 bit | 2.73 MB | **12.7×** | 53.8 G | — |
 
-INT8 预训练与微调作业共用 GPU 时实测为 `6.60–6.77 h`；按同卡单独跑 TUAB 微调的量化耗时比（`2.25 h / 1.93 h = 1.17×`）折算，独占 GPU 约 `3.0 h`。Brevitas 是浮点模拟，表中比较的是比特操作数（BOPs），不是整数部署延迟。计算公式与脚本见 [评测指标与成本](reproduction/formal_line/results/metrics/README.md)。
+表中 `单片段 BOPs` 含固定保持 FP32 的状态空间扫描与 depthwise 卷积（共 `42.9 G`），量化层本身依次为 `696.9 G / 43.6 G / 21.8 G / 10.9 G`。INT8 预训练与微调作业共用 GPU 时实测为 `6.60–6.77 h`；按同卡单独跑 TUAB 微调的量化耗时比（`2.25 h / 1.93 h = 1.17×`）折算，独占 GPU 约 `3.0 h`。Brevitas 是浮点模拟，表中比较的是比特操作数（BOPs），不是整数部署延迟。计算公式、BF16/FP16 基线与下游微调耗时见 [评测指标与成本](reproduction/formal_line/results/metrics/README.md)。
 
 ## 4. 快速复现与多机分工
 
