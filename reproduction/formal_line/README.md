@@ -36,8 +36,8 @@ SEED=42 BITS=2 SCHEME=ternary TASKS="tuar tuab tusl0-v2 tusl1-v2 tusl2-v2 tusl3-
 BATCHES="42:4:uniform 43:8:uniform" QUEUE=./finetune_queue.sh nohup ./launch_batches.sh >> "$ART/logs/launch-batches.log" 2>&1 &
 # QAP 预训练还没到时：RUN_QAP=no 只跑 C 和 PTQ，到了以后用 RUN_QAP=yes 重跑同一命令
 FP32_PARENTS=given RUN_QAP=no SEED=43 BITS=4 TASKS=tuab ./finetune_queue.sh
-# 随机初始化基线（W8A8，不加载预训练，三个任务），在 STUDY 目录里运行
-SEEDS="42 43 44" ./run_random_init.sh
+# 随机初始化基线（不加载预训练，三个任务，BITS=8 或 4），在 STUDY 目录里运行
+BITS=8 SEEDS="42 43 44" ./run_random_init.sh
 # FP16 和 BF16 重放（FP32 微调检查点，不重新训练），在 STUDY 目录里运行
 DTYPES="bfloat16 float16" ./run_half_precision.sh
 # 汇总
