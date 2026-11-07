@@ -1,0 +1,597 @@
+{
+ "source_repository": "https://github.com/berumottovv00/BioFoundation",
+ "source_base_commit": "a2a4d441485efd8423c44b35d7448a30ccd44437",
+ "scope": "INT4 (W4A8, uniform) stages and PTQ sweeps behind the TUAR, TUAB and TUSL v2 results. The FP32 parents are the INT8 page ones.",
+ "training_stages": [
+  {
+   "stage": "seed42/qap_w4a8/pretrain",
+   "gpu": "NVIDIA GeForce RTX 5060 Ti",
+   "epochs": 2,
+   "selected_epoch": 1,
+   "best_validation_loss": 0.09056751430034637,
+   "checkpoint_sha256": "9afc50a5a8aefd3902387dfc8d861093cad5523448c434317f637517dcfd39f8",
+   "started_utc": "2026-10-25T21:37:54",
+   "completed_utc": "2026-10-26T03:52:27"
+  },
+  {
+   "stage": "seed42/c_w4a8/finetune-tuar",
+   "gpu": "NVIDIA RTX PRO 6000 Blackwell Server Edition",
+   "epochs": 5,
+   "selected_epoch": 2,
+   "best_validation_loss": 0.37051793932914734,
+   "checkpoint_sha256": "996bae178f8b13dc8d1b5dd10be512b34b8f0336d17b805a59c1715d81357b73",
+   "started_utc": "2026-11-07T04:30:35",
+   "completed_utc": "2026-11-07T05:10:29",
+   "parent_sha256": "57216556fa8b458dd84cbc809b3d8277512b33a4114040dfa3b6548286c2680e"
+  },
+  {
+   "stage": "seed42/qap_w4a8/finetune-tuar",
+   "gpu": "NVIDIA RTX PRO 6000 Blackwell Server Edition",
+   "epochs": 5,
+   "selected_epoch": 0,
+   "best_validation_loss": 0.33195316791534424,
+   "checkpoint_sha256": "eb8caca44682f40ec073ddaed9f83c9a27fd2a0d746759f7d9b47e17b4d67a9f",
+   "started_utc": "2026-11-07T05:10:47",
+   "completed_utc": "2026-11-07T05:47:11",
+   "parent_sha256": "9afc50a5a8aefd3902387dfc8d861093cad5523448c434317f637517dcfd39f8"
+  },
+  {
+   "stage": "seed42/c_w4a8/finetune-tuab",
+   "gpu": "NVIDIA GeForce RTX 5060 Ti",
+   "epochs": 5,
+   "selected_epoch": 0,
+   "best_validation_loss": 0.49637627601623535,
+   "checkpoint_sha256": "61c3d03585cb9e16ef8ce5883351c01416d16215b0450f81695d6343a3ea988a",
+   "started_utc": "2026-11-06T06:51:16",
+   "completed_utc": "2026-11-06T09:22:40",
+   "parent_sha256": "57216556fa8b458dd84cbc809b3d8277512b33a4114040dfa3b6548286c2680e"
+  },
+  {
+   "stage": "seed42/qap_w4a8/finetune-tuab",
+   "gpu": "NVIDIA GeForce RTX 5060 Ti",
+   "epochs": 5,
+   "selected_epoch": 0,
+   "best_validation_loss": 0.4988331198692322,
+   "checkpoint_sha256": "374b36d585d403b6717470f5491463bdde8e023d5e2285df5d6ef05c203834b4",
+   "started_utc": "2026-11-06T09:24:01",
+   "completed_utc": "2026-11-06T11:37:30",
+   "parent_sha256": "9afc50a5a8aefd3902387dfc8d861093cad5523448c434317f637517dcfd39f8"
+  },
+  {
+   "stage": "seed42/c_w4a8/finetune-tusl0-v2",
+   "gpu": "NVIDIA RTX PRO 6000 Blackwell Server Edition",
+   "epochs": 20,
+   "selected_epoch": 19,
+   "best_validation_loss": 0.6068287491798401,
+   "checkpoint_sha256": "0ced533bc9abd091049ed561f1e9925ce1ce8ab76c8844337db6a8012792d7c4",
+   "started_utc": "2026-11-07T05:53:04",
+   "completed_utc": "2026-11-07T05:56:57",
+   "parent_sha256": "57216556fa8b458dd84cbc809b3d8277512b33a4114040dfa3b6548286c2680e"
+  },
+  {
+   "stage": "seed42/qap_w4a8/finetune-tusl0-v2",
+   "gpu": "NVIDIA RTX PRO 6000 Blackwell Server Edition",
+   "epochs": 20,
+   "selected_epoch": 15,
+   "best_validation_loss": 0.5159710049629211,
+   "checkpoint_sha256": "18378bd535314a76073f173e56d8947ad88075a50c34fbb39f9916742e76e3db",
+   "started_utc": "2026-11-07T06:08:36",
+   "completed_utc": "2026-11-07T06:09:46",
+   "parent_sha256": "9afc50a5a8aefd3902387dfc8d861093cad5523448c434317f637517dcfd39f8"
+  },
+  {
+   "stage": "seed42/c_w4a8/finetune-tusl1-v2",
+   "gpu": "NVIDIA RTX PRO 6000 Blackwell Server Edition",
+   "epochs": 20,
+   "selected_epoch": 13,
+   "best_validation_loss": 0.925747811794281,
+   "checkpoint_sha256": "97ff8d602bdbb50ebd90784f577f254af45ed6a4f7b63d6454458ec3cc7091f7",
+   "started_utc": "2026-11-07T05:57:03",
+   "completed_utc": "2026-11-07T06:00:46",
+   "parent_sha256": "57216556fa8b458dd84cbc809b3d8277512b33a4114040dfa3b6548286c2680e"
+  },
+  {
+   "stage": "seed42/qap_w4a8/finetune-tusl1-v2",
+   "gpu": "NVIDIA RTX PRO 6000 Blackwell Server Edition",
+   "epochs": 20,
+   "selected_epoch": 8,
+   "best_validation_loss": 0.9508422613143921,
+   "checkpoint_sha256": "9cb483191ec6ec31e2a0a31a7653f5b915fbd674cbc3fd001a46c3f36699d949",
+   "started_utc": "2026-11-07T06:09:52",
+   "completed_utc": "2026-11-07T06:11:04",
+   "parent_sha256": "9afc50a5a8aefd3902387dfc8d861093cad5523448c434317f637517dcfd39f8"
+  },
+  {
+   "stage": "seed42/c_w4a8/finetune-tusl2-v2",
+   "gpu": "NVIDIA RTX PRO 6000 Blackwell Server Edition",
+   "epochs": 20,
+   "selected_epoch": 15,
+   "best_validation_loss": 0.6145656704902649,
+   "checkpoint_sha256": "afb002f6782170d22cffd8a97d1f832c85a164ed410086581ba7cdd84d646861",
+   "started_utc": "2026-11-07T06:00:51",
+   "completed_utc": "2026-11-07T06:04:38",
+   "parent_sha256": "57216556fa8b458dd84cbc809b3d8277512b33a4114040dfa3b6548286c2680e"
+  },
+  {
+   "stage": "seed42/qap_w4a8/finetune-tusl2-v2",
+   "gpu": "NVIDIA RTX PRO 6000 Blackwell Server Edition",
+   "epochs": 20,
+   "selected_epoch": 13,
+   "best_validation_loss": 0.545313835144043,
+   "checkpoint_sha256": "5553f076285f3cab7aa6e18d91631992309dbfb49098182ea7b78436f4512ce0",
+   "started_utc": "2026-11-07T06:11:09",
+   "completed_utc": "2026-11-07T06:12:25",
+   "parent_sha256": "9afc50a5a8aefd3902387dfc8d861093cad5523448c434317f637517dcfd39f8"
+  },
+  {
+   "stage": "seed42/c_w4a8/finetune-tusl3-v2",
+   "gpu": "NVIDIA RTX PRO 6000 Blackwell Server Edition",
+   "epochs": 20,
+   "selected_epoch": 18,
+   "best_validation_loss": 0.7737678289413452,
+   "checkpoint_sha256": "50847a0733047cb01bceeb3c1421840dd98c8a74bfd7964bb58a0293f61469af",
+   "started_utc": "2026-11-07T06:04:44",
+   "completed_utc": "2026-11-07T06:08:30",
+   "parent_sha256": "57216556fa8b458dd84cbc809b3d8277512b33a4114040dfa3b6548286c2680e"
+  },
+  {
+   "stage": "seed42/qap_w4a8/finetune-tusl3-v2",
+   "gpu": "NVIDIA RTX PRO 6000 Blackwell Server Edition",
+   "epochs": 20,
+   "selected_epoch": 16,
+   "best_validation_loss": 0.7114957571029663,
+   "checkpoint_sha256": "efe1f0315a3739ec20719faf6d53b9d1dd1de6a182b8c1b26ccbd26a6646a9dd",
+   "started_utc": "2026-11-07T06:12:31",
+   "completed_utc": "2026-11-07T06:13:46",
+   "parent_sha256": "9afc50a5a8aefd3902387dfc8d861093cad5523448c434317f637517dcfd39f8"
+  },
+  {
+   "stage": "seed43/qap_w4a8/pretrain",
+   "gpu": "NVIDIA RTX PRO 6000 Blackwell Server Edition",
+   "epochs": 2,
+   "selected_epoch": 1,
+   "best_validation_loss": 0.08527516573667526,
+   "checkpoint_sha256": "234bfabf639ffdc95a7f55d028c598eda7960c24c5494ca394ce44af710edbe9",
+   "started_utc": "2026-11-06T10:51:49",
+   "completed_utc": "2026-11-06T13:09:06"
+  },
+  {
+   "stage": "seed43/c_w4a8/finetune-tuar",
+   "gpu": "NVIDIA RTX PRO 6000 Blackwell Server Edition",
+   "epochs": 5,
+   "selected_epoch": 2,
+   "best_validation_loss": 0.34798359870910645,
+   "checkpoint_sha256": "72c79106da0ee993a8bc2b98d97bc7894988ec435f4ef545deac04b66b5d8e0b",
+   "started_utc": "2026-11-07T04:30:35",
+   "completed_utc": "2026-11-07T05:10:41",
+   "parent_sha256": "5cc1d7819b599c118048039f07e684e924185703d04160c4e2f82c230eda1cc7"
+  },
+  {
+   "stage": "seed43/qap_w4a8/finetune-tuar",
+   "gpu": "NVIDIA RTX PRO 6000 Blackwell Server Edition",
+   "epochs": 5,
+   "selected_epoch": 1,
+   "best_validation_loss": 0.3470710813999176,
+   "checkpoint_sha256": "b198f56127aea433c23a7424ccf946538c857570202f758a01a0e7c6e0db7921",
+   "started_utc": "2026-11-07T05:10:56",
+   "completed_utc": "2026-11-07T05:47:29",
+   "parent_sha256": "234bfabf639ffdc95a7f55d028c598eda7960c24c5494ca394ce44af710edbe9"
+  },
+  {
+   "stage": "seed43/c_w4a8/finetune-tuab",
+   "gpu": "NVIDIA GeForce RTX 5060 Ti",
+   "epochs": 5,
+   "selected_epoch": 1,
+   "best_validation_loss": 0.5010988116264343,
+   "checkpoint_sha256": "815749d7e818097ca4603ba970be815f67d27f1e4827935b9cf873e55f0fc818",
+   "started_utc": "2026-11-06T12:05:41",
+   "completed_utc": "2026-11-06T14:20:36",
+   "parent_sha256": "5cc1d7819b599c118048039f07e684e924185703d04160c4e2f82c230eda1cc7"
+  },
+  {
+   "stage": "seed43/qap_w4a8/finetune-tuab",
+   "gpu": "NVIDIA RTX PRO 6000 Blackwell Server Edition",
+   "epochs": 5,
+   "selected_epoch": 0,
+   "best_validation_loss": 0.4881848394870758,
+   "checkpoint_sha256": "e90f9c2c4a30f822d389e293bf812b142b41b7434e4925245822543dc7906cc1",
+   "started_utc": "2026-11-07T05:33:11",
+   "completed_utc": "2026-11-07T07:06:40",
+   "parent_sha256": "234bfabf639ffdc95a7f55d028c598eda7960c24c5494ca394ce44af710edbe9"
+  },
+  {
+   "stage": "seed43/c_w4a8/finetune-tusl0-v2",
+   "gpu": "NVIDIA RTX PRO 6000 Blackwell Server Edition",
+   "epochs": 20,
+   "selected_epoch": 16,
+   "best_validation_loss": 0.6707601547241211,
+   "checkpoint_sha256": "0628c0542750ed1ff57ac47ae340c10eb543ceb6d2a6c87ede2487ed672ab45c",
+   "started_utc": "2026-11-07T06:24:29",
+   "completed_utc": "2026-11-07T06:27:51",
+   "parent_sha256": "5cc1d7819b599c118048039f07e684e924185703d04160c4e2f82c230eda1cc7"
+  },
+  {
+   "stage": "seed43/qap_w4a8/finetune-tusl0-v2",
+   "gpu": "NVIDIA RTX PRO 6000 Blackwell Server Edition",
+   "epochs": 20,
+   "selected_epoch": 17,
+   "best_validation_loss": 0.47103044390678406,
+   "checkpoint_sha256": "772016a996047ff67eeedb04854b187211783aaf18b9247d4b08694ce1d8c0d5",
+   "started_utc": "2026-11-07T06:39:14",
+   "completed_utc": "2026-11-07T06:40:26",
+   "parent_sha256": "234bfabf639ffdc95a7f55d028c598eda7960c24c5494ca394ce44af710edbe9"
+  },
+  {
+   "stage": "seed43/c_w4a8/finetune-tusl1-v2",
+   "gpu": "NVIDIA RTX PRO 6000 Blackwell Server Edition",
+   "epochs": 20,
+   "selected_epoch": 8,
+   "best_validation_loss": 0.9985629320144653,
+   "checkpoint_sha256": "df3f6f3c1339ed011a0f2c4f4ecae33fc2efd933da14c32bc16b3b96a45c4f4a",
+   "started_utc": "2026-11-07T06:27:57",
+   "completed_utc": "2026-11-07T06:31:37",
+   "parent_sha256": "5cc1d7819b599c118048039f07e684e924185703d04160c4e2f82c230eda1cc7"
+  },
+  {
+   "stage": "seed43/qap_w4a8/finetune-tusl1-v2",
+   "gpu": "NVIDIA RTX PRO 6000 Blackwell Server Edition",
+   "epochs": 20,
+   "selected_epoch": 8,
+   "best_validation_loss": 0.8855909705162048,
+   "checkpoint_sha256": "87cb61b5492ee040b579759014071298bbd871d9c48bffb1605de12410941813",
+   "started_utc": "2026-11-07T06:40:31",
+   "completed_utc": "2026-11-07T06:41:41",
+   "parent_sha256": "234bfabf639ffdc95a7f55d028c598eda7960c24c5494ca394ce44af710edbe9"
+  },
+  {
+   "stage": "seed43/c_w4a8/finetune-tusl2-v2",
+   "gpu": "NVIDIA RTX PRO 6000 Blackwell Server Edition",
+   "epochs": 20,
+   "selected_epoch": 19,
+   "best_validation_loss": 0.6477386355400085,
+   "checkpoint_sha256": "c2de653c22cbd93a023ea7dd22e0fb71d1b19c528882948f16546c755d2c8a93",
+   "started_utc": "2026-11-07T06:31:43",
+   "completed_utc": "2026-11-07T06:35:16",
+   "parent_sha256": "5cc1d7819b599c118048039f07e684e924185703d04160c4e2f82c230eda1cc7"
+  },
+  {
+   "stage": "seed43/qap_w4a8/finetune-tusl2-v2",
+   "gpu": "NVIDIA RTX PRO 6000 Blackwell Server Edition",
+   "epochs": 20,
+   "selected_epoch": 7,
+   "best_validation_loss": 0.8187747001647949,
+   "checkpoint_sha256": "9926f7a9e50317a8eeb3aaccdf882c676aa90003e6ab79acc9c15e2974dc7236",
+   "started_utc": "2026-11-07T06:41:47",
+   "completed_utc": "2026-11-07T06:42:58",
+   "parent_sha256": "234bfabf639ffdc95a7f55d028c598eda7960c24c5494ca394ce44af710edbe9"
+  },
+  {
+   "stage": "seed43/c_w4a8/finetune-tusl3-v2",
+   "gpu": "NVIDIA RTX PRO 6000 Blackwell Server Edition",
+   "epochs": 20,
+   "selected_epoch": 17,
+   "best_validation_loss": 0.7694528698921204,
+   "checkpoint_sha256": "603002cdcc4cca7c046111b83049800a53136b8da270a885d10964e05fe1b1da",
+   "started_utc": "2026-11-07T06:35:22",
+   "completed_utc": "2026-11-07T06:39:08",
+   "parent_sha256": "5cc1d7819b599c118048039f07e684e924185703d04160c4e2f82c230eda1cc7"
+  },
+  {
+   "stage": "seed43/qap_w4a8/finetune-tusl3-v2",
+   "gpu": "NVIDIA RTX PRO 6000 Blackwell Server Edition",
+   "epochs": 20,
+   "selected_epoch": 14,
+   "best_validation_loss": 0.7430238723754883,
+   "checkpoint_sha256": "5bb43b3a1783c371a979b8f6e20a0c12da98895c70e7c1630ef0d80d7a2a7283",
+   "started_utc": "2026-11-07T06:43:03",
+   "completed_utc": "2026-11-07T06:44:19",
+   "parent_sha256": "234bfabf639ffdc95a7f55d028c598eda7960c24c5494ca394ce44af710edbe9"
+  },
+  {
+   "stage": "seed44/qap_w4a8/pretrain",
+   "gpu": "NVIDIA RTX PRO 6000 Blackwell Server Edition",
+   "epochs": 2,
+   "selected_epoch": 1,
+   "best_validation_loss": 0.0831976905465126,
+   "checkpoint_sha256": "9a5b9438e2bbeae3dadbba4561e9c116f7830fa1e6af6e325bde3a78b31b6d59",
+   "started_utc": "2026-11-06T10:51:49",
+   "completed_utc": "2026-11-06T13:08:43"
+  },
+  {
+   "stage": "seed44/c_w4a8/finetune-tuar",
+   "gpu": "NVIDIA RTX PRO 6000 Blackwell Server Edition",
+   "epochs": 5,
+   "selected_epoch": 3,
+   "best_validation_loss": 0.36014851927757263,
+   "checkpoint_sha256": "140f985c4c7e26d8ec098f1e7de7bfdb9d3e3768d02b8e87814d3d4406592bdd",
+   "started_utc": "2026-11-07T05:52:46",
+   "completed_utc": "2026-11-07T06:34:35",
+   "parent_sha256": "fe04362efc1cd2922e3ddfa85b7d06db47da245f557106d5655f007845acda2f"
+  },
+  {
+   "stage": "seed44/qap_w4a8/finetune-tuar",
+   "gpu": "NVIDIA RTX PRO 6000 Blackwell Server Edition",
+   "epochs": 5,
+   "selected_epoch": 1,
+   "best_validation_loss": 0.3379391133785248,
+   "checkpoint_sha256": "7d418f2b005d3bc138862e73ce6c6f76c24ec8950c9d4b6277c88a72bb850e5d",
+   "started_utc": "2026-11-07T06:35:02",
+   "completed_utc": "2026-11-07T07:13:07",
+   "parent_sha256": "9a5b9438e2bbeae3dadbba4561e9c116f7830fa1e6af6e325bde3a78b31b6d59"
+  },
+  {
+   "stage": "seed44/c_w4a8/finetune-tuab",
+   "gpu": "NVIDIA GeForce RTX 5060 Ti",
+   "epochs": 5,
+   "selected_epoch": 2,
+   "best_validation_loss": 0.5212810039520264,
+   "checkpoint_sha256": "6de01b4119808b709f14df54f9d9b1b8d2e3b0edf411b66eae97db70da85c7be",
+   "started_utc": "2026-11-06T14:43:04",
+   "completed_utc": "2026-11-06T16:58:18",
+   "parent_sha256": "fe04362efc1cd2922e3ddfa85b7d06db47da245f557106d5655f007845acda2f"
+  },
+  {
+   "stage": "seed44/qap_w4a8/finetune-tuab",
+   "gpu": "NVIDIA RTX PRO 6000 Blackwell Server Edition",
+   "epochs": 5,
+   "selected_epoch": 0,
+   "best_validation_loss": 0.4883529543876648,
+   "checkpoint_sha256": "34c1c3642b123b86094782d0a173dd1a9b4f9bccfb7543a4c11efdc31cccb664",
+   "started_utc": "2026-11-07T05:33:11",
+   "completed_utc": "2026-11-07T07:07:38",
+   "parent_sha256": "9a5b9438e2bbeae3dadbba4561e9c116f7830fa1e6af6e325bde3a78b31b6d59"
+  },
+  {
+   "stage": "seed44/c_w4a8/finetune-tusl0-v2",
+   "gpu": "NVIDIA RTX PRO 6000 Blackwell Server Edition",
+   "epochs": 20,
+   "selected_epoch": 19,
+   "best_validation_loss": 0.6736619472503662,
+   "checkpoint_sha256": "d235a02b309c53f2bfba9f25d99fd8bd20be14b1b06d6c6d5d665be96dc0914e",
+   "started_utc": "2026-11-07T06:55:01",
+   "completed_utc": "2026-11-07T06:58:21",
+   "parent_sha256": "fe04362efc1cd2922e3ddfa85b7d06db47da245f557106d5655f007845acda2f"
+  },
+  {
+   "stage": "seed44/qap_w4a8/finetune-tusl0-v2",
+   "gpu": "NVIDIA RTX PRO 6000 Blackwell Server Edition",
+   "epochs": 20,
+   "selected_epoch": 19,
+   "best_validation_loss": 0.5029457211494446,
+   "checkpoint_sha256": "6405831bd89bc6e104028a940fc3a9236f30683b9e76ff63791d3e0960c9ed39",
+   "started_utc": "2026-11-07T07:09:54",
+   "completed_utc": "2026-11-07T07:11:06",
+   "parent_sha256": "9a5b9438e2bbeae3dadbba4561e9c116f7830fa1e6af6e325bde3a78b31b6d59"
+  },
+  {
+   "stage": "seed44/c_w4a8/finetune-tusl1-v2",
+   "gpu": "NVIDIA RTX PRO 6000 Blackwell Server Edition",
+   "epochs": 20,
+   "selected_epoch": 18,
+   "best_validation_loss": 0.9386874437332153,
+   "checkpoint_sha256": "d2cb294d2054f0e599308bb66a771041d2b06ec1362563d5dc2bf1fc9f1a0596",
+   "started_utc": "2026-11-07T06:58:27",
+   "completed_utc": "2026-11-07T07:02:08",
+   "parent_sha256": "fe04362efc1cd2922e3ddfa85b7d06db47da245f557106d5655f007845acda2f"
+  },
+  {
+   "stage": "seed44/qap_w4a8/finetune-tusl1-v2",
+   "gpu": "NVIDIA RTX PRO 6000 Blackwell Server Edition",
+   "epochs": 20,
+   "selected_epoch": 10,
+   "best_validation_loss": 0.8338621854782104,
+   "checkpoint_sha256": "d7dbb290dd66aa10e90ca609344907ab187bc6cd76dc26255e68679d2da00d57",
+   "started_utc": "2026-11-07T07:11:12",
+   "completed_utc": "2026-11-07T07:12:24",
+   "parent_sha256": "9a5b9438e2bbeae3dadbba4561e9c116f7830fa1e6af6e325bde3a78b31b6d59"
+  },
+  {
+   "stage": "seed44/c_w4a8/finetune-tusl2-v2",
+   "gpu": "NVIDIA RTX PRO 6000 Blackwell Server Edition",
+   "epochs": 20,
+   "selected_epoch": 19,
+   "best_validation_loss": 0.6545233130455017,
+   "checkpoint_sha256": "37a1ebb0fb2bef3f2a8b42b42ba86d1486af851bee9009094eaa4be9379a62a3",
+   "started_utc": "2026-11-07T07:02:14",
+   "completed_utc": "2026-11-07T07:06:00",
+   "parent_sha256": "fe04362efc1cd2922e3ddfa85b7d06db47da245f557106d5655f007845acda2f"
+  },
+  {
+   "stage": "seed44/qap_w4a8/finetune-tusl2-v2",
+   "gpu": "NVIDIA RTX PRO 6000 Blackwell Server Edition",
+   "epochs": 20,
+   "selected_epoch": 10,
+   "best_validation_loss": 0.7368032336235046,
+   "checkpoint_sha256": "329af024a3523fcdccabe8672d660d29d20c5665fc14560a3b96494ff387abae",
+   "started_utc": "2026-11-07T07:12:30",
+   "completed_utc": "2026-11-07T07:13:37",
+   "parent_sha256": "9a5b9438e2bbeae3dadbba4561e9c116f7830fa1e6af6e325bde3a78b31b6d59"
+  },
+  {
+   "stage": "seed44/c_w4a8/finetune-tusl3-v2",
+   "gpu": "NVIDIA RTX PRO 6000 Blackwell Server Edition",
+   "epochs": 20,
+   "selected_epoch": 16,
+   "best_validation_loss": 0.7527016997337341,
+   "checkpoint_sha256": "faa2f36b477a4e3315a9e734278877a033ba8d7f65773e41fd0bd7a58dfbc01c",
+   "started_utc": "2026-11-07T07:06:06",
+   "completed_utc": "2026-11-07T07:09:49",
+   "parent_sha256": "fe04362efc1cd2922e3ddfa85b7d06db47da245f557106d5655f007845acda2f"
+  },
+  {
+   "stage": "seed44/qap_w4a8/finetune-tusl3-v2",
+   "gpu": "NVIDIA RTX PRO 6000 Blackwell Server Edition",
+   "epochs": 20,
+   "selected_epoch": 18,
+   "best_validation_loss": 0.7507724165916443,
+   "checkpoint_sha256": "0cb70e984b626585d94a024a53179b132dbffbd99e47254136d034009cf551fa",
+   "started_utc": "2026-11-07T07:13:43",
+   "completed_utc": "2026-11-07T07:14:59",
+   "parent_sha256": "9a5b9438e2bbeae3dadbba4561e9c116f7830fa1e6af6e325bde3a78b31b6d59"
+  }
+ ],
+ "ptq_sweeps": [
+  {
+   "seed": 42,
+   "task": "tuar",
+   "gpu": "NVIDIA RTX PRO 6000 Blackwell Server Edition",
+   "parent_sha256": "fc6bd3d7c3d6215fde3bd37d08a54749df9937d0b6e2bc6ecf257991b9b7156e",
+   "selected": "p95",
+   "checkpoint_sha256": "28f28813d2503f22e4819f1898d7eb1720b19f676044d4b49943110e9acb9fb2",
+   "train_sha256": "f4b32cf4a9794c4be8eec73c663f2b31b4f373ba39c7b2a36d618bff92dbe1c5"
+  },
+  {
+   "seed": 42,
+   "task": "tuab",
+   "gpu": "NVIDIA GeForce RTX 5060 Ti",
+   "parent_sha256": "2e4cd3144c8e165b2ce6ff16bdad711edfe681681c02e19674cebdc18dc26c3a",
+   "selected": "p95",
+   "checkpoint_sha256": "ff354cec89bf16b0e8143a24c0cb028b9f370c30e51bcc55f8c9bbcb4aa9ba66",
+   "train_sha256": "28c45e5db40000724111f85e9cd3e96ce5e27de2cb9f1c6601f50379aa686309"
+  },
+  {
+   "seed": 42,
+   "task": "tusl0-v2",
+   "gpu": "NVIDIA RTX PRO 6000 Blackwell Server Edition",
+   "parent_sha256": "bb8ab93df5ac8565effd7cadeed99b7917372468cea6e1064db47c254f9a3624",
+   "selected": "p99.9",
+   "checkpoint_sha256": "872d42e5c7f13fb441633a9c04b1877d1ef57de54839c2b341bf314216dbb59d",
+   "train_sha256": "08c5ef16e0babf342967ae1e508a1149406e0cbd0ed5fe02068982a7e0053488"
+  },
+  {
+   "seed": 42,
+   "task": "tusl1-v2",
+   "gpu": "NVIDIA RTX PRO 6000 Blackwell Server Edition",
+   "parent_sha256": "1ad71d9545f556990b2bc8b4b6e60dd062f4fe2cc9878096060e8fde9d07e0df",
+   "selected": "p99",
+   "checkpoint_sha256": "02d5c36d23071aee01a4d27850f2b2eb87f74fc9040c43ff895c6523b99b0941",
+   "train_sha256": "62d6f3252f67a6c8ad9ec5fa1077954a47d1eefe6e60f663cdc52161732ab618"
+  },
+  {
+   "seed": 42,
+   "task": "tusl2-v2",
+   "gpu": "NVIDIA RTX PRO 6000 Blackwell Server Edition",
+   "parent_sha256": "d01cee82f17e8635740d29fa16780e11d558c30c8478738f598cf6b1f90ccf16",
+   "selected": "p95",
+   "checkpoint_sha256": "c7797d2818bd39fbef2f31a2f89d27625297e5a23113795271e35df6e6f88ff3",
+   "train_sha256": "ec7e131f7f24133708fe33bd2e23f92370aab5e220efd9d01c799a9a7c175150"
+  },
+  {
+   "seed": 42,
+   "task": "tusl3-v2",
+   "gpu": "NVIDIA RTX PRO 6000 Blackwell Server Edition",
+   "parent_sha256": "6403fddeae22f57801efef7371abc14cf2b96ee724b697b5b74eab55450e1c53",
+   "selected": "p99",
+   "checkpoint_sha256": "53d3059489710a22083d001b8fff25d3e1e23ac62b5eb460417d8d1789d782b1",
+   "train_sha256": "e0bd739696aa8e10b4d30af512727280c253eef12027657358fbf2e7f7e7bfd1"
+  },
+  {
+   "seed": 43,
+   "task": "tuar",
+   "gpu": "NVIDIA RTX PRO 6000 Blackwell Server Edition",
+   "parent_sha256": "a0f48fba8cadf996c50b718e2df575c73f871075a84f9447c35d1aea8fb0ab50",
+   "selected": "p99_9",
+   "checkpoint_sha256": "8102731644859240ac1df448823ff52acb6a4d0e161538732c2ca7ee36d7333d",
+   "train_sha256": "f4b32cf4a9794c4be8eec73c663f2b31b4f373ba39c7b2a36d618bff92dbe1c5"
+  },
+  {
+   "seed": 43,
+   "task": "tuab",
+   "gpu": "NVIDIA GeForce RTX 5060 Ti",
+   "parent_sha256": "aaa3040dc32d49e4a2632936599a591ce68b90ddf8f19ec6b5749b5d6d7af33c",
+   "selected": "p95",
+   "checkpoint_sha256": "97eeda9866a8fd5c0954c47ad3019e54373bb2edcaaa7fc4d670b87027fe03e4",
+   "train_sha256": "28c45e5db40000724111f85e9cd3e96ce5e27de2cb9f1c6601f50379aa686309"
+  },
+  {
+   "seed": 43,
+   "task": "tusl0-v2",
+   "gpu": "NVIDIA RTX PRO 6000 Blackwell Server Edition",
+   "parent_sha256": "704305ba5ae9aca553f3e0d161492d62c13b1c5d1c80fe789edbad451903ce11",
+   "selected": "p98",
+   "checkpoint_sha256": "964322ee2600f6d2018c05c5c74941feb9787d28287cffbbbdf429b13fbe32a1",
+   "train_sha256": "08c5ef16e0babf342967ae1e508a1149406e0cbd0ed5fe02068982a7e0053488"
+  },
+  {
+   "seed": 43,
+   "task": "tusl1-v2",
+   "gpu": "NVIDIA RTX PRO 6000 Blackwell Server Edition",
+   "parent_sha256": "71f4cd09de7bb00e1005f0e99ed12f3168c49add84ca7deff054ad647cb9d9f0",
+   "selected": "p99.99",
+   "checkpoint_sha256": "291059cd7af49ab247f83cf3b07d3c26631fe5ae3f470a729ff88520abbf5730",
+   "train_sha256": "62d6f3252f67a6c8ad9ec5fa1077954a47d1eefe6e60f663cdc52161732ab618"
+  },
+  {
+   "seed": 43,
+   "task": "tusl2-v2",
+   "gpu": "NVIDIA RTX PRO 6000 Blackwell Server Edition",
+   "parent_sha256": "1e9dceb65633477e049abfa314453e36d577b276923e9d6262bfc91c746aed0f",
+   "selected": "p99.99",
+   "checkpoint_sha256": "174a4d3c9fcd9efaf84d6e044d2ed089d99e01701c5da39d393c1845916f36af",
+   "train_sha256": "ec7e131f7f24133708fe33bd2e23f92370aab5e220efd9d01c799a9a7c175150"
+  },
+  {
+   "seed": 43,
+   "task": "tusl3-v2",
+   "gpu": "NVIDIA RTX PRO 6000 Blackwell Server Edition",
+   "parent_sha256": "d76934dac2c3c82886eefe43854dbc5c6e35ae9eacd64cfd65dad9a726d2da6e",
+   "selected": "p99.99",
+   "checkpoint_sha256": "bb4b11e5a8ab9a125402483b2f3083590eb48959ec8a47e8064e4f3c6d6d1871",
+   "train_sha256": "e0bd739696aa8e10b4d30af512727280c253eef12027657358fbf2e7f7e7bfd1"
+  },
+  {
+   "seed": 44,
+   "task": "tuar",
+   "gpu": "NVIDIA RTX PRO 6000 Blackwell Server Edition",
+   "parent_sha256": "54b95955a5d423f6ca6593a4f4ac8072ea1b85b2a2f267d45d8ec8a2d32073ab",
+   "selected": "p99",
+   "checkpoint_sha256": "e896ed0d2c7ba7f07bf99fb60dfbc147693de8a5fb2f5e181d92e161d83db4e7",
+   "train_sha256": "f4b32cf4a9794c4be8eec73c663f2b31b4f373ba39c7b2a36d618bff92dbe1c5"
+  },
+  {
+   "seed": 44,
+   "task": "tuab",
+   "gpu": "NVIDIA GeForce RTX 5060 Ti",
+   "parent_sha256": "67d6a76c4b11ef7a3644523eabc069a2afedbc17a70a852b927d1b9962632e56",
+   "selected": "p95",
+   "checkpoint_sha256": "d417da2a20a348c4e4134806ca7acd0139fc04189aefed07eff18f5c904fd027",
+   "train_sha256": "28c45e5db40000724111f85e9cd3e96ce5e27de2cb9f1c6601f50379aa686309"
+  },
+  {
+   "seed": 44,
+   "task": "tusl0-v2",
+   "gpu": "NVIDIA RTX PRO 6000 Blackwell Server Edition",
+   "parent_sha256": "8cae1c9db79e9ba9cac9661bce83cc0beb520fcc48800525d07b554c068469f9",
+   "selected": "p99.9",
+   "checkpoint_sha256": "407dfaf2045c9f12839ff710f1b48d03d7ffa70d7a35a968c7d8ca50ace6b14c",
+   "train_sha256": "08c5ef16e0babf342967ae1e508a1149406e0cbd0ed5fe02068982a7e0053488"
+  },
+  {
+   "seed": 44,
+   "task": "tusl1-v2",
+   "gpu": "NVIDIA RTX PRO 6000 Blackwell Server Edition",
+   "parent_sha256": "42a6a834e66f9d5ac2022e9de9f4d93ff5d8e235b85b72e9ee62f077e64f40ad",
+   "selected": "p99.999",
+   "checkpoint_sha256": "a13ae7afb0a2e76821a88fd6f63dd01c229e347d80a17d4e18608570417c3cd8",
+   "train_sha256": "62d6f3252f67a6c8ad9ec5fa1077954a47d1eefe6e60f663cdc52161732ab618"
+  },
+  {
+   "seed": 44,
+   "task": "tusl2-v2",
+   "gpu": "NVIDIA RTX PRO 6000 Blackwell Server Edition",
+   "parent_sha256": "000e1cb8f7cd52c681fd056364f31b7b079b8cdbc1034c8f43cc1b32e4d02ef2",
+   "selected": "p99.9",
+   "checkpoint_sha256": "c33b214f45f342e34876137ebd3c4cfe9d7951064b528a9531e1952a5413b1ed",
+   "train_sha256": "ec7e131f7f24133708fe33bd2e23f92370aab5e220efd9d01c799a9a7c175150"
+  },
+  {
+   "seed": 44,
+   "task": "tusl3-v2",
+   "gpu": "NVIDIA RTX PRO 6000 Blackwell Server Edition",
+   "parent_sha256": "c0a5062a19789321ca545489ccbc267d3bbe78a225f7635e9f412fd34a7bb69e",
+   "selected": "p99.999",
+   "checkpoint_sha256": "b0ddc6f7fb2e78e5e78a21d895b7ac9902fc6671f0739194a623347e4b5a35b8",
+   "train_sha256": "e0bd739696aa8e10b4d30af512727280c253eef12027657358fbf2e7f7e7bfd1"
+  }
+ ]
+}
