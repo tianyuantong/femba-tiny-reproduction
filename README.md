@@ -11,7 +11,7 @@
 ![Brevitas 0.12.1](https://img.shields.io/badge/brevitas-0.12.1-008080)
 [![License: Apache-2.0](https://img.shields.io/badge/license-Apache--2.0-lightgrey.svg)](LICENSE)
 
-[快速复现与分工](#5-快速复现与多机分工) · [INT8 完整结果](reproduction/formal_line/results/int8/README.md) · [INT4 完整结果](reproduction/formal_line/results/int4/README.md) · [评测指标与成本](reproduction/formal_line/results/metrics/README.md) · [PTQ 掉点定位](reproduction/formal_line/results/ptq-diagnosis/README.md) · [QAP 逐层分析](reproduction/formal_line/results/layers/README.md)
+[问题与数据速查](#6-报告问题与数据速查索引) · [INT8 结果](reproduction/formal_line/results/int8/README.md) · [INT4 结果](reproduction/formal_line/results/int4/README.md) · [评测指标与成本](reproduction/formal_line/results/metrics/README.md) · [QAP 逐层分析](reproduction/formal_line/results/layers/README.md) · [PTQ 掉点定位](reproduction/formal_line/results/ptq-diagnosis/README.md) · [快速复现](#5-快速复现与多机分工)
 
 <picture>
   <source media="(prefers-color-scheme: dark)" srcset="reproduction/figures/formal-overview-dark.svg">
@@ -20,11 +20,15 @@
 
 </div>
 
-本页的正式线实验采用受试者独立划分（预训练语料为 TUAB 官方训练集并剔除全部下游测试受试者），固定随机种子 42 / 43 / 44，使用 Brevitas 伪量化。
+本页正式线实验采用受试者独立划分（预训练语料为 TUAB 官方训练集并剔除全部下游测试受试者），固定随机种子 42 / 43 / 44，使用 Brevitas 伪量化。对应课程研究问题的三条核心结论如下：
+
+1. **PTQ vs 量化训练（C / QAP）**：在 INT8（W8A8，压缩 `3.8×`）与 INT4（W4A8，压缩 `7.1×`）下，标准 PTQ 在 TUAB 上掉点 `0.08–0.09`（`0.84 → 0.76 / 0.75`），在 TUAR 默认阈值下平衡准确率（BAcc）跌至 `0.63 / 0.57`；而带量化的微调（C 与 QAP）在两档位宽、三个任务上均不掉点（与 FP32 相差 `≤ 0.03`）。
+2. **QAP 在哪一层减小掉点最多？**：位宽拆解与逐层分析（[layers/](reproduction/formal_line/results/layers/README.md)、[ptq-diagnosis/](reproduction/formal_line/results/ptq-diagnosis/README.md)）表明，8 位与 4 位权重本身几乎不损精度（`W8A32` 为 `0.84`、`W4A32` 为 `0.83`），掉点集中在**第 2 个 Mamba 块的反向状态空间扫描（SSM）输出**的 8 位激活量化；QAP 相对 PTQ 减小的掉点有 **76%（INT8）** 与 **72%（INT4）** 来自第 2 个 Mamba 块（不重训时对该块扫描输出做 SmoothQuant 通道迁移亦可收回 82% 与 57% 的掉点）。
+3. **QAP 值不值得它的预训练成本？（部署建议）**：在 INT8 与 INT4 两档下，**共用一份 FP32 预训练底座做量化微调（C，仅需一次 `2.59 h` 预训练）与按位宽专门做量化预训练（QAP，每档约 `3.0 h`）精度持平**，因为下游量化微调已将第 2 块的激活截断率从 `4%` 压到 `≤ 0.02%`；同时，在小样本任务 TUSL v2（每轮约 400 片段，不计第 0 组）上，加载预训练底座（C 或 QAP，`0.90`）比不预训练直接微调（随机初始化，`0.83`）高 **`+0.07 ~ +0.08` AUROC**，在大样本 TUAB / TUAR 上主要将收敛从第 2–5 轮提前到第 1 轮。
 
 ## 1. 正式线主结果：三任务 INT8（W8A8）对比
 
-下表汇总三个随机种子的测试集均值（两位小数）：包含 ROC 曲线下面积（AUROC）、平衡准确率（BAcc，TUAR 与 TUAB 按默认阈值 `0`，TUSL v2 按最大概率分类）与期望校准误差（ECE，15 等宽分箱，越低越好）。`C` 为 FP32 预训练 + 量化微调，`QAP` 为量化预训练 + 量化微调，`随机初始化` 为不加载预训练直接做 INT8 量化微调。
+下表汇总三个随机种子的测试集均值（两位小数）：包含 ROC 曲线下面积（AUROC）、平衡准确率（BAcc，TUAR 与 TUAB 按默认阈值 `0`，TUSL v2 按最大概率分类）与期望校准误差（ECE，15 等宽分箱，越低越好）。`C` 为 FP32 预训练 + 量化微调，`QAP` 为量化预训练 + 量化微调，`随机初始化` 为不加载预训练直接做量化微调。
 
 | 任务 | 指标 | FP32 | PTQ | C | QAP | 随机初始化 |
 | --- | --- | ---: | ---: | ---: | ---: | ---: |
@@ -41,14 +45,12 @@
 
 若在验证集上重选分类阈值，PTQ 在 TUAR、TUAB 上的 BAcc 分别恢复到 `0.75` 与 `0.70`（其余各组变化不超过 `0.01`）。四位小数明细、逐种子标准差与配对差值见 [INT8 完整结果](reproduction/formal_line/results/int8/README.md) 与 [评测指标与成本](reproduction/formal_line/results/metrics/README.md)。
 
-- **PTQ 在三个任务上掉点最重且校准最差**：TUAB 上 AUROC 比 FP32 低 `0.08`（`0.76` vs `0.84`）；TUAR 上默认阈值 BAcc 跌至 `0.63`（种子 42 把全部片段判为阳性，ECE 达 `0.33`），用验证集重选阈值后恢复到 `0.75`。
-- **量化微调（C 与 QAP）能把精度拉回 FP32 水平**：三个任务的 AUROC 与 FP32 相差均不超过 `0.03`；TUAB 和 TUSL v2 上 QAP 在三个种子上都高于 PTQ（平均高 `+0.10` 和 `+0.04`）。
-- **INT8 下量化预训练（QAP）与只做量化微调（C）持平**：TUAR 与 TUAB 上两组相差不超过 `0.01`，跨种子有正有负；TUSL v2 上 QAP 高出的 `+0.03` 全部来自第 0 测试组（单名受试者占 84% 事件，不计该组时两组均为 `0.90`）。
-- **预训练在小样本 TUSL 上提升显著，在大样本 TUAB、TUAR 上主要加速收敛**：在每轮约 400 片段的 TUSL v2（不计第 0 组）上，预训练组（`0.90–0.91`）比随机初始化（`0.83`）高 `0.08`，三个种子与三个测试组同向；在每轮 12.3 万 / 5.5 万片段的 TUAB、TUAR 上与随机初始化持平，但预训练把验证损失见底从第 2–5 轮提前到第 1 轮。
+- **PTQ 的阈值偏移与校准退化**：TUAR 上 PTQ 的种子 42 在默认阈值 `0` 下把全部片段判为阳性（BAcc 跌至 `0.50`，ECE 达 `0.33`），用验证集重选阈值后恢复到 `0.73`；TUAB 上两种阈值下 PTQ 均比 C、QAP 低 `0.07–0.12`。
+- **TUSL v2 第 0 测试组的单受试者效应**：四组全计时 QAP 比 C 高 `+0.03`，但这全部来自第 0 测试组（单名受试者占该组 55 个测试事件中的 46 个）；剔除第 0 组后，C 与 QAP 的宏平均 AUROC 完全相同（`0.9032` vs `0.9032`），且双双比随机初始化（`0.8272`）高 `+0.08`。
 
 ## 2. 正式线主结果：三任务 INT4（W4A8）对比
 
-权重降到 4 位，C 和 QAP 仍然不掉点。下表的口径和 INT8 相同。
+权重从 8 位降到 4 位（激活保持 8 位），C 与 QAP 依然保持 FP32 水平。下表口径与 INT8 相同：
 
 <div align="center">
 <picture>
@@ -70,12 +72,10 @@
 | **TUSL v2** | 宏平均 BAcc ↑ | **0.68** | 0.49 | 0.65 | **0.68** | **0.68** |
 | **TUSL v2** | 校准误差 ECE ↓ | 0.11 | 0.18 | **0.09** | **0.09** | 0.11 |
 
-四位小数明细、逐种子差值和 TUSL 重抽样见 [INT4 完整结果](reproduction/formal_line/results/int4/README.md)。
+若在验证集上重选分类阈值，PTQ 在 TUAR、TUAB 上的 BAcc 分别恢复到 `0.74` 与 `0.69`。四位小数明细、逐种子差值和 TUSL 重抽样见 [INT4 完整结果](reproduction/formal_line/results/int4/README.md)。
 
-- **权重降到 4 位不掉点**：C、QAP 与 FP32 的 AUROC 均值差均不超过 `0.03`；相比 INT8，模型存储再省 `47%`（`9.10 → 4.85 MB`），量化层 BOPs 减半（`43.6 → 21.8 G`），合计 BOPs 再省 `25%`（`86.4 → 64.7 G`）。
-- **PTQ 在 INT4 下继续下滑，必须靠量化微调或离群通道修复**：TUAB 上标准 W4A8 PTQ 比 FP32 低 `0.09`（`0.75` vs `0.84`），做 SmoothQuant 通道迁移后可不重训恢复到 `0.80`；TUAR 默认阈值下 BAcc 跌至 `0.57`（验证集重选阈值后恢复到 `0.74`）。
-- **为什么 INT8 与 INT4 下只做量化微调（C）就够了，无需做量化预训练（QAP）**：位宽拆解表明 8 位与 4 位权重本身几乎不损精度（`W8A32` 为 `0.84`、`W4A32` 为 `0.83`），掉点主要来自第 2 个 Mamba 块的 8 位激活量化；量化微调后，C 在这一块的截断比例和 QAP 一样低（每处中位数都不超过 `0.02%`，PTQ 是 `4%`）。因此 C 只需预训练一次 FP32 底座（`2.59 h`）即可通用于 INT8 与 INT4，而 QAP 每换一个位宽都要重训一次底座（约 `3.0 h`）却无稳定精度增益（INT4 下 QAP − C 在 TUAR 为 `−0.015`，TUAB 为 `+0.008`，TUSL 不计第 0 组为 `+0.003`）。
-- **小样本任务仍需预训练底座**：与 INT8 一致，INT4 随机初始化在大样本 TUAB（`0.85`）、TUAR（`0.87`）上与预训练组持平，但在小样本 TUSL v2（不计第 0 组，每轮约 400 片段）上仅 `0.83`，比预训练组（`0.90`）低 `0.07`。
+- **相比 INT8 再省 47% 存储、50% 量化层算力而精度不降**：从 INT8 到 INT4，模型存储从 `9.10 MB` 降至 `4.85 MB`，量化层 BOPs 从 `43.6 G` 降至 `21.8 G`（合计 BOPs `86.4 → 64.7 G`），C 与 QAP 在三个任务上的 AUROC 变化均不超过 `0.02`。
+- **C 与 QAP 依然不分高下**：INT4 下 `QAP − C` 的测试 AUROC 在 TUAR 上三个种子均为负（均值 `−0.015`），TUAB 上均值 `+0.008`（种子 44 为负），TUSL v2 不计第 0 组时仅差 `+0.003`（种子 44 为负）。这证实到 4 位权重为止，共用 FP32 预训练底座的 C 已足够。
 
 ## 3. TUAB 上 PTQ 掉点定位与 QAP 逐层归因
 
