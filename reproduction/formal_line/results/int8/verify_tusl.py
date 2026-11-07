@@ -1,4 +1,4 @@
-"""Independent check of the protocol-v2 TUSL results (selected seed, W8A8).
+"""Independent check of the protocol-v2 TUSL results (selected seed and setting).
 
 Recomputes event metrics with sklearn from the score files, compares with results.json and
 summary.json, checks every stage trained / validated / tested on the v2 fold files, PTQ
@@ -15,8 +15,8 @@ import numpy as np
 from sklearn.metrics import average_precision_score, balanced_accuracy_score, roc_auc_score
 
 ART, SUMMARY, DATA = Path(sys.argv[1]), Path(sys.argv[2]), Path(sys.argv[3])
-SEED, SETTING, TOL = int(sys.argv[4]), "w8a8", 1e-9
-STAGES = {"fp32": "fp32/finetune-tusl{k}-v2", "c": "c_w8a8/finetune-tusl{k}-v2", "qap": "qap_w8a8/finetune-tusl{k}-v2"}
+SEED, SETTING, TOL = int(sys.argv[4]), sys.argv[5], 1e-9
+STAGES = {"fp32": "fp32/finetune-tusl{k}-v2", "c": f"c_{SETTING}/finetune-tusl{{k}}-v2", "qap": f"qap_{SETTING}/finetune-tusl{{k}}-v2"}
 problems = []
 
 
@@ -43,7 +43,7 @@ def metrics(p, y):
             "bacc": balanced_accuracy_score(y, p.argmax(1)), "pred": np.bincount(p.argmax(1), minlength=3).tolist()}
 
 
-summary = json.loads((SUMMARY / "summary.json").read_text())["w8a8"]["tusl-v2"]
+summary = json.loads((SUMMARY / "summary.json").read_text())[SETTING]["tusl-v2"]
 manifests = {k: json.loads((DATA / f"fold{k}" / "data-manifest.json").read_text())["data"] for k in range(4)}
 table, picks = {}, {}
 for arm in ("fp32", "c", "qap", "ptq"):

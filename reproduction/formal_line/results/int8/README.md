@@ -119,9 +119,9 @@ v1 只跑了种子 42。v2 的三个随机种子下的均值单独汇总，不�
 RESULTS=reproduction/formal_line/results/int8
 for seed in 42 43 44; do
   python "$RESULTS/verify_binary.py" "$ART" "$RESULTS" "$seed" w8a8 tuar tuab
-  python "$RESULTS/verify_tusl.py" "$ART" "$RESULTS" "$TUSL_DATA" "$seed"
+  python "$RESULTS/verify_tusl.py" "$ART" "$RESULTS" "$TUSL_DATA" "$seed" w8a8
 done
-python "$RESULTS/bootstrap_tusl.py" "$ART" "$RESULTS/summary.json" tusl-bootstrap.json
+python "$RESULTS/bootstrap_tusl.py" "$ART" "$RESULTS/summary.json" tusl-bootstrap.json w8a8
 ```
 
 `ART` 是正式实验输出文件的根目录，同级要有 `subject-data-20261025`；`TUSL_DATA` 是含 `fold0`–`fold3` 的 v2 数据目录。原始预测、权重和数据不在仓库里。

@@ -8,7 +8,7 @@ seeds, exactly as the reported numbers. Macro AUROC is undefined when a fold lac
 of the three classes (every real test fold has all three), so such replicates are drawn
 again and the redraw rate is reported. An event-level bootstrap runs for comparison.
 The observed differences are also given per fold and with each fold left out.
-Usage: bootstrap_tusl.py <artifacts> <summary.json> <output.json>
+Usage: bootstrap_tusl.py <artifacts> <summary.json> <output.json> <setting>
 """
 import json
 import sys
@@ -18,13 +18,13 @@ from pathlib import Path
 import numpy as np
 from sklearn.metrics import roc_auc_score
 
-ART, SUMMARY, OUT = Path(sys.argv[1]), Path(sys.argv[2]), Path(sys.argv[3])
+ART, SUMMARY, OUT, SETTING = Path(sys.argv[1]), Path(sys.argv[2]), Path(sys.argv[3]), sys.argv[4]
 REPLICATES, RNG_SEED, FOLDS = 2000, 20261028, 4
 SEEDS = ("42", "43", "44")
 ARMS = ("fp32", "ptq", "c", "qap")
 PAIRS = (("qap", "c"), ("qap", "ptq"), ("c", "ptq"), ("qap", "fp32"), ("ptq", "fp32"))
-STAGE = {"fp32": "fp32/finetune-tusl{k}-v2/eval", "c": "c_w8a8/finetune-tusl{k}-v2/eval",
-         "qap": "qap_w8a8/finetune-tusl{k}-v2/eval", "ptq": "ptq_w8a8/sweep-tusl{k}-v2/test"}
+STAGE = {"fp32": "fp32/finetune-tusl{k}-v2/eval", "c": f"c_{SETTING}/finetune-tusl{{k}}-v2/eval",
+         "qap": f"qap_{SETTING}/finetune-tusl{{k}}-v2/eval", "ptq": f"ptq_{SETTING}/sweep-tusl{{k}}-v2/test"}
 
 
 def event_probs(npz: Path) -> tuple[list[str], np.ndarray, np.ndarray]:
@@ -89,7 +89,7 @@ def main() -> None:
     folds = [load_fold(k) for k in range(FOLDS)]
     observed_folds = fold_auroc(folds, [np.arange(len(f["labels"])) for f in folds])
     observed = observed_folds.mean(axis=2)
-    summary = json.loads(SUMMARY.read_text())["w8a8"]["tusl-v2"]
+    summary = json.loads(SUMMARY.read_text())[SETTING]["tusl-v2"]
     for i, seed in enumerate(SEEDS):
         for j, arm in enumerate(ARMS):
             assert abs(observed[i, j] - summary[arm][seed]["macro_auroc"]) < 1e-12, (arm, seed)
