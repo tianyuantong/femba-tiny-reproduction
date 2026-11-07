@@ -36,6 +36,7 @@ RUN_QAP=${RUN_QAP:-yes}
 arm=qap_w${BITS}a8; [ "$SCHEME" = ternary ] && arm=qap_ternary_a8
 quant=(--weight-bit-width "$BITS" --activation-bit-width 8 --weight-quant-scheme "$SCHEME")
 log="$ART/logs/seed$SEED-finetune-${arm#qap_}${LOG_SUFFIX:-}.log"
+mkdir -p "$ART/logs"
 
 field() { "$PY" -c 'import json,sys; print(json.load(open(sys.argv[1]))[sys.argv[2]])' "$1" "$2"; }
 wait_for() { while [ ! -f "$1" ]; do sleep 120; done; }
