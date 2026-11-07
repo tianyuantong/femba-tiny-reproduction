@@ -1,8 +1,8 @@
 """Recompute the numbers in README.md from the result records in this directory.
 
-Reads calibration/, ablation/, sensitivity/, sweep-scales.json and the TUAB FP32 rows of
-../int8/summary.json, and prints one block per README table (test AUROC unless marked
-validation). Standard library only. Usage: python summarize.py
+Reads calibration/, ablation/, sensitivity/, channels/, migration*/, rotation/, sweep-scales.json and
+the TUAB FP32 rows of ../int8/summary.json, and prints one block per README table (test AUROC
+unless marked validation). Standard library only. Usage: python summarize.py
 """
 from dataclasses import dataclass
 import json
@@ -29,6 +29,7 @@ class Records:
     migration: dict    # seed -> channel migration of the second block's scan outputs
     migration_w4a8: dict  # seed -> the same migration under INT4 weights
     migration_tuar: dict  # seed -> the same migration on the TUAR FP32 parents
+    rotation: dict     # seed -> H128 rotation of the second block's scan outputs, alone and on the migration
     tuar: dict         # arm -> seed -> TUAR formal-line row
 
 
@@ -50,6 +51,7 @@ def load_records() -> Records:
         migration={seed: load(f"migration/seed{seed}.json") for seed in SEEDS},
         migration_w4a8={seed: load(f"migration-w4a8/seed{seed}.json") for seed in SEEDS},
         migration_tuar={seed: load(f"migration-tuar/seed{seed}.json") for seed in SEEDS},
+        rotation={seed: load(f"rotation/seed{seed}.json") for seed in SEEDS},
         tuar=load("../int8/summary.json")["w8a8"]["tuar"])
 
 
@@ -221,6 +223,53 @@ def print_migration_tuar(records: Records) -> None:
     print(row("BAcc validation threshold migrated", [entry["all"]["test"]["validation_selected"]["balanced_accuracy"] for entry in chosen], 3))
 
 
+def print_rotation(records: Records) -> None:
+    first = records.rotation[SEEDS[0]]
+    percentiles = [candidate["percentile"] for candidate in first["arms"]["rotation"]["candidates"]]
+    for arm in first["arms"]:
+        print(f"\n{arm}, validation AUROC per percentile {percentiles} | chosen percentile | default BAcc on test")
+        for seed in SEEDS:
+            record = records.rotation[seed]["arms"][arm]
+            print(row(str(seed), [c["validation"]["auroc"] for c in record["candidates"]], should_add_mean=False)
+                  + f" {record['chosen_percentile']:g} | {record['chosen']['all']['test']['default']['balanced_accuracy']:.3f} |")
+    every, upper = ([auroc(records.split[seed, "w8a8"][role]) for seed in SEEDS] for role in ("all", "weights"))
+    migrated = [auroc(records.migration[seed]["chosen"]["all"]) for seed in SEEDS]
+    print("\nTest AUROC: seed 42 | 43 | 44 | mean, and the share of the W8A8 loss recovered")
+    print(row("W8A8 PTQ (p95)", every))
+    print(row("migration, all INT8", migrated))
+    for arm in first["arms"]:
+        chosen = [records.rotation[seed]["arms"][arm]["chosen"] for seed in SEEDS]
+        full = [auroc(entry["all"]) for entry in chosen]
+        print(row(f"{arm}, all INT8", full)
+              + f" recovered {(mean(full) - mean(every)) / (mean(upper) - mean(every)):.0%}; vs migration "
+              + ", ".join(f"{f - m:+.4f}" for f, m in zip(full, migrated)))
+        print(row(f"{arm}, weights only", [auroc(entry["weights_only"]) for entry in chosen]))
+    print(row("weights only, no rotation", upper))
+    print("\nScan-output scales at p95, rotated over plain (fwd, rev), and the chosen candidate's scale over plain p95")
+    for seed in SEEDS:
+        record = records.rotation[seed]
+        plain = record["baseline"]["scan_output_scales"]
+        for arm in record["arms"]:
+            by_percentile = {c["percentile"]: c for c in record["arms"][arm]["candidates"]}
+            at95, chosen = by_percentile[95.0]["rotated_scales"], by_percentile[record["arms"][arm]["chosen_percentile"]]["rotated_scales"]
+            print(f"| {seed} | {arm} | " + ", ".join(f"{at95[t] / plain[t]:.2f}" for t in plain) + " | "
+                  + ", ".join(f"{chosen[t] / plain[t]:.2f}" for t in plain) + " |")
+    print("\nFloat parity (TF32 off): worst logits error over tolerance | worst out_proj vector RMS ratio | "
+          "elementwise failures kept for the record | controls rejected | float logit change under the formal runtime")
+    for seed in SEEDS:
+        record = records.rotation[seed]
+        splits = record["parity"]["variants"]["h128"].values()
+        worst_logit = max(s["outputs"]["logits"]["max_error_over_tolerance"] for s in splits)
+        worst_rms = max(v["max_rms_ratio"] for s in splits for v in s["vector_rms"].values())
+        legacy = sum(s["outputs"][t]["failure_count"] for s in splits for t in record["targets"])
+        rejected = (record["parity"]["negative_controls"]["passed"]
+                    and all(c["rejected"] for c in record["parity"]["model_negative_controls"].values()))
+        print(f"| {seed} | {worst_logit:.3g} | {worst_rms:.3g} | {legacy} | {rejected} | {record['float_logit_change']:.1e} |")
+    print("baseline p95 validation AUROC minus the formal checkpoint:",
+          [f"{records.rotation[seed]['baseline']['validation']['auroc'] - records.calibration[seed]['percentile', 'all']['validation']['auroc']:.1e}"
+           for seed in SEEDS])
+
+
 def main() -> None:
     records = load_records()
     print_overview(records)
@@ -231,6 +280,7 @@ def main() -> None:
     print_migration(records)
     print_migration_w4a8(records)
     print_migration_tuar(records)
+    print_rotation(records)
 
 
 if __name__ == "__main__":
