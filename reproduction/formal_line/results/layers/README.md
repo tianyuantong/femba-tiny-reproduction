@@ -1,6 +1,6 @@
 # 逐层分析：QAP 在哪里减小掉点最多
 
-范围：TUAB，INT8（W8A8），验证集，种子 42 / 43 / 44。全部在 Colab G4（RTX PRO 6000 Blackwell）上测得。单模型 PTQ 掉点与修复对照见 [PTQ 掉点定位](../ptq-diagnosis/README.md)。
+范围：TUAB，INT8（W8A8），验证集，种子 42 / 43 / 44。单模型 PTQ 掉点与修复对照见 [PTQ 掉点定位](../ptq-diagnosis/README.md)。
 
 ## 结论
 
