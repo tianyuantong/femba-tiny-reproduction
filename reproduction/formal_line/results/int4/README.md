@@ -75,7 +75,12 @@ BAcc、ECE 和逐层分析见[评测指标与成本](../metrics/README.md)和 [Q
 - **RTX 5060 Ti**：TUAB 的 PTQ、C，QAP 种子 42 的预训练和 TUAB 微调。
 - **RTX PRO 6000 Blackwell**：QAP 种子 43、44 的预训练和 TUAB 微调，TUAR、TUSL 的 PTQ、C、QAP。
 
-把 5060 Ti 上产出的四个 TUAB 检查点放到另一张卡上重放验证集，AUROC 最多差 0.00002。每个阶段用的卡记在 [provenance.json](provenance.json)。
+两张卡的差别很小：
+
+- **同一批检查点重放**：5060 Ti 上产出的四个 TUAB 检查点放到另一张卡上重放验证集，AUROC 最多差 0.00002。
+- **同一种子各训练一次**：QAP 种子 43 用同一个预训练父模型在两张卡上各微调一次，都选中第 1 轮。测试 AUROC 是 0.8445、0.8442，验证集阈值的 BAcc 是 0.7715、0.7705。默认阈值的 BAcc 差得多一些，是 0.7686、0.7522，所以比较时以 AUROC 和验证集阈值为准。主表用的是 RTX PRO 6000 这一份。
+
+每个阶段用的卡记在 [provenance.json](provenance.json)。
 
 ## 文件
 
