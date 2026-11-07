@@ -1,5 +1,7 @@
 # 正式线：INT4 三种子结果
 
+[结论](#结论) · [从 INT8 到 INT4](#从-int8-到-int4) · [同种子差值](#同一种子内的-auroc-差) · [TUSL 稳健性](#tusl-的稳健性) · [运行环境](#运行环境) · [文件](#文件)
+
 受试者划分，种子 42 / 43 / 44。INT4 指 W4A8：权重 4 位、激活 8 位（Brevitas 伪量化，uniform）。下表是测试集 AUROC 在三个种子上的均值 ± 样本标准差；TUSL 为事件级三分类的宏平均 AUROC，每个种子先对四个测试组求平均。FP32 和 [INT8 结果](../int8/README.md)是同一批模型。
 
 | 任务 | FP32 | PTQ | C | QAP |
@@ -68,7 +70,7 @@ BAcc、ECE 和逐层分析见[评测指标与成本](../metrics/README.md)和 [Q
 
 ## 运行环境
 
-模型源码、软件版本和 FP32 母模型都和 INT8 相同。
+模型源码、软件版本和 FP32 父模型都和 INT8 相同。
 
 - **RTX 5060 Ti**：TUAB 的 PTQ、C，QAP 种子 42 的预训练和 TUAB 微调。
 - **RTX PRO 6000 Blackwell**：QAP 种子 43、44 的预训练和 TUAB 微调，TUAR、TUSL 的 PTQ、C、QAP。
@@ -80,7 +82,7 @@ BAcc、ECE 和逐层分析见[评测指标与成本](../metrics/README.md)和 [Q
 | 文件 | 内容 |
 | --- | --- |
 | [summary.json](summary.json) | 各种子、各测试组的 AUROC、AP、BAcc |
-| [provenance.json](provenance.json) | 每个训练阶段和 PTQ 校准的检查点、母模型哈希、选中的轮次或百分位、GPU |
+| [provenance.json](provenance.json) | 每个训练阶段和 PTQ 校准的检查点、父模型哈希、选中的轮次或百分位、GPU |
 | [tusl-bootstrap.json](tusl-bootstrap.json) | TUSL 各测试组的差值、不计某个测试组后的结果和重复抽样检查 |
 
 使用原始实验输出文件复核（只用 CPU，需要 NumPy 和 scikit-learn）：

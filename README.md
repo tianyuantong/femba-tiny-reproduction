@@ -72,11 +72,10 @@
 
 四位小数明细、逐种子差值和 TUSL 重抽样见 [INT4 完整结果](reproduction/formal_line/results/int4/README.md)。
 
-- **INT4 不掉点**：C、QAP 与 FP32 的 AUROC 均值差不超过 `0.03`。比起 INT8，存储再省 `47%`（`9.10 → 4.85 MB`），合计 BOPs 再省 `25%`（`86.4 → 64.7 G`）。
-- **PTQ 仍然最差**：TUAB 上比 FP32 低 `0.09`；TUAR 默认阈值下 BAcc 只有 `0.57`，验证集重选阈值后恢复到 `0.74`。
-- **QAP 不比 C 稳定更好**：TUAR 上三个种子 QAP 都更低（平均 `−0.015`）；TUAB 高 `0.008`，跨种子有正有负；TUSL v2 高 `0.029`，不计第 0 组后只剩 `0.003`。
-- **INT8、INT4 两档，QAP 都不值得它的预训练成本**：C 共用一份 FP32 预训练（`2.59 h`），QAP 每个位宽要单独预训练一次（约 `3.0 h`），精度却没有稳定优势。
-- **随机初始化的结论和 INT8 相同**：TUAB、TUAR 上和预训练模型持平；TUSL v2（不计第 0 组）上预训练模型高 `0.07–0.08`。
+- **权重降到 4 位不掉点**：C、QAP 与 FP32 的 AUROC 均值差均不超过 `0.03`；相比 INT8，模型存储再省 `47%`（`9.10 → 4.85 MB`），量化层 BOPs 减半（`43.6 → 21.8 G`），合计 BOPs 再省 `25%`（`86.4 → 64.7 G`）。
+- **PTQ 在 INT4 下继续下滑，必须靠量化微调或离群通道修复**：TUAB 上标准 W4A8 PTQ 比 FP32 低 `0.09`（`0.75` vs `0.84`），做 SmoothQuant 通道迁移后可不重训恢复到 `0.80`；TUAR 默认阈值下 BAcc 跌至 `0.57`（验证集重选阈值后恢复到 `0.74`）。
+- **为什么 INT8 与 INT4 下只做量化微调（C）就够了，无需做量化预训练（QAP）**：位宽拆解表明 8 位与 4 位权重本身几乎不损精度（`W8A32` 为 `0.84`、`W4A32` 为 `0.83`），掉点主要来自第 2 个 Mamba 块的 8 位激活截断；下游量化微调（C）已将该处截断率从 `4%` 压到 `0.01%–0.02%`。因此 C 只需预训练一次 FP32 底座（`2.59 h`）即可通用于 INT8 与 INT4，而 QAP 每换一个位宽都要重训一次底座（约 `3.0 h`）却无稳定精度增益（INT4 下 QAP − C 在 TUAR 为 `−0.015`，TUAB 为 `+0.008`，TUSL 不计第 0 组为 `+0.003`）。
+- **小样本任务仍需预训练底座**：与 INT8 一致，INT4 随机初始化在大样本 TUAB（`0.85`）、TUAR（`0.87`）上与预训练组持平，但在小样本 TUSL v2（不计第 0 组，每轮约 400 片段）上仅 `0.83`，比预训练组（`0.90`）低 `0.07`。
 
 ## 3. TUAB 上 PTQ 掉点定位与 QAP 逐层归因
 
@@ -137,13 +136,13 @@ FP32_PARENTS=given SEED=42 BITS=4 SCHEME=uniform \
 | --- | --- | --- |
 | **INT8 三任务主指标**（AUROC、AP、种子标准差、配对差值与重抽样） | [INT8 完整结果](reproduction/formal_line/results/int8/README.md) | [summary.json](reproduction/formal_line/results/int8/summary.json) · [provenance.json](reproduction/formal_line/results/int8/provenance.json) · [verify_binary.py](reproduction/formal_line/results/int8/verify_binary.py) |
 | **INT4 三任务主指标**（AUROC、AP、配对差值、重抽样与运行环境） | [INT4 完整结果](reproduction/formal_line/results/int4/README.md) | [summary.json](reproduction/formal_line/results/int4/summary.json) · [provenance.json](reproduction/formal_line/results/int4/provenance.json) · [tusl-bootstrap.json](reproduction/formal_line/results/int4/tusl-bootstrap.json) |
-| **平衡准确率（BAcc）**（默认阈值 `0` vs 验证集阈值，及 TUSL 最大概率） | [评测指标与成本 §平衡准确率](reproduction/formal_line/results/metrics/README.md#平衡准确率) | [summary.json](reproduction/formal_line/results/int8/summary.json) |
+| **平衡准确率（BAcc）**（默认阈值 `0` vs 验证集阈值，及 TUSL 最大概率） | [评测指标与成本 §平衡准确率](reproduction/formal_line/results/metrics/README.md#平衡准确率) | [int8/summary.json](reproduction/formal_line/results/int8/summary.json) · [int4/summary.json](reproduction/formal_line/results/int4/summary.json) |
 | **期望校准误差（ECE）**（15 等宽分箱，含 TUSL 剔除第 0 组对照） | [评测指标与成本 §校准误差](reproduction/formal_line/results/metrics/README.md#校准误差) | [calibration-error.json](reproduction/formal_line/results/metrics/calibration-error.json) · [calibration_error.py](reproduction/formal_line/calibration_error.py) |
 | **16 位未量化基线**（BF16 与 FP16 三任务重放及 FP16 溢出位置统计） | [评测指标与成本 §FP16 和 BF16](reproduction/formal_line/results/metrics/README.md#fp16-和-bf16) | [half-precision.json](reproduction/formal_line/results/metrics/half-precision.json) · [half_precision.py](reproduction/teammate_ptq/half_precision.py) |
 | **随机初始化基线**（不加载预训练直接做 INT8、INT4 量化微调，检验预训练收益） | [评测指标与成本 §随机初始化](reproduction/formal_line/results/metrics/README.md#随机初始化) | [random-init.json](reproduction/formal_line/results/metrics/random-init.json) · [run_random_init.sh](reproduction/formal_line/run_random_init.sh) |
 | **模型成本与训练耗时**（有效位数、存储、量化层与合计 BOPs、预训练与微调耗时） | [评测指标与成本 §每参数有效位数](reproduction/formal_line/results/metrics/README.md#每参数有效位数和存储) | [model-cost.json](reproduction/formal_line/results/metrics/model-cost.json) · [model_cost.py](reproduction/formal_line/model_cost.py) |
 | **QAP 在哪一层减小掉点最多？**（TUAB INT8、INT4 按块 + 第 2 块逐处 + SQNR/截断率） | [QAP 逐层分析](reproduction/formal_line/results/layers/README.md) | [layers/seed*.json](reproduction/formal_line/results/layers/) · [layer_comparison.py](reproduction/teammate_ptq/layer_comparison.py) |
-| **PTQ 掉点诊断与修复**（位宽拆解、MSE/KL 校准、FP16 回退、SmoothQuant 通道迁移） | [PTQ 掉点定位](reproduction/formal_line/results/ptq-diagnosis/README.md) | [ptq-diagnosis/summarize.py](reproduction/formal_line/results/ptq-diagnosis/summarize.py) · [channel_migration.py](reproduction/teammate_ptq/channel_migration.py) |
+| **PTQ 掉点诊断与修复**（位宽拆解、MSE/KL 校准、FP16 回退、SmoothQuant 迁移、Hadamard 旋转） | [PTQ 掉点定位](reproduction/formal_line/results/ptq-diagnosis/README.md) | [ptq-diagnosis/summarize.py](reproduction/formal_line/results/ptq-diagnosis/summarize.py) · [channel_migration.py](reproduction/teammate_ptq/channel_migration.py) · [rotation_ptq.py](reproduction/teammate_ptq/rotation_ptq.py) |
 | **正式线协议、数据划分与多机队列**（[subject_split](reproduction/subject_split/)、[tusl_events](reproduction/tusl_events/)、[teammate_ptq](reproduction/teammate_ptq/README.md)） | [正式线复现手册](reproduction/formal_line/README.md) · [早期 2025 权重归档](reproduction/RESULTS.md) | [finetune_queue.sh](reproduction/formal_line/finetune_queue.sh) · [summarize_formal.py](reproduction/formal_line/summarize_formal.py) |
 
 ## 上游来源与致谢
