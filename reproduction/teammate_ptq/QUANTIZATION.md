@@ -31,7 +31,7 @@ mkdir -p "$artifacts"
 
 ## INT4 与混合位宽命令
 
-传入 `--weight-bit-width 4 --activation-bit-width 8` 即为正式线的 INT4（W4A8）；传入 `4 / 4` 或 `8 / 4` 可测试激活降位宽；省略位宽参数则默认为 W8A8。
+传入 `--weight-bit-width 4 --activation-bit-width 8` 即为正式线的 INT4（W4A8）；传入 `4 / 4` 或 `8 / 4` 可测试激活降位宽。下面的示例都是 W4A4，跑正式线 INT4 时把 `--activation-bit-width 4` 换成 `8`；省略位宽参数则默认为 W8A8。
 
 **1. PTQ（训练后量化）**：从同种子的 FP32 微调检查点出发，支持单档百分位校准（`calibrate.py`）或七档百分位扫描（`sweep.py`）：
 

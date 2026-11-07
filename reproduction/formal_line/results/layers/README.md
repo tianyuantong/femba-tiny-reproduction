@@ -146,6 +146,17 @@ AUROC：
 
 - [seed42.json](seed42.json)、[seed43.json](seed43.json)、[seed44.json](seed44.json)：INT8 每处的 AUROC、平衡准确率、SQNR 和截断比例。
 - [w4a8-seed42.json](w4a8-seed42.json)、[w4a8-seed43.json](w4a8-seed43.json)、[w4a8-seed44.json](w4a8-seed44.json)：INT4 的同一组数字。
+复现（在正式线的运行目录 `$STUDY` 里；三个种子在一张 RTX PRO 6000 上并行约 40 分钟）：
+
+```bash
+python layer_comparison.py --source "$SRC" --data "$DATA_ROOT/tuab-ft" \
+  --qap <QAP 的 TUAB 微调检查点> --ptq <PTQ 选中档的检查点> --output <输出目录> \
+  --weight-bit-width 4 --activation-bit-width 8 --weight-quant-scheme uniform --activation-quant-scheme uniform
+```
+
+- QAP 检查点是 `$ART/seed<种子>/qap_<档>/finetune-tuab/complete.json` 里的 `best_checkpoint`；PTQ 是 `$ART/seed<种子>/ptq_<档>/sweep-tuab/<选中档>/` 下的 `.ckpt`，选中档在 `sweep-tuab/results.json` 的 `selected.candidate`，INT8、INT4 三个种子都是 `p95`。
+- INT8 改成 `--weight-bit-width 8`；三值用 `--weight-bit-width 2 --weight-quant-scheme ternary`。只要 SQNR 和截断比例时加 `--signal-only`，在 RTX 5060 Ti 上每个种子约 15 秒。
+
 - [c-signal.json](c-signal.json)：C 每处的 SQNR 和截断比例，由下面的脚本加 `--signal-only`、把 `--qap` 换成 C 的检查点测得。
 - [layer_comparison.py](../../../teammate_ptq/layer_comparison.py)：测量脚本。
 - [plot_layer_drop.py](../../../figures/plot_layer_drop.py)：画图。

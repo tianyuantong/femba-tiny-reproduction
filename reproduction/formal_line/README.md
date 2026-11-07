@@ -9,17 +9,17 @@ FP32 与 INT8 三个种子的测试结果、复核脚本和学习曲线见 [INT8
 | 项目 | 规定 |
 |---|---|
 | 划分 | 全部按受试者；TUAB 测试集 = 官方 eval；预训练语料 = TUAB 官方训练集，剔除 TUAR、TUSL 的测试受试者 |
-| 四组 | FP32；PTQ（在 FP32 微调检查点上校准）；C（FP32 预训练 + 量化微调）；QAP（量化预训练 + 量化微调，两阶段位宽相同） |
+| 四种方法 | FP32；PTQ（在 FP32 微调检查点上校准）；C（FP32 预训练 + 量化微调）；QAP（量化预训练 + 量化微调，两阶段位宽相同） |
 | 三档 | int8 = W8A8；int4 = W4A8；三值 = 每层 scale = mean\|w\|，\|w\| > 0.7 × scale 记 ±1、否则记 0，激活 8 位 |
 | 训练 | 预训练 2 轮，每轮存档；整体微调 5 轮，TUSL 20 轮；都按最低验证损失选点 |
-| PTQ | 激活百分位七档（99.999 … 90）。二分类用 512 个训练片段校准、按验证 AUROC 选档；TUSL 用 384 个、按验证宏平均 AUROC 选档；同一测试组各档共用一份校准名单 |
+| PTQ | 激活百分位七档（99.999 … 90，结果目录里 99.999 叫 `original`）。二分类用 512 个训练片段校准、按验证 AUROC 选档；TUSL 用 384 个、按验证宏平均 AUROC 选档；同一测试组各档共用一份校准名单 |
 | 评估 | TUAR / TUAB：AUROC、AP、默认阈值和验证集阈值下的 BAcc。TUSL：按事件（两个片段概率平均）的宏平均 AUROC、宏平均 AP、BAcc |
 | TUSL | 296 个事件、三分类，四个测试组轮换。协议 v2 的验证集从另外三组按人抽（[resplit_validation.py](../tusl_events/resplit_validation.py)），是看过 v1 测试结果之后的探索性修订；v1 结果并列保留 |
 
 ## 环境与数据
 
 - 环境：Python 3.11，`pip install --extra-index-url https://download.pytorch.org/whl/cu128 -r requirements-formal.txt`（[版本清单](requirements-formal.txt)：torch 2.7.1 + CUDA 12.8，Brevitas 0.12.1；量化版 FEMBA 是纯 PyTorch，不需要 mamba-ssm）。
-- 数据：TUAR、TUAB 用 [run_subject_data.sh](../subject_split/run_subject_data.sh) 生成；TUSL 用 [make_tusl_events.py](../tusl_events/make_tusl_events.py)（v1）再经 `resplit_validation.py`（v2）。每个数据目录含 `train/val/test.h5`、`data-manifest.json` 和 `<split>-manifest.json`，运行脚本按清单核对文件大小、片段数和类别数。
+- 数据：先用 [make_subject_splits.py](../subject_split/make_subject_splits.py) 按受试者生成划分文件，TUAR、TUAB 再用 [run_subject_data.sh](../subject_split/run_subject_data.sh) 生成；TUAB 微调集 `tuab-ft` 用 [subset_h5.py](../subject_split/subset_h5.py) 从训练集、验证集各抽五分之一的受试者（`--fraction 0.2 --seed 42`），测试集用完整的官方 eval；TUSL 用 [make_tusl_events.py](../tusl_events/make_tusl_events.py)（v1）再经 `resplit_validation.py`（v2）。每个数据目录含 `train/val/test.h5`、`data-manifest.json` 和 `<split>-manifest.json`，运行脚本按清单核对文件大小、片段数和类别数。
 - 运行目录 `STUDY`：队列在这个目录里调用各个脚本，所以先把它们拷到一起：`cp ../teammate_ptq/*.py ../tusl_events/evaluate_events.py ./*.sh ./*.py "$STUDY"/`。
 - 路径：除 `pretrain_queue.sh` 外，脚本开头的默认路径都能用环境变量覆盖（`PY`、`STUDY`、`SRC`、`DATA_ROOT`、`TUSL_ROOT`、`ART`）；三值预训练另需 `DATA`（TUAB 预训练语料目录）和 `SMOKE`（小样本流程测试目录），流程测试还需 `FORMAL_ART`（存放共用 FP32 检查点的 `$ART`）。
 
