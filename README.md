@@ -26,11 +26,11 @@
 
 | 立项问题 | 答案 | 细节 |
 | --- | --- | --- |
-| **QAP 从哪个位宽开始优于 PTQ？** | 测过的 INT8、INT4 两档都已优于，没有出现交叉。TUAB 上 QAP 比 PTQ 的 AUROC 高约 `0.10`、BAcc 高约 `0.12`，从 8 位到 4 位差距不变；TUSL 上也更高；TUAR 换成验证集选的阈值后两者持平。 | [INT8](reproduction/formal_line/results/int8/README.md) · [INT4](reproduction/formal_line/results/int4/README.md) |
+| **QAP 从哪个位宽开始优于 PTQ？** | 测过的 INT8、INT4 两档都已优于，没有出现交叉。TUAB 上 QAP 比 PTQ 的 AUROC 高约 `0.10`、BAcc 高约 `0.12`，从 8 位到 4 位差距不变；TUSL 上 BAcc 高约 `0.19`；TUAR 换成验证集选的阈值后两者持平。 | [INT8](reproduction/formal_line/results/int8/README.md) · [INT4](reproduction/formal_line/results/int4/README.md) |
 | **差距大到要改部署默认吗？** | 要改，但改成量化微调（C）就够：C 拿到同样的提升，QAP 对 C 没有稳定优势。 | [§1](#1-正式线主结果三任务-int8w8a8对比) · [§2](#2-正式线主结果三任务-int4w4a8对比) |
 | **QAP 值得预训练成本的位宽** | 8 位、4 位都不值得。C 各位宽共用一份 FP32 预训练（`2.59 h`），QAP 每个位宽要单独预训练一次（INT8 单独占卡折算约 `3.0 h`）。 | [预训练成本](reproduction/formal_line/results/metrics/README.md#预训练成本) |
 | **逐层：QAP 在哪里帮助最大？** | 第 2 个 Mamba 块，占 QAP 减小掉点的 `76%`（INT8）和 `72%`（INT4），三种子均值上以反向扫描输出最大。量化微调后，C、QAP 在这一块的截断比例都不超过 `0.02%`，PTQ 是 `4%`。 | [逐层分析](reproduction/formal_line/results/layers/README.md) |
-| **部署建议** | 优先 INT4 + C：比 INT8 再省 `47%` 存储、`25%` BOPs，AUROC 与 FP32 相差不超过 `0.03`。PTQ 只有 TUAR 在验证集重选阈值后接近 C，TUAB、TUSL 都明显更差；必须用 PTQ 时，把第 2 块扫描输出的离群通道迁进下一层权重，TUAB 上不重训可收回 `82%`（INT8）和 `57%`（INT4）的掉点，TUAR 上没有效果。存储和 BOPs 是理论值，没有在设备上实测。 | [§4](#4-位宽压缩率推理计算量与训练耗时) · [PTQ 掉点定位](reproduction/formal_line/results/ptq-diagnosis/README.md) |
+| **部署建议** | 优先 INT4 + C：比 INT8 再省 `47%` 存储、`25%` BOPs，AUROC 与 FP32 相差不超过 `0.03`。PTQ 只有 TUAR 在验证集重选阈值后接近 C；TUAB 的 AUROC 比 C 低 `0.08–0.09`，TUSL 的 BAcc 低 `0.16`；必须用 PTQ 时，把第 2 块扫描输出的离群通道迁进下一层权重，TUAB 上不重训可收回 `82%`（INT8）和 `57%`（INT4）的掉点，TUAR 上没有效果。存储和 BOPs 是理论值。 | [§4](#4-位宽压缩率推理计算量与训练耗时) · [PTQ 掉点定位](reproduction/formal_line/results/ptq-diagnosis/README.md) |
 | **三种基线** | FP16、BF16 与 FP32 持平；各位宽的 PTQ 见 §1、§2；随机初始化（不加载预训练、直接量化微调）在 TUAB、TUAR 上与预训练模型持平，在 TUSL 上（不计第 0 组）低 `0.07–0.08`。 | [FP16 和 BF16](reproduction/formal_line/results/metrics/README.md#fp16-和-bf16) · [随机初始化](reproduction/formal_line/results/metrics/README.md#随机初始化) |
 | **四项指标** | BAcc、ECE 见 §1、§2；每参数有效位数 `8.40 / 4.48 / 2.52`，合计 BOPs `86.4 / 64.7 / 53.8 G`（INT8 / INT4 / 三值）。 | [评测指标与成本](reproduction/formal_line/results/metrics/README.md) |
 | **与 FEMBA on the Edge 对照** | 方向一致，数字不能直接比。论文只在 TUAB 上做量化：PTQ 在 W8A8、W4A8 下是 `0.77`、`0.71`，QAT 都回到 `0.88`（FP32 `0.89`）。本页 TUAB 的 PTQ 是 `0.76`、`0.75`，C、QAP 回到 `0.84–0.85`（FP32 `0.84`）。论文用 TUEG 预训练；本页只用 TUAB 训练集预训练 2 轮，微调只用五分之一的受试者，PTQ 做法也不同。 | [与上游协议的差异](reproduction/formal_line/results/int8/README.md#与上游协议的差异) |
