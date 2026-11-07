@@ -91,7 +91,7 @@ v1 只跑了种子 42。v2 的三个随机种子下的均值单独汇总，不�
 ## 与上游协议的差异
 
 - **划分**：上游 [FEMBA（EMBC 2025）](https://arxiv.org/abs/2502.06438v2)和 [FEMBA on the Edge（2026）](https://arxiv.org/abs/2603.26716v1)在 TUAR、TUSL 上随机 80/10/10 划分，后者写明按样本划分，同一受试者可能同时出现在训练和测试中。本页三个任务都按受试者划分，数字不能和论文直接比。TUAB 两边都用官方划分，训练与测试的受试者不重叠。
-- **量化**：上游的量化实验只做了 TUAB，W8A8 PTQ 的 AUROC 从 0.89 降到 0.77，QAT 回到 0.88。本页方向一致：TUAB 上 PTQ 比 FP32 低 0.083，C 与 FP32 持平，QAP 高 0.012。
+- **量化**：上游的量化实验只做了 TUAB。FP32 的 AUROC 是 0.89；PTQ 在 W8A8、W4A8 下降到 0.77、0.71，QAT 都回到 0.88。本页方向一致：TUAB 上 INT8 的 PTQ 比 FP32 低 0.083，C 与 FP32 持平，QAP 高 0.012；INT4 见 [INT4 结果](../int4/README.md)。本页 FP32 比论文低 0.05：论文用 TUEG 预训练，本页只用 TUAB 训练集预训练 2 轮，微调只用五分之一的受试者。
 - **PTQ 做法**：本页权重逐张量量化，激活按百分位校准，从七个候选百分位中按验证集表现选择一个；上游用逐通道权重、2 的幂次激活尺度和偏置校正。早期复现按最大值校准激活时，W8A8 全部判为阳性（AUROC 0.5），原因是少数极大的激活把其余值压成 0。
 - **与论文对照的 FP32**：早期复现按录音划分，TUAR 的 FP32 AUROC 为 0.924，论文为 0.937。早期复现的结果都在[历史实验结果](../../../RESULTS.md)。
 
@@ -127,3 +127,14 @@ python "$RESULTS/bootstrap_tusl.py" "$ART" "$RESULTS/summary.json" tusl-bootstra
 ```
 
 `ART` 是正式实验输出文件的根目录，同级要有 `subject-data-20261025`；`TUSL_DATA` 是含 `fold0`–`fold3` 的 v2 数据目录。原始预测、权重和数据不在仓库里。
+
+逐样本测试分数组内按压缩包分发（INT8 14 MB，INT4 11 MB），解开后的目录和 `$ART` 相同。档名是 `w8a8`、`w4a8`：
+
+| 组 | 文件 | 键 |
+| --- | --- | --- |
+| FP32、C、QAP，TUAR / TUAB | `seed<种子>/{fp32,c_<档>,qap_<档>}/finetune-<任务>/eval/{fp32,c,qap_b}_test_logits.npz` | `logits`（N × 2）、`labels` |
+| PTQ，TUAR / TUAB | `seed<种子>/ptq_<档>/sweep-<任务>/<选中档>_test_logits.npz`；选中档在同目录 `results.json` 的 `selected.candidate` | 同上 |
+| FP32、C、QAP，TUSL | `seed<种子>/{fp32,c_<档>,qap_<档>}/finetune-tusl<k>-v2/eval/test_scores.npz` | `event_probs`（事件 × 3）、`event_labels`，另有逐片段的 `window_probs`、`window_labels`、`window_names` |
+| PTQ，TUSL | `seed<种子>/ptq_<档>/sweep-tusl<k>-v2/test/test_scores.npz` | 同上 |
+
+二分类的分数是 `logits[:, 1] − logits[:, 0]`：默认阈值判 `分数 > 0` 为阳性；验证集阈值是在验证集上使 BAcc 最大的那个分数阈值。只画 BAcc 和 ECE 的话不用这些文件：逐种子的 BAcc 在 [INT8](summary.json) 和 [INT4](../int4/summary.json) 的 `summary.json`，ECE 在 [calibration-error.json](../metrics/calibration-error.json)。

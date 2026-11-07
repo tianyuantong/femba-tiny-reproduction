@@ -2,9 +2,9 @@
 
 # FEMBA-Tiny 脑电基础模型量化与位宽临界点研究
 
-在脑电基础模型 FEMBA-Tiny（双向 Mamba，867 万参数）上比较三种量化方案：训练后量化（PTQ）、FP32 预训练 + 量化微调（C）、量化预训练 + 量化微调（QAP）。下游任务覆盖 TUAR、TUAB、TUSL，本页汇总 INT8 和 INT4 的结果。
+在脑电基础模型 FEMBA-Tiny（双向 Mamba，867 万参数）上比较三种量化方案：训练后量化（PTQ，post-training quantization）、FP32 预训练 + 量化微调（C）、量化预训练 + 量化微调（QAP，quantization-aware pretraining）。下游任务来自 TUH 脑电数据库：TUAR 伪迹检测、TUAB 异常检测、TUSL 慢波三分类。本页汇总 INT8 和 INT4；三值实验由队友负责，不在本仓库。
 
-**TUAB 上 QAP 0.85、PTQ 0.76 · TUSL v2 上 QAP 0.86、PTQ 0.82 · INT8 存储 9.10 MB（3.8×）· INT4 存储 4.85 MB（7.1×）**
+**TUAB 测试 AUROC：PTQ 0.76，C 0.84，QAP 0.85 · INT4 存储 4.85 MB（7.1×），精度不降 · QAP 与 C 持平**
 
 ![Python 3.11](https://img.shields.io/badge/python-3.11-blue)
 ![PyTorch 2.7](https://img.shields.io/badge/pytorch-2.7.1%2Bcu128-ee4c2c)
@@ -20,11 +20,23 @@
 
 </div>
 
-本页正式线实验采用受试者独立划分（预训练语料为 TUAB 官方训练集并剔除全部下游测试受试者），固定随机种子 42 / 43 / 44，使用 Brevitas 伪量化。对应课程研究问题的三条核心结论如下：
+本页正式线实验采用受试者独立划分（预训练语料为 TUAB 官方训练集并剔除全部下游测试受试者），固定随机种子 42 / 43 / 44，使用 Brevitas 伪量化。C 是本仓库加的对照：预训练不带量化、微调带量化，用来单独看“预训练要不要带量化”。
 
-1. **PTQ vs 量化训练（C / QAP）**：在 INT8（W8A8，压缩 `3.8×`）与 INT4（W4A8，压缩 `7.1×`）下，标准 PTQ 在 TUAB 上掉点 `0.08–0.09`（`0.84 → 0.76 / 0.75`），在 TUAR 默认阈值下平衡准确率（BAcc）跌至 `0.63 / 0.57`；而带量化的微调（C 与 QAP）在两档位宽、三个任务上均不掉点（与 FP32 相差 `≤ 0.03`）。
-2. **QAP 在哪一层减小掉点最多？**：位宽拆解与逐层分析（[layers/](reproduction/formal_line/results/layers/README.md)、[ptq-diagnosis/](reproduction/formal_line/results/ptq-diagnosis/README.md)）表明，8 位与 4 位权重本身几乎不损精度（`W8A32` 为 `0.84`、`W4A32` 为 `0.83`），掉点集中在**第 2 个 Mamba 块的反向状态空间扫描（SSM）输出**的 8 位激活量化；QAP 相对 PTQ 减小的掉点有 **76%（INT8）** 与 **72%（INT4）** 来自第 2 个 Mamba 块（不重训时对该块扫描输出做 SmoothQuant 通道迁移亦可收回 82% 与 57% 的掉点）。
-3. **QAP 值不值得它的预训练成本？（部署建议）**：在 INT8 与 INT4 两档下，**共用一份 FP32 预训练底座做量化微调（C，仅需一次 `2.59 h` 预训练）与按位宽专门做量化预训练（QAP，每档约 `3.0 h`）精度持平**，因为下游量化微调已将第 2 块的激活截断率从 `4%` 压到 `≤ 0.02%`；同时，在小样本任务 TUSL v2（每轮约 400 片段，不计第 0 组）上，加载预训练底座（C 或 QAP，`0.90`）比不预训练直接微调（随机初始化，`0.83`）高 **`+0.07 ~ +0.08` AUROC**，在大样本 TUAB / TUAR 上主要将收敛从第 2–5 轮提前到第 1 轮。
+## 立项问题速答
+
+| 立项问题 | 答案 | 细节 |
+| --- | --- | --- |
+| **QAP 从哪个位宽开始优于 PTQ？** | 测过的 INT8、INT4 两档都已优于，没有出现交叉。TUAB 上 QAP 比 PTQ 的 AUROC 高约 `0.10`、BAcc 高约 `0.12`，从 8 位到 4 位差距不变；TUSL 上也更高；TUAR 换成验证集选的阈值后两者持平。 | [INT8](reproduction/formal_line/results/int8/README.md) · [INT4](reproduction/formal_line/results/int4/README.md) |
+| **差距大到要改部署默认吗？** | 要改，但改成量化微调（C）就够：C 拿到同样的提升，QAP 对 C 没有稳定优势。 | [§1](#1-正式线主结果三任务-int8w8a8对比) · [§2](#2-正式线主结果三任务-int4w4a8对比) |
+| **QAP 值得预训练成本的位宽** | 8 位、4 位都不值得。C 各位宽共用一份 FP32 预训练（`2.59 h`），QAP 每个位宽要单独预训练一次（INT8 单独占卡折算约 `3.0 h`）。 | [预训练成本](reproduction/formal_line/results/metrics/README.md#预训练成本) |
+| **逐层：QAP 在哪里帮助最大？** | 第 2 个 Mamba 块，占 QAP 减小掉点的 `76%`（INT8）和 `72%`（INT4），三种子均值上以反向扫描输出最大。量化微调后，C、QAP 在这一块的截断比例都不超过 `0.02%`，PTQ 是 `4%`。 | [逐层分析](reproduction/formal_line/results/layers/README.md) |
+| **部署建议** | 优先 INT4 + C：比 INT8 再省 `47%` 存储、`25%` BOPs，AUROC 与 FP32 相差不超过 `0.03`。PTQ 只有 TUAR 在验证集重选阈值后接近 C，TUAB、TUSL 都明显更差；必须用 PTQ 时，把第 2 块扫描输出的离群通道迁进下一层权重，TUAB 上不重训可收回 `82%`（INT8）和 `57%`（INT4）的掉点，TUAR 上没有效果。存储和 BOPs 是理论值，没有在设备上实测。 | [§4](#4-位宽压缩率推理计算量与训练耗时) · [PTQ 掉点定位](reproduction/formal_line/results/ptq-diagnosis/README.md) |
+| **三种基线** | FP16、BF16 与 FP32 持平；各位宽的 PTQ 见 §1、§2；随机初始化（不加载预训练、直接量化微调）在 TUAB、TUAR 上与预训练模型持平，在 TUSL 上（不计第 0 组）低 `0.07–0.08`。 | [FP16 和 BF16](reproduction/formal_line/results/metrics/README.md#fp16-和-bf16) · [随机初始化](reproduction/formal_line/results/metrics/README.md#随机初始化) |
+| **四项指标** | BAcc、ECE 见 §1、§2；每参数有效位数 `8.40 / 4.48 / 2.52`，合计 BOPs `86.4 / 64.7 / 53.8 G`（INT8 / INT4 / 三值）。 | [评测指标与成本](reproduction/formal_line/results/metrics/README.md) |
+| **与 FEMBA on the Edge 对照** | 方向一致，数字不能直接比。论文只在 TUAB 上做量化：PTQ 在 W8A8、W4A8 下是 `0.77`、`0.71`，QAT 都回到 `0.88`（FP32 `0.89`）。本页 TUAB 的 PTQ 是 `0.76`、`0.75`，C、QAP 回到 `0.84–0.85`（FP32 `0.84`）。论文用 TUEG 预训练；本页只用 TUAB 训练集预训练 2 轮，微调只用五分之一的受试者，PTQ 做法也不同。 | [与上游协议的差异](reproduction/formal_line/results/int8/README.md#与上游协议的差异) |
+| **交叉图** | 含三值的交叉图在小组报告里；本仓库 INT8、INT4 的逐项数字在两张结果页。 | [INT8](reproduction/formal_line/results/int8/README.md) · [INT4](reproduction/formal_line/results/int4/README.md) |
+
+TUSL 的“第 0 组”是四个测试组中的第一组，55 个测试事件里 46 个来自同一名受试者，所以单列不计它的结果；v2 是验证集改为按人抽的协议，见 [INT8 结果](reproduction/formal_line/results/int8/README.md#tuslv2-为主v1-对照)。
 
 ## 1. 正式线主结果：三任务 INT8（W8A8）对比
 
@@ -115,6 +127,9 @@ FEMBA-Tiny 共 867 万参数：98.0% 为量化卷积与线性层权重，0.4%（
 正式线完整协议、环境变量与多机分跑步骤以 **[reproduction/formal_line/README.md](reproduction/formal_line/README.md)** 为准。
 
 ```bash
+# 0. 路径：SRC 是打好补丁的上游源码，STUDY 是运行目录，ART 是结果根目录（共享的 FP32 父模型也放这里）
+export SRC=<源码目录> STUDY=<运行目录> ART=<结果根目录>
+
 # 1. 安装正式线依赖（Python 3.11，PyTorch 2.7.1+cu128，Brevitas 0.12.1）
 pip install --extra-index-url https://download.pytorch.org/whl/cu128 -r reproduction/formal_line/requirements-formal.txt
 
@@ -125,10 +140,23 @@ git -C "$SRC" apply "$PWD/reproduction/teammate_ptq/source.patch" \
                     "$PWD/reproduction/teammate_ptq/quantization-config.patch" \
                     "$PWD/reproduction/teammate_ptq/ternary-model.patch"
 
-# 3. 运行单种子微调、PTQ 七档校准与评估队列（以 INT4 为例，复用共享 FP32 父模型）
+# 3. 把脚本拷进运行目录，再跑单种子微调、PTQ 七档校准与评估队列（以 INT4 为例，复用共享 FP32 父模型）
+#    QAP 的微调要等同种子的 QAP 预训练完成；还没有时加 RUN_QAP=no，只跑 C 和 PTQ
+cp reproduction/teammate_ptq/*.py reproduction/tusl_events/evaluate_events.py \
+   reproduction/formal_line/*.sh reproduction/formal_line/*.py "$STUDY"/
+cd "$STUDY"
 FP32_PARENTS=given SEED=42 BITS=4 SCHEME=uniform \
   TASKS="tuar tuab tusl0-v2 tusl1-v2 tusl2-v2 tusl3-v2" LOG_SUFFIX=-all ./finetune_queue.sh
 ```
+
+我们写的代码和结果都在 `reproduction/` 下；根目录的 `models/`、`tasks/`、`config/` 等是上游 pulp-bio/BioFoundation 的代码，正式线不直接用。
+
+| 目录 | 内容 |
+| --- | --- |
+| `reproduction/formal_line/` | 正式线的运行脚本、手册和全部结果页（现行） |
+| `reproduction/teammate_ptq/` | 正式线共用的训练、PTQ、评估脚本和三个源码补丁；其 README 的结果表是早期按录音划分的 TUAR 试点 |
+| `reproduction/subject_split/`、`reproduction/tusl_events/` | 按受试者划分的 TUAR、TUAB 数据和 TUSL 事件数据的生成脚本 |
+| `reproduction/RESULTS.md`、`reproduction/PROTOCOL.md` | 2025 公开权重的早期复现，已归档 |
 
 ## 6. 报告问题与数据速查索引
 
@@ -140,7 +168,9 @@ FP32_PARENTS=given SEED=42 BITS=4 SCHEME=uniform \
 | **期望校准误差（ECE）**（15 等宽分箱，含 TUSL 剔除第 0 组对照） | [评测指标与成本 §校准误差](reproduction/formal_line/results/metrics/README.md#校准误差) | [calibration-error.json](reproduction/formal_line/results/metrics/calibration-error.json) · [calibration_error.py](reproduction/formal_line/calibration_error.py) |
 | **16 位未量化基线**（BF16 与 FP16 三任务重放及 FP16 溢出位置统计） | [评测指标与成本 §FP16 和 BF16](reproduction/formal_line/results/metrics/README.md#fp16-和-bf16) | [half-precision.json](reproduction/formal_line/results/metrics/half-precision.json) · [half_precision.py](reproduction/teammate_ptq/half_precision.py) |
 | **随机初始化基线**（不加载预训练直接做 INT8、INT4 量化微调，检验预训练收益） | [评测指标与成本 §随机初始化](reproduction/formal_line/results/metrics/README.md#随机初始化) | [random-init.json](reproduction/formal_line/results/metrics/random-init.json) · [run_random_init.sh](reproduction/formal_line/run_random_init.sh) |
-| **模型成本与训练耗时**（有效位数、存储、量化层与合计 BOPs、预训练与微调耗时） | [评测指标与成本 §每参数有效位数](reproduction/formal_line/results/metrics/README.md#每参数有效位数和存储) | [model-cost.json](reproduction/formal_line/results/metrics/model-cost.json) · [model_cost.py](reproduction/formal_line/model_cost.py) |
+| **模型成本**（有效位数、存储、量化层与合计 BOPs） | [评测指标与成本 §每参数有效位数](reproduction/formal_line/results/metrics/README.md#每参数有效位数和存储) | [model-cost.json](reproduction/formal_line/results/metrics/model-cost.json) · [model_cost.py](reproduction/formal_line/model_cost.py) |
+| **训练耗时与卡型**（FP32、QAP 预训练和各微调） | [评测指标与成本 §预训练成本](reproduction/formal_line/results/metrics/README.md#预训练成本) | [int4/provenance.json](reproduction/formal_line/results/int4/provenance.json)（INT4 各阶段的起止时间和 GPU） |
+| **逐样本测试分数**（算校准误差、画交叉图用） | [INT8 完整结果 §文件](reproduction/formal_line/results/int8/README.md#文件) | 不在仓库里，格式见该节 |
 | **QAP 在哪一层减小掉点最多？**（TUAB INT8、INT4 按块 + 第 2 块逐处 + SQNR/截断率） | [QAP 逐层分析](reproduction/formal_line/results/layers/README.md) | [layers/seed*.json](reproduction/formal_line/results/layers/) · [layer_comparison.py](reproduction/teammate_ptq/layer_comparison.py) |
 | **PTQ 掉点诊断与修复**（位宽拆解、MSE/KL 校准、FP16 回退、SmoothQuant 迁移、Hadamard 旋转） | [PTQ 掉点定位](reproduction/formal_line/results/ptq-diagnosis/README.md) | [ptq-diagnosis/summarize.py](reproduction/formal_line/results/ptq-diagnosis/summarize.py) · [channel_migration.py](reproduction/teammate_ptq/channel_migration.py) · [rotation_ptq.py](reproduction/teammate_ptq/rotation_ptq.py) |
 | **正式线协议、数据划分与多机队列**（[subject_split](reproduction/subject_split/)、[tusl_events](reproduction/tusl_events/)、[teammate_ptq](reproduction/teammate_ptq/README.md)） | [正式线复现手册](reproduction/formal_line/README.md) · [早期 2025 权重归档](reproduction/RESULTS.md) | [finetune_queue.sh](reproduction/formal_line/finetune_queue.sh) · [summarize_formal.py](reproduction/formal_line/summarize_formal.py) |
