@@ -1,0 +1,615 @@
+{
+  "quantization_config": {
+    "weight_bit_width": 4,
+    "activation_bit_width": 8,
+    "weight_quant_scheme": "uniform",
+    "activation_quant_scheme": "uniform"
+  },
+  "split": "val",
+  "groups": {
+    "other": [
+      "input_quant.act_quant",
+      "patch_embed.output_quant.act_quant",
+      "pos_quant.act_quant",
+      "scale_equalizer.act_quant",
+      "post_norm_quants.0.act_quant",
+      "post_norm_quants.1.act_quant",
+      "pre_classifier_quant.act_quant"
+    ],
+    "block0": [
+      "mamba_blocks.0.mamba_fwd.in_proj_quant.act_quant",
+      "mamba_blocks.0.mamba_fwd.conv1d.output_quant.act_quant",
+      "mamba_blocks.0.mamba_fwd.silu.output_quant.act_quant",
+      "mamba_blocks.0.mamba_fwd.ssm.output_quant.act_quant",
+      "mamba_blocks.0.mamba_fwd.output_quant.act_quant",
+      "mamba_blocks.0.mamba_rev.in_proj_quant.act_quant",
+      "mamba_blocks.0.mamba_rev.conv1d.output_quant.act_quant",
+      "mamba_blocks.0.mamba_rev.silu.output_quant.act_quant",
+      "mamba_blocks.0.mamba_rev.ssm.output_quant.act_quant",
+      "mamba_blocks.0.mamba_rev.output_quant.act_quant",
+      "mamba_blocks.0.scale_equalizer.act_quant",
+      "mamba_blocks.0.post_flip_quant.act_quant",
+      "mamba_blocks.0.rev_post_flip_quant.act_quant",
+      "mamba_blocks.0.output_quant.act_quant"
+    ],
+    "block1": [
+      "mamba_blocks.1.mamba_fwd.in_proj_quant.act_quant",
+      "mamba_blocks.1.mamba_fwd.conv1d.output_quant.act_quant",
+      "mamba_blocks.1.mamba_fwd.silu.output_quant.act_quant",
+      "mamba_blocks.1.mamba_fwd.ssm.output_quant.act_quant",
+      "mamba_blocks.1.mamba_fwd.output_quant.act_quant",
+      "mamba_blocks.1.mamba_rev.in_proj_quant.act_quant",
+      "mamba_blocks.1.mamba_rev.conv1d.output_quant.act_quant",
+      "mamba_blocks.1.mamba_rev.silu.output_quant.act_quant",
+      "mamba_blocks.1.mamba_rev.ssm.output_quant.act_quant",
+      "mamba_blocks.1.mamba_rev.output_quant.act_quant",
+      "mamba_blocks.1.scale_equalizer.act_quant",
+      "mamba_blocks.1.post_flip_quant.act_quant",
+      "mamba_blocks.1.rev_post_flip_quant.act_quant",
+      "mamba_blocks.1.output_quant.act_quant"
+    ]
+  },
+  "device": "NVIDIA RTX PRO 6000 Blackwell Server Edition",
+  "ptq_checkpoint_sha256": "ff354cec89bf16b0e8143a24c0cb028b9f370c30e51bcc55f8c9bbcb4aa9ba66",
+  "qap_checkpoint_sha256": "374b36d585d403b6717470f5491463bdde8e023d5e2285df5d6ef05c203834b4",
+  "stored": {},
+  "ptq": {
+    "alone": {
+      "mamba_blocks.1.mamba_fwd.in_proj_quant.act_quant": {
+        "auroc": 0.8214503104061913,
+        "bacc_default": 0.7577319106170914,
+        "bacc_chosen_threshold": 0.7610528833172723
+      },
+      "mamba_blocks.1.mamba_fwd.conv1d.output_quant.act_quant": {
+        "auroc": 0.8206553894288151,
+        "bacc_default": 0.7564188951400397,
+        "bacc_chosen_threshold": 0.7600967275437008
+      },
+      "mamba_blocks.1.mamba_fwd.silu.output_quant.act_quant": {
+        "auroc": 0.81894529535966,
+        "bacc_default": 0.7512038707277213,
+        "bacc_chosen_threshold": 0.7588922095336327
+      },
+      "mamba_blocks.1.mamba_fwd.ssm.output_quant.act_quant": {
+        "auroc": 0.8211046357416651,
+        "bacc_default": 0.7564293875868826,
+        "bacc_chosen_threshold": 0.7602100893375211
+      },
+      "mamba_blocks.1.mamba_fwd.output_quant.act_quant": {
+        "auroc": 0.8218307020593922,
+        "bacc_default": 0.7599956576416478,
+        "bacc_chosen_threshold": 0.7604355733794674
+      },
+      "mamba_blocks.1.mamba_rev.in_proj_quant.act_quant": {
+        "auroc": 0.8187990386769715,
+        "bacc_default": 0.7520184561427956,
+        "bacc_chosen_threshold": 0.7555842763363296
+      },
+      "mamba_blocks.1.mamba_rev.conv1d.output_quant.act_quant": {
+        "auroc": 0.8190584920964818,
+        "bacc_default": 0.7544443085583037,
+        "bacc_chosen_threshold": 0.7572456624088822
+      },
+      "mamba_blocks.1.mamba_rev.silu.output_quant.act_quant": {
+        "auroc": 0.8141616393217709,
+        "bacc_default": 0.7509157977192438,
+        "bacc_chosen_threshold": 0.7535010563583173
+      },
+      "mamba_blocks.1.mamba_rev.ssm.output_quant.act_quant": {
+        "auroc": 0.79010811919518,
+        "bacc_default": 0.7298744189394918,
+        "bacc_chosen_threshold": 0.7309527395468011
+      },
+      "mamba_blocks.1.mamba_rev.output_quant.act_quant": {
+        "auroc": 0.8220600503769494,
+        "bacc_default": 0.7592552151829965,
+        "bacc_chosen_threshold": 0.7602874492872082
+      },
+      "mamba_blocks.1.scale_equalizer.act_quant": {
+        "auroc": 0.821466884070683,
+        "bacc_default": 0.7593332288878538,
+        "bacc_chosen_threshold": 0.7597855724467336
+      },
+      "mamba_blocks.1.post_flip_quant.act_quant": {
+        "auroc": 0.8219711493830176,
+        "bacc_default": 0.7582974379671461,
+        "bacc_chosen_threshold": 0.7598711075724617
+      },
+      "mamba_blocks.1.rev_post_flip_quant.act_quant": {
+        "auroc": 0.8220600503769494,
+        "bacc_default": 0.7592552151829965,
+        "bacc_chosen_threshold": 0.7602874492872082
+      },
+      "mamba_blocks.1.output_quant.act_quant": {
+        "auroc": 0.8219785122197133,
+        "bacc_default": 0.7597294433580242,
+        "bacc_chosen_threshold": 0.7599062517674854
+      }
+    },
+    "groups": {
+      "other": {
+        "auroc": 0.832547992134691,
+        "bacc_default": 0.7721868970039022,
+        "bacc_chosen_threshold": 0.7767782875298868
+      },
+      "block0": {
+        "auroc": 0.8155926058244821,
+        "bacc_default": 0.7457351278174857,
+        "bacc_chosen_threshold": 0.7553187837725228
+      },
+      "block1": {
+        "auroc": 0.7392906035329214,
+        "bacc_default": 0.6659404320555293,
+        "bacc_chosen_threshold": 0.6740267265211242
+      }
+    },
+    "all": {
+      "auroc": 0.7578532566386604,
+      "bacc_default": 0.6861834398429962,
+      "bacc_chosen_threshold": 0.6975023788597171
+    },
+    "weights_only": {
+      "auroc": 0.8223729790275471,
+      "bacc_default": 0.7600133316861293,
+      "bacc_chosen_threshold": 0.7605391644462617
+    }
+  },
+  "qap": {
+    "alone": {
+      "mamba_blocks.1.mamba_fwd.in_proj_quant.act_quant": {
+        "auroc": 0.7784613446154128,
+        "bacc_default": 0.6406798856997762,
+        "bacc_chosen_threshold": 0.7241061428868272
+      },
+      "mamba_blocks.1.mamba_fwd.conv1d.output_quant.act_quant": {
+        "auroc": 0.7828362289056023,
+        "bacc_default": 0.6461896048189808,
+        "bacc_chosen_threshold": 0.7272466565051106
+      },
+      "mamba_blocks.1.mamba_fwd.silu.output_quant.act_quant": {
+        "auroc": 0.784708506039591,
+        "bacc_default": 0.6478613474090835,
+        "bacc_chosen_threshold": 0.7286599521997522
+      },
+      "mamba_blocks.1.mamba_fwd.ssm.output_quant.act_quant": {
+        "auroc": 0.7788196574677618,
+        "bacc_default": 0.6455407754672948,
+        "bacc_chosen_threshold": 0.7254701091938134
+      },
+      "mamba_blocks.1.mamba_fwd.output_quant.act_quant": {
+        "auroc": 0.7802949498655873,
+        "bacc_default": 0.6475359650461319,
+        "bacc_chosen_threshold": 0.7273185242640843
+      },
+      "mamba_blocks.1.mamba_rev.in_proj_quant.act_quant": {
+        "auroc": 0.7801750181559461,
+        "bacc_default": 0.6484615690929307,
+        "bacc_chosen_threshold": 0.7272192117336029
+      },
+      "mamba_blocks.1.mamba_rev.conv1d.output_quant.act_quant": {
+        "auroc": 0.7784596163715467,
+        "bacc_default": 0.6441217157233543,
+        "bacc_chosen_threshold": 0.7258173761729129
+      },
+      "mamba_blocks.1.mamba_rev.silu.output_quant.act_quant": {
+        "auroc": 0.7782362715977568,
+        "bacc_default": 0.649524940714439,
+        "bacc_chosen_threshold": 0.7245538260128095
+      },
+      "mamba_blocks.1.mamba_rev.ssm.output_quant.act_quant": {
+        "auroc": 0.78299948322272,
+        "bacc_default": 0.6511353079924107,
+        "bacc_chosen_threshold": 0.7283600112694446
+      },
+      "mamba_blocks.1.mamba_rev.output_quant.act_quant": {
+        "auroc": 0.7803168280089118,
+        "bacc_default": 0.6472562193250468,
+        "bacc_chosen_threshold": 0.7272691269117824
+      },
+      "mamba_blocks.1.scale_equalizer.act_quant": {
+        "auroc": 0.780293198966839,
+        "bacc_default": 0.6472894961104998,
+        "bacc_chosen_threshold": 0.7272659519918709
+      },
+      "mamba_blocks.1.post_flip_quant.act_quant": {
+        "auroc": 0.7803013029418219,
+        "bacc_default": 0.6475032060865564,
+        "bacc_chosen_threshold": 0.7272971574738138
+      },
+      "mamba_blocks.1.rev_post_flip_quant.act_quant": {
+        "auroc": 0.7803222392893316,
+        "bacc_default": 0.6474205319488016,
+        "bacc_chosen_threshold": 0.7273512832236597
+      },
+      "mamba_blocks.1.output_quant.act_quant": {
+        "auroc": 0.7803203912982313,
+        "bacc_default": 0.647715880410858,
+        "bacc_chosen_threshold": 0.7273065463042554
+      }
+    },
+    "groups": {
+      "other": {
+        "auroc": 0.807425737652348,
+        "bacc_default": 0.7341771150659459,
+        "bacc_chosen_threshold": 0.7509112311422865
+      },
+      "block0": {
+        "auroc": 0.8063541520178581,
+        "bacc_default": 0.7218427680496203,
+        "bacc_chosen_threshold": 0.748919530415299
+      },
+      "block1": {
+        "auroc": 0.7824909879202485,
+        "bacc_default": 0.6415808800717469,
+        "bacc_chosen_threshold": 0.7250025447905467
+      }
+    },
+    "all": {
+      "auroc": 0.824236210390738,
+      "bacc_default": 0.7634666218436588,
+      "bacc_chosen_threshold": 0.7664307348403594
+    },
+    "weights_only": {
+      "auroc": 0.7803235597453193,
+      "bacc_default": 0.6472889782846223,
+      "bacc_chosen_threshold": 0.7272825903845974
+    }
+  },
+  "signal": {
+    "ptq": {
+      "input_quant.act_quant": {
+        "sqnr_db": 1.7456153418480078,
+        "zeroed_share": 0.0028777382590553977,
+        "clipped_share": 0.07124827991832386
+      },
+      "patch_embed.output_quant.act_quant": {
+        "sqnr_db": 14.522013914111668,
+        "zeroed_share": 0.0065356762378246756,
+        "clipped_share": 0.031039468344155843
+      },
+      "pos_quant.act_quant": {
+        "sqnr_db": 9.403786409428164,
+        "zeroed_share": 0.008311688311688312,
+        "clipped_share": 0.05
+      },
+      "scale_equalizer.act_quant": {
+        "sqnr_db": 19.99776155161983,
+        "zeroed_share": 0.00041608391608391606,
+        "clipped_share": 0.09301308066933067
+      },
+      "mamba_blocks.0.mamba_fwd.in_proj_quant.act_quant": {
+        "sqnr_db": 12.637069390327394,
+        "zeroed_share": 0.0116961669921875,
+        "clipped_share": 0.02475972757711039
+      },
+      "mamba_blocks.0.mamba_fwd.conv1d.output_quant.act_quant": {
+        "sqnr_db": 25.167414247680078,
+        "zeroed_share": 0.005578660841112013,
+        "clipped_share": 0.03786797065239448
+      },
+      "mamba_blocks.0.mamba_fwd.silu.output_quant.act_quant": {
+        "sqnr_db": 24.62884992656737,
+        "zeroed_share": 0.0,
+        "clipped_share": 0.04797271332183441
+      },
+      "mamba_blocks.0.mamba_fwd.ssm.output_quant.act_quant": {
+        "sqnr_db": 9.192090126475623,
+        "zeroed_share": 0.046674915660511365,
+        "clipped_share": 0.024254245510349028
+      },
+      "mamba_blocks.0.mamba_fwd.output_quant.act_quant": {
+        "sqnr_db": 31.568222626080725,
+        "zeroed_share": 0.013480684354707792,
+        "clipped_share": 0.0013275542816558442
+      },
+      "mamba_blocks.0.mamba_rev.in_proj_quant.act_quant": {
+        "sqnr_db": 9.59492013006188,
+        "zeroed_share": 0.011077896712662337,
+        "clipped_share": 0.023818034382609578
+      },
+      "mamba_blocks.0.mamba_rev.conv1d.output_quant.act_quant": {
+        "sqnr_db": 25.106760052834936,
+        "zeroed_share": 0.00435553216314935,
+        "clipped_share": 0.037106775060876625
+      },
+      "mamba_blocks.0.mamba_rev.silu.output_quant.act_quant": {
+        "sqnr_db": 25.231112206923694,
+        "zeroed_share": 0.0,
+        "clipped_share": 0.04627512746043019
+      },
+      "mamba_blocks.0.mamba_rev.ssm.output_quant.act_quant": {
+        "sqnr_db": 17.39554714637883,
+        "zeroed_share": 0.013346787489853896,
+        "clipped_share": 0.01618238572950487
+      },
+      "mamba_blocks.0.mamba_rev.output_quant.act_quant": {
+        "sqnr_db": 32.52210417944074,
+        "zeroed_share": 0.009504616477272727,
+        "clipped_share": 0.002806348924512987
+      },
+      "mamba_blocks.0.scale_equalizer.act_quant": {
+        "sqnr_db": 17.1284328936064,
+        "zeroed_share": 0.028505035004058443,
+        "clipped_share": 0.021472421621347403
+      },
+      "mamba_blocks.0.post_flip_quant.act_quant": {
+        "sqnr_db": 45.310327047817964,
+        "zeroed_share": 0.0,
+        "clipped_share": 0.0
+      },
+      "mamba_blocks.0.rev_post_flip_quant.act_quant": {
+        "sqnr_db": null,
+        "zeroed_share": 0.0,
+        "clipped_share": 0.0
+      },
+      "mamba_blocks.0.output_quant.act_quant": {
+        "sqnr_db": 40.93836563344287,
+        "zeroed_share": 0.0,
+        "clipped_share": 0.0
+      },
+      "mamba_blocks.1.mamba_fwd.in_proj_quant.act_quant": {
+        "sqnr_db": 13.637231667883754,
+        "zeroed_share": 0.006736624581473214,
+        "clipped_share": 0.052813023158482145
+      },
+      "mamba_blocks.1.mamba_fwd.conv1d.output_quant.act_quant": {
+        "sqnr_db": 13.661042666721581,
+        "zeroed_share": 0.008603816837459416,
+        "clipped_share": 0.052392197646103894
+      },
+      "mamba_blocks.1.mamba_fwd.silu.output_quant.act_quant": {
+        "sqnr_db": 12.662981881594808,
+        "zeroed_share": 0.0,
+        "clipped_share": 0.04714621803977273
+      },
+      "mamba_blocks.1.mamba_fwd.ssm.output_quant.act_quant": {
+        "sqnr_db": 3.428499315146121,
+        "zeroed_share": 0.09328792423396916,
+        "clipped_share": 0.013429731889204545
+      },
+      "mamba_blocks.1.mamba_fwd.output_quant.act_quant": {
+        "sqnr_db": 18.15588735405798,
+        "zeroed_share": 0.05478471235795455,
+        "clipped_share": 0.001563768262987013
+      },
+      "mamba_blocks.1.mamba_rev.in_proj_quant.act_quant": {
+        "sqnr_db": 11.917367462397792,
+        "zeroed_share": 0.006953616451907467,
+        "clipped_share": 0.05420409363585633
+      },
+      "mamba_blocks.1.mamba_rev.conv1d.output_quant.act_quant": {
+        "sqnr_db": 14.519803046259065,
+        "zeroed_share": 0.009076117973823052,
+        "clipped_share": 0.04310581752232143
+      },
+      "mamba_blocks.1.mamba_rev.silu.output_quant.act_quant": {
+        "sqnr_db": 11.053201100948101,
+        "zeroed_share": 0.0,
+        "clipped_share": 0.04471793831168831
+      },
+      "mamba_blocks.1.mamba_rev.ssm.output_quant.act_quant": {
+        "sqnr_db": 0.9236899996034555,
+        "zeroed_share": 0.0711745700588474,
+        "clipped_share": 0.04808539848823052
+      },
+      "mamba_blocks.1.mamba_rev.output_quant.act_quant": {
+        "sqnr_db": 20.19578756281737,
+        "zeroed_share": 0.0490330762987013,
+        "clipped_share": 0.0016288301542207793
+      },
+      "mamba_blocks.1.scale_equalizer.act_quant": {
+        "sqnr_db": 26.32649489558904,
+        "zeroed_share": 0.0,
+        "clipped_share": 0.00210205078125
+      },
+      "mamba_blocks.1.post_flip_quant.act_quant": {
+        "sqnr_db": null,
+        "zeroed_share": 0.0,
+        "clipped_share": 0.0
+      },
+      "mamba_blocks.1.rev_post_flip_quant.act_quant": {
+        "sqnr_db": null,
+        "zeroed_share": 0.0,
+        "clipped_share": 0.0
+      },
+      "mamba_blocks.1.output_quant.act_quant": {
+        "sqnr_db": 25.391524388094567,
+        "zeroed_share": 0.0,
+        "clipped_share": 0.002149515523538961
+      },
+      "post_norm_quants.0.act_quant": {
+        "sqnr_db": 21.720232319321504,
+        "zeroed_share": 0.005669452617694805,
+        "clipped_share": 0.04741103135146104
+      },
+      "post_norm_quants.1.act_quant": {
+        "sqnr_db": 12.574246089116341,
+        "zeroed_share": 0.006495852780032467,
+        "clipped_share": 0.041479999492694805
+      },
+      "pre_classifier_quant.act_quant": {
+        "sqnr_db": 11.051535792773425,
+        "zeroed_share": 0.004139610389610389,
+        "clipped_share": 0.19862520292207791
+      }
+    },
+    "qap": {
+      "input_quant.act_quant": {
+        "sqnr_db": 7.606616426504643,
+        "zeroed_share": 0.0643402099609375,
+        "clipped_share": 0.00032875754616477275
+      },
+      "patch_embed.output_quant.act_quant": {
+        "sqnr_db": 18.419021374044977,
+        "zeroed_share": 0.24044592126623376,
+        "clipped_share": 2.726765422077922e-06
+      },
+      "pos_quant.act_quant": {
+        "sqnr_db": 36.29955054869055,
+        "zeroed_share": 0.02207792207792208,
+        "clipped_share": 6.493506493506494e-05
+      },
+      "scale_equalizer.act_quant": {
+        "sqnr_db": 23.840055153536124,
+        "zeroed_share": 0.01451098901098901,
+        "clipped_share": 4.901348651348651e-06
+      },
+      "mamba_blocks.0.mamba_fwd.in_proj_quant.act_quant": {
+        "sqnr_db": 19.309877897756948,
+        "zeroed_share": 0.036298645812195614,
+        "clipped_share": 0.00030707024908685065
+      },
+      "mamba_blocks.0.mamba_fwd.conv1d.output_quant.act_quant": {
+        "sqnr_db": 25.881266936704847,
+        "zeroed_share": 0.031067893288352272,
+        "clipped_share": 0.0001413954697646104
+      },
+      "mamba_blocks.0.mamba_fwd.silu.output_quant.act_quant": {
+        "sqnr_db": 25.240751241694156,
+        "zeroed_share": 0.0,
+        "clipped_share": 0.00010130250608766234
+      },
+      "mamba_blocks.0.mamba_fwd.ssm.output_quant.act_quant": {
+        "sqnr_db": 13.329401695104641,
+        "zeroed_share": 0.8570478325385552,
+        "clipped_share": 2.6950588474025975e-06
+      },
+      "mamba_blocks.0.mamba_fwd.output_quant.act_quant": {
+        "sqnr_db": 24.711248518916197,
+        "zeroed_share": 0.0771283989448052,
+        "clipped_share": 4.952566964285714e-05
+      },
+      "mamba_blocks.0.mamba_rev.in_proj_quant.act_quant": {
+        "sqnr_db": 19.91955330816684,
+        "zeroed_share": 0.039726396040482954,
+        "clipped_share": 0.0003239698533887987
+      },
+      "mamba_blocks.0.mamba_rev.conv1d.output_quant.act_quant": {
+        "sqnr_db": 24.67386652273476,
+        "zeroed_share": 0.024961317978896103,
+        "clipped_share": 0.00022749467329545453
+      },
+      "mamba_blocks.0.mamba_rev.silu.output_quant.act_quant": {
+        "sqnr_db": 26.95216269142709,
+        "zeroed_share": 0.0,
+        "clipped_share": 0.00015155742694805194
+      },
+      "mamba_blocks.0.mamba_rev.ssm.output_quant.act_quant": {
+        "sqnr_db": 7.029027087416432,
+        "zeroed_share": 0.6765201241629464,
+        "clipped_share": 0.00017676415381493506
+      },
+      "mamba_blocks.0.mamba_rev.output_quant.act_quant": {
+        "sqnr_db": 20.163520196808314,
+        "zeroed_share": 0.0217237596387987,
+        "clipped_share": 0.0026804738230519483
+      },
+      "mamba_blocks.0.scale_equalizer.act_quant": {
+        "sqnr_db": 37.448478788937564,
+        "zeroed_share": 0.0,
+        "clipped_share": 2.6506696428571428e-05
+      },
+      "mamba_blocks.0.post_flip_quant.act_quant": {
+        "sqnr_db": 17.82661205976705,
+        "zeroed_share": 0.0,
+        "clipped_share": 0.00014749898538961038
+      },
+      "mamba_blocks.0.rev_post_flip_quant.act_quant": {
+        "sqnr_db": 40.57861069317552,
+        "zeroed_share": 0.0,
+        "clipped_share": 0.0013844992897727273
+      },
+      "mamba_blocks.0.output_quant.act_quant": {
+        "sqnr_db": 30.867963165906648,
+        "zeroed_share": 0.0,
+        "clipped_share": 0.0004983639407467532
+      },
+      "mamba_blocks.1.mamba_fwd.in_proj_quant.act_quant": {
+        "sqnr_db": 26.996892867214832,
+        "zeroed_share": 0.012517874581473215,
+        "clipped_share": 0.002836636629971591
+      },
+      "mamba_blocks.1.mamba_fwd.conv1d.output_quant.act_quant": {
+        "sqnr_db": 22.038514379651556,
+        "zeroed_share": 0.016615148767248376,
+        "clipped_share": 0.005418859704748377
+      },
+      "mamba_blocks.1.mamba_fwd.silu.output_quant.act_quant": {
+        "sqnr_db": 33.68099637094684,
+        "zeroed_share": 0.0,
+        "clipped_share": 0.0017580027394480519
+      },
+      "mamba_blocks.1.mamba_fwd.ssm.output_quant.act_quant": {
+        "sqnr_db": 4.165536290569137,
+        "zeroed_share": 0.8411566558441559,
+        "clipped_share": 4.671963778409091e-05
+      },
+      "mamba_blocks.1.mamba_fwd.output_quant.act_quant": {
+        "sqnr_db": 28.150488520145387,
+        "zeroed_share": 0.11500456574675325,
+        "clipped_share": 6.341314935064935e-07
+      },
+      "mamba_blocks.1.mamba_rev.in_proj_quant.act_quant": {
+        "sqnr_db": 29.58507884789537,
+        "zeroed_share": 0.014022565569196429,
+        "clipped_share": 0.0010465468369521105
+      },
+      "mamba_blocks.1.mamba_rev.conv1d.output_quant.act_quant": {
+        "sqnr_db": 18.67432777946977,
+        "zeroed_share": 0.015097434303977272,
+        "clipped_share": 0.0056040261008522725
+      },
+      "mamba_blocks.1.mamba_rev.silu.output_quant.act_quant": {
+        "sqnr_db": 31.15633123114902,
+        "zeroed_share": 0.0,
+        "clipped_share": 0.0025418843851461037
+      },
+      "mamba_blocks.1.mamba_rev.ssm.output_quant.act_quant": {
+        "sqnr_db": 7.926517353054921,
+        "zeroed_share": 0.8003311751724838,
+        "clipped_share": 7.798232041396104e-05
+      },
+      "mamba_blocks.1.mamba_rev.output_quant.act_quant": {
+        "sqnr_db": 28.846590631334607,
+        "zeroed_share": 0.11233309659090909,
+        "clipped_share": 5.707183441558442e-07
+      },
+      "mamba_blocks.1.scale_equalizer.act_quant": {
+        "sqnr_db": 32.354271743919504,
+        "zeroed_share": 0.0,
+        "clipped_share": 1.0463169642857143e-06
+      },
+      "mamba_blocks.1.post_flip_quant.act_quant": {
+        "sqnr_db": 36.06631961888769,
+        "zeroed_share": 0.0,
+        "clipped_share": 5.073051948051948e-07
+      },
+      "mamba_blocks.1.rev_post_flip_quant.act_quant": {
+        "sqnr_db": 30.547178527752216,
+        "zeroed_share": 0.0,
+        "clipped_share": 5.073051948051948e-07
+      },
+      "mamba_blocks.1.output_quant.act_quant": {
+        "sqnr_db": 27.00232355709587,
+        "zeroed_share": 0.0,
+        "clipped_share": 5.707183441558442e-07
+      },
+      "post_norm_quants.0.act_quant": {
+        "sqnr_db": 36.28566292182083,
+        "zeroed_share": 0.021497057629870128,
+        "clipped_share": 5.073051948051948e-07
+      },
+      "post_norm_quants.1.act_quant": {
+        "sqnr_db": 40.28221281637605,
+        "zeroed_share": 0.010848848417207792,
+        "clipped_share": 0.00022169237012987012
+      },
+      "pre_classifier_quant.act_quant": {
+        "sqnr_db": 36.79032878237241,
+        "zeroed_share": 0.014645900974025974,
+        "clipped_share": 0.000294237012987013
+      }
+    }
+  },
+  "time_utc": "2026-11-07T08:06:56.331831+00:00"
+}
