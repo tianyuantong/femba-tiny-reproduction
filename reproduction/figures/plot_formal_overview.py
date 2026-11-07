@@ -1,11 +1,12 @@
-"""Draw the front-page chart, test AUROC of the formal line, from the INT8 summary (light and dark SVG)."""
+"""Draw the front-page charts, test AUROC of the formal line at INT8 and INT4, from the summaries (light and dark SVG)."""
 import json
 from pathlib import Path
 import statistics
 
 ROOT = Path(__file__).parent
-SUMMARY = ROOT.parent / "formal_line" / "results" / "int8" / "summary.json"
+RESULTS = ROOT.parent / "formal_line" / "results"
 SEEDS = ("42", "43", "44")
+SETTINGS = (("int8", "w8a8", "INT8", "W8A8", "formal-overview"), ("int4", "w4a8", "INT4", "W4A8", "formal-overview-int4"))
 TASKS = (("tuar", "auroc", "TUAR 伪迹检测"), ("tuab", "auroc", "TUAB 异常检测"), ("tusl-v2", "macro_auroc", "TUSL v2 慢波三分类"))
 ARMS = (("fp32", "FP32 基线"), ("ptq", "PTQ（训练后量化）"), ("c", "C（FP32 预训练 + 量化微调）"), ("qap", "QAP（量化预训练 + 量化微调）"))
 THEMES = {
@@ -30,11 +31,11 @@ def text(x, top, body, size, fill, anchor="start", weight=None):
             f"font-family='{FONT}'>{body}</text>")
 
 
-def draw(theme: dict, summary: dict) -> str:
+def draw(theme: dict, summary: dict, name: str, config: str) -> str:
     parts = [f"<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 {WIDTH} {HEIGHT}' width='{WIDTH}' height='{HEIGHT}' role='img'>",
-             "<title>FEMBA-Tiny formal line: INT8 test AUROC on three tasks, three seeds</title>",
+             f"<title>FEMBA-Tiny formal line: {name} test AUROC on three tasks, three seeds</title>",
              f"<rect width='{WIDTH}' height='{HEIGHT}' fill='{theme['surface']}' rx='8'/>",
-             text(LEFT, 28, "三任务 INT8（W8A8）测试 AUROC", 17, theme["ink"], weight=600),
+             text(LEFT, 28, f"三任务 {name}（{config}）测试 AUROC", 17, theme["ink"], weight=600),
              text(LEFT, 47, "FEMBA-Tiny · 受试者独立划分 · 3 个随机种子的均值，细线为范围 · 纵轴从随机水平 0.5 起", 11.5, theme["muted"])]
     x = LEFT
     for arm, label in ARMS:
@@ -63,9 +64,10 @@ def draw(theme: dict, summary: dict) -> str:
 
 
 def main() -> None:
-    summary = json.loads(SUMMARY.read_text())["w8a8"]
-    for name, theme in THEMES.items():
-        (ROOT / f"formal-overview-{name}.svg").write_text(draw(theme, summary))
+    for folder, setting, name, config, stem in SETTINGS:
+        summary = json.loads((RESULTS / folder / "summary.json").read_text())[setting]
+        for mode, theme in THEMES.items():
+            (ROOT / f"{stem}-{mode}.svg").write_text(draw(theme, summary, name, config))
 
 
 if __name__ == "__main__":
