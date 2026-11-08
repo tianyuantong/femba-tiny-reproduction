@@ -4,7 +4,8 @@ Reads ``<artifacts>/seed<seed>/<arm>/...`` written by finetune_queue.sh:
 binary tasks (tuar, tuab) from evaluate_one.py / sweep.py results, TUSL folds
 from evaluate_events.py results, protocol v2 (``tusl<k>-v2``) and protocol v1
 (``tusl<k>``) kept apart. Arms: fp32 and, per weight setting
-(w8a8, w4a8, ternary_a8), ptq / c / qap. Prints a Markdown summary and writes
+(w8a8, w4a8, ternary_a8 and the activation-width settings, p95_ meaning group C
+started from the 95th percentile), ptq / c / qap. Prints a Markdown summary and writes
 ``summary.json``. Seeds are the unit of variation: TUSL folds are averaged
 within a seed first, only when all four folds exist (partial ones are listed as
 incomplete); differences are computed within the same seed (and fold).
@@ -14,7 +15,7 @@ import json
 import statistics
 from pathlib import Path
 
-SETTINGS = ("w8a8", "w4a8", "ternary_a8", "random_w8a8", "random_w4a8")
+SETTINGS = ("w8a8", "w4a8", "ternary_a8", "random_w8a8", "random_w4a8", "w8a6", "w8a5", "w8a4", "p95_w8a6", "p95_w8a4")
 BINARY_TASKS = ("tuar", "tuab")
 BINARY_METRICS = ("auroc", "ap", "bacc_default", "bacc_val_thr")
 TUSL_METRICS = ("macro_auroc", "macro_ap", "bacc")

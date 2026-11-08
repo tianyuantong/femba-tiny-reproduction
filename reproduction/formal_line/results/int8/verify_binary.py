@@ -54,6 +54,8 @@ for task in TASKS:
     manifest_dir = {"tuab": "tuab-ft"}.get(task, task)
     rows, test_labels = {}, {}
     for arm in ("fp32", "c", "qap", "ptq"):
+        if arm not in summary[SETTING][task]:  # a setting screened without this arm
+            continue
         if arm == "ptq":
             d = ART / f"seed{SEED}" / f"ptq_{SETTING}" / f"sweep-{task}"
             result = json.loads((d / "results.json").read_text())

@@ -1,6 +1,6 @@
 # 正式线：三个任务 × 三档位宽
 
-[INT8 结果](results/int8/README.md) · [INT4 结果](results/int4/README.md) · [评测指标与成本](results/metrics/README.md) · [QAP 逐层分析](results/layers/README.md) · [PTQ 掉点定位](results/ptq-diagnosis/README.md)
+[INT8 结果](results/int8/README.md) · [INT4 结果](results/int4/README.md) · [评测指标与成本](results/metrics/README.md) · [QAP 逐层分析](results/layers/README.md) · [PTQ 掉点定位](results/ptq-diagnosis/README.md) · [激活位宽线](results/activation-sweep/README.md)
 
 在 TUAR、TUAB、TUSL 三个任务上比较 FP32、PTQ、C、QAP 四组（位宽三档，种子 42 / 43 / 44，受试者独立划分）。模型源码基于上游 BioFoundation `a2a4d44` 依次应用三个补丁，见 [QUANTIZATION.md](../teammate_ptq/QUANTIZATION.md#独立准备源码)。
 
@@ -36,6 +36,8 @@ SEED=42 BITS=2 SCHEME=ternary TASKS="tuar tuab tusl0-v2 tusl1-v2 tusl2-v2 tusl3-
 BATCHES="42:4:uniform 43:8:uniform" QUEUE=./finetune_queue.sh nohup ./launch_batches.sh >> "$ART/logs/launch-batches.log" 2>&1 &
 # QAP 预训练未就绪时：RUN_QAP=no 先跑 C 和 PTQ，就绪后用 RUN_QAP=yes 补跑
 FP32_PARENTS=given RUN_QAP=no SEED=43 BITS=4 TASKS=tuab ./finetune_queue.sh
+# 激活位宽：ABITS 设激活位宽，RUN_QAP=no 只跑 C 和 PTQ，见 results/activation-sweep/README.md
+FP32_PARENTS=given RUN_QAP=no SEED=42 BITS=8 ABITS=6 TASKS=tuab ./finetune_queue.sh
 # 随机初始化基线（无预训练，三任务，BITS=8 或 4，在 STUDY 目录运行）
 BITS=8 SEEDS="42 43 44" ./run_random_init.sh
 # FP16 / BF16 重放（直接重放 FP32 微调检查点，在 STUDY 目录运行）

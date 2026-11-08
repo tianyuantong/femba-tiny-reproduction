@@ -14,9 +14,9 @@
 # FP32_PARENTS=given (a machine running only quantized settings): the seed's FP32 stages
 # and their evaluations must already be in $ART, copied from the machine that ran them;
 # a missing one is an error rather than trained again, so all settings share one FP32.
-# RUN_QAP=no stops at the FP32 and C stages and the PTQ sweep, so a setting can run before its
-# QAP pretraining exists; running the same command later with RUN_QAP=yes skips what is done
-# and adds the QAP stages.
+# ABITS sets the activation width (default 8). RUN_QAP=no stops at the FP32 and C stages and
+# the PTQ sweep, so a width can be screened before its QAP pretraining exists; running the
+# same command later with RUN_QAP=yes skips what is done and adds the QAP stages.
 set -u
 PY=${PY:-/root/envs/femba/bin/python}
 STUDY=${STUDY:-/root/work/femba-formal-study}
@@ -29,12 +29,13 @@ TUSL_EPOCHS=${TUSL_EPOCHS:-20}
 ART=${ART:-/root/work/femba-artifacts/formal-20261025}
 SEED=${SEED:-42}
 BITS=${BITS:-8}
+ABITS=${ABITS:-8}
 SCHEME=${SCHEME:-uniform}
 TASKS=${TASKS:-tuar tuab}
 FP32_PARENTS=${FP32_PARENTS:-run}
 RUN_QAP=${RUN_QAP:-yes}
-arm=qap_w${BITS}a8; [ "$SCHEME" = ternary ] && arm=qap_ternary_a8
-quant=(--weight-bit-width "$BITS" --activation-bit-width 8 --weight-quant-scheme "$SCHEME")
+arm=qap_w${BITS}a$ABITS; [ "$SCHEME" = ternary ] && arm=qap_ternary_a$ABITS
+quant=(--weight-bit-width "$BITS" --activation-bit-width "$ABITS" --weight-quant-scheme "$SCHEME")
 log="$ART/logs/seed$SEED-finetune-${arm#qap_}${LOG_SUFFIX:-}.log"
 mkdir -p "$ART/logs"
 
