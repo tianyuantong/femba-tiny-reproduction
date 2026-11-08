@@ -11,7 +11,7 @@
 ![Brevitas 0.12.1](https://img.shields.io/badge/brevitas-0.12.1-008080)
 [![License: Apache-2.0](https://img.shields.io/badge/license-Apache--2.0-lightgrey.svg)](LICENSE)
 
-[问题与数据速查](#6-报告问题与数据速查索引) · [INT8 结果](reproduction/formal_line/results/int8/README.md) · [INT4 结果](reproduction/formal_line/results/int4/README.md) · [评测指标与成本](reproduction/formal_line/results/metrics/README.md) · [QAP 逐层分析](reproduction/formal_line/results/layers/README.md) · [PTQ 掉点定位](reproduction/formal_line/results/ptq-diagnosis/README.md) · [快速复现](#5-快速复现与多机分工)
+[问题与数据速查](#6-报告问题与数据速查索引) · [INT8 结果](reproduction/formal_line/results/int8/README.md) · [INT4 结果](reproduction/formal_line/results/int4/README.md) · [评测指标与成本](reproduction/formal_line/results/metrics/README.md) · [QAP 逐层分析](reproduction/formal_line/results/layers/README.md) · [PTQ 掉点定位](reproduction/formal_line/results/ptq-diagnosis/README.md) · [激活位宽线](reproduction/formal_line/results/activation-sweep/README.md) · [快速复现](#5-快速复现与多机分工)
 
 <picture>
   <source media="(prefers-color-scheme: dark)" srcset="reproduction/figures/formal-overview-dark.svg">
@@ -170,6 +170,7 @@ FP32_PARENTS=given SEED=42 BITS=4 SCHEME=uniform \
 | **逐样本测试分数**（文件布局与字段格式） | [INT8 完整结果 §文件](reproduction/formal_line/results/int8/README.md#文件) | 组内按压缩包分发，格式见该节 |
 | **QAP 逐层分析**（按块 + 第 2 块逐处 + SQNR/截断率） | [QAP 逐层分析](reproduction/formal_line/results/layers/README.md) | [layers/*.json](reproduction/formal_line/results/layers/) · [layer_comparison.py](reproduction/teammate_ptq/layer_comparison.py) |
 | **PTQ 掉点诊断与修复**（迁移、旋转、FP16 回退、MSE/KL） | [PTQ 掉点定位](reproduction/formal_line/results/ptq-diagnosis/README.md) | [ptq-diagnosis/summarize.py](reproduction/formal_line/results/ptq-diagnosis/summarize.py) · [channel_migration.py](reproduction/teammate_ptq/channel_migration.py) · [rotation_ptq.py](reproduction/teammate_ptq/rotation_ptq.py) |
+| **激活位宽线**（W8A6 / W8A5 / W8A4 与 95 百分位起步） | [激活位宽线](reproduction/formal_line/results/activation-sweep/README.md) | [summary.json](reproduction/formal_line/results/activation-sweep/summary.json) · [provenance.json](reproduction/formal_line/results/activation-sweep/provenance.json) · [run_c_start.sh](reproduction/formal_line/run_c_start.sh) |
 | **正式线协议与队列**（[subject_split](reproduction/subject_split/)、[tusl_events](reproduction/tusl_events/)、[teammate_ptq](reproduction/teammate_ptq/README.md)） | [正式线复现手册](reproduction/formal_line/README.md) · [2025 权重归档](reproduction/RESULTS.md) | [finetune_queue.sh](reproduction/formal_line/finetune_queue.sh) · [summarize_formal.py](reproduction/formal_line/summarize_formal.py) |
 
 ## 上游来源与致谢
