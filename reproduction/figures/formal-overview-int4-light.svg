@@ -8,9 +8,9 @@
 <rect x='156.23000000000002' y='61' width='12' height='12' rx='3' fill='#eb6834'/>
 <text x='173.23000000000002' y='71.5' font-size='11.5' fill='#0b0b0b' text-anchor='start' font-family='-apple-system, BlinkMacSystemFont, Segoe UI, Helvetica, Arial, sans-serif'>PTQ（训练后量化）</text>
 <rect x='290.13' y='61' width='12' height='12' rx='3' fill='#2a78d6'/>
-<text x='307.13' y='71.5' font-size='11.5' fill='#0b0b0b' text-anchor='start' font-family='-apple-system, BlinkMacSystemFont, Segoe UI, Helvetica, Arial, sans-serif'>C（FP32 预训练 + 量化微调）</text>
-<rect x='503.15' y='61' width='12' height='12' rx='3' fill='#1baf7a'/>
-<text x='520.15' y='71.5' font-size='11.5' fill='#0b0b0b' text-anchor='start' font-family='-apple-system, BlinkMacSystemFont, Segoe UI, Helvetica, Arial, sans-serif'>QAP（量化预训练 + 量化微调）</text>
+<text x='307.13' y='71.5' font-size='11.5' fill='#0b0b0b' text-anchor='start' font-family='-apple-system, BlinkMacSystemFont, Segoe UI, Helvetica, Arial, sans-serif'>QAT（FP32 预训练 + 量化微调）</text>
+<rect x='522.93' y='61' width='12' height='12' rx='3' fill='#1baf7a'/>
+<text x='539.93' y='71.5' font-size='11.5' fill='#0b0b0b' text-anchor='start' font-family='-apple-system, BlinkMacSystemFont, Segoe UI, Helvetica, Arial, sans-serif'>QAP（量化预训练 + 量化微调）</text>
 <line x1='52' y1='360.0' x2='736' y2='360.0' stroke='#e1e0d9' stroke-width='1'/>
 <text x='44' y='364.0' font-size='10.5' fill='#52514e' text-anchor='end' font-family='-apple-system, BlinkMacSystemFont, Segoe UI, Helvetica, Arial, sans-serif'>0.50</text>
 <line x1='52' y1='297.0' x2='736' y2='297.0' stroke='#e1e0d9' stroke-width='1'/>

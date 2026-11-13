@@ -2,14 +2,14 @@
 
 [INT8 结果](results/int8/README.md) · [INT4 结果](results/int4/README.md) · [评测指标与成本](results/metrics/README.md) · [QAP 逐层分析](results/layers/README.md) · [PTQ 掉点定位](results/ptq-diagnosis/README.md) · [激活位宽线](results/activation-sweep/README.md)
 
-在 TUAR、TUAB、TUSL 三个任务上比较 FP32、PTQ、C、QAP 四组（位宽三档，种子 42 / 43 / 44，受试者独立划分）。模型源码基于上游 BioFoundation `a2a4d44` 依次应用三个补丁，见 [QUANTIZATION.md](../teammate_ptq/QUANTIZATION.md#独立准备源码)。
+在 TUAR、TUAB、TUSL 三个任务上比较 FP32、PTQ、QAT、QAP 四组（位宽三档，种子 42 / 43 / 44，受试者独立划分；脚本参数、目录 `c_<档>` 与 JSON 键 `"c"` 沿用内部组名代号）。模型源码基于上游 BioFoundation `a2a4d44` 依次应用三个补丁，见 [QUANTIZATION.md](../teammate_ptq/QUANTIZATION.md#独立准备源码)。
 
 ## 协议
 
 | 项目 | 规定 |
 |---|---|
 | 划分 | 全部按受试者；TUAB 测试集 = 官方 eval；预训练语料 = TUAB 官方训练集，剔除 TUAR、TUSL 测试受试者 |
-| 四种方法 | FP32；PTQ（在 FP32 微调检查点上校准）；C（FP32 预训练 + 量化微调）；QAP（量化预训练 + 量化微调，两阶段位宽相同） |
+| 四种方法 | FP32；PTQ（在 FP32 微调检查点上校准）；QAT（FP32 预训练 + 量化感知微调，脚本与产物中记作 `c`）；QAP（量化预训练 + 量化微调，两阶段位宽相同） |
 | 三档位宽 | int8 = W8A8；int4 = W4A8；三值 = 每层 scale = mean\|w\|，\|w\| > 0.7 × scale 记 ±1、否则记 0，激活 8 位 |
 | 训练 | 预训练 2 轮（每轮存档）；整体微调 5 轮（TUSL 20 轮）；均按最低验证损失选检查点 |
 | PTQ | 激活百分位七档（99.999 / 99.99 / 99.9 / 99 / 98 / 95 / 90，目录中 99.999 记为 `original`）。二分类用 512 个训练片段校准、按验证 AUROC 选档；TUSL 用 384 个、按验证宏平均 AUROC 选档；同折共用校准名单 |
@@ -34,9 +34,9 @@ SMOKE_QUEUE=./finetune_queue.sh nohup ./pretrain_queue_ternary.sh > "$ART/logs/p
 SEED=42 BITS=2 SCHEME=ternary TASKS="tuar tuab tusl0-v2 tusl1-v2 tusl2-v2 tusl3-v2" LOG_SUFFIX=-all ./finetune_queue.sh
 # 多批次串行启动（预训练之外 GPU 上只跑一个微调）
 BATCHES="42:4:uniform 43:8:uniform" QUEUE=./finetune_queue.sh nohup ./launch_batches.sh >> "$ART/logs/launch-batches.log" 2>&1 &
-# QAP 预训练未就绪时：RUN_QAP=no 先跑 C 和 PTQ，就绪后用 RUN_QAP=yes 补跑
+# QAP 预训练未就绪时：RUN_QAP=no 先跑 QAT 和 PTQ，就绪后用 RUN_QAP=yes 补跑
 FP32_PARENTS=given RUN_QAP=no SEED=43 BITS=4 TASKS=tuab ./finetune_queue.sh
-# 激活位宽：ABITS 设激活位宽，RUN_QAP=no 只跑 C 和 PTQ，见 results/activation-sweep/README.md
+# 激活位宽：ABITS 设激活位宽，RUN_QAP=no 只跑 QAT 和 PTQ，见 results/activation-sweep/README.md
 FP32_PARENTS=given RUN_QAP=no SEED=42 BITS=8 ABITS=6 TASKS=tuab ./finetune_queue.sh
 # 随机初始化基线（无预训练，三任务，BITS=8 或 4，在 STUDY 目录运行）
 BITS=8 SEEDS="42 43 44" ./run_random_init.sh

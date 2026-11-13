@@ -8,7 +8,7 @@ RESULTS = ROOT.parent / "formal_line" / "results"
 SEEDS = ("42", "43", "44")
 SETTINGS = (("int8", "w8a8", "INT8", "W8A8", "formal-overview"), ("int4", "w4a8", "INT4", "W4A8", "formal-overview-int4"))
 TASKS = (("tuar", "auroc", "TUAR 伪迹检测"), ("tuab", "auroc", "TUAB 异常检测"), ("tusl-v2", "macro_auroc", "TUSL v2 慢波三分类"))
-ARMS = (("fp32", "FP32 基线"), ("ptq", "PTQ（训练后量化）"), ("c", "C（FP32 预训练 + 量化微调）"), ("qap", "QAP（量化预训练 + 量化微调）"))
+ARMS = (("fp32", "FP32 基线"), ("ptq", "PTQ（训练后量化）"), ("c", "QAT（FP32 预训练 + 量化微调）"), ("qap", "QAP（量化预训练 + 量化微调）"))
 THEMES = {
     "light": {"surface": "#fcfcfb", "ink": "#0b0b0b", "muted": "#52514e", "grid": "#e1e0d9",
               "fp32": "#6250d6", "ptq": "#eb6834", "c": "#2a78d6", "qap": "#1baf7a"},

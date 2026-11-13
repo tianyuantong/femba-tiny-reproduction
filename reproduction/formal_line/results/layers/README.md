@@ -2,14 +2,14 @@
 
 [结论](#结论) · [怎么测](#怎么测) · [INT8 按块](#按块) · [INT8 第 2 块逐处](#第二个-mamba-块逐处) · [INT8 量化误差](#量化误差) · [INT4 逐层与量化误差](#int4) · [文件](#文件)
 
-范围：TUAB 验证集，种子 42 / 43 / 44（上半页 INT8 W8A8，页尾 [INT4 W4A8](#int4)）。本页对比 **PTQ / C / QAP 的逐块掉点与截断率**（回答为什么量化微调不掉点）；单模型 PTQ 的 35 处消融与不重训修复见 [PTQ 掉点定位](../ptq-diagnosis/README.md)。
+范围：TUAB 验证集，种子 42 / 43 / 44（上半页 INT8 W8A8，页尾 [INT4 W4A8](#int4)）。本页对比 **PTQ / QAT / QAP 的逐块掉点与截断率**（回答为什么量化微调不掉点）；单模型 PTQ 的 35 处消融与不重训修复见 [PTQ 掉点定位](../ptq-diagnosis/README.md)。
 
 ## 结论
 
 1. **QAP 对 PTQ 的优势集中在第 2 个 Mamba 块**：PTQ 在该块掉 `0.057` AUROC，QAP 不掉（三个种子同向），占 QAP 全部掉点缩减量的 **76%**（`0.063 / 0.083`，BAcc 结论相同）。
 2. **第 2 块内集中在反向分支**：掉点差距最大的 5 处有 4 处在反向分支；单开反向扫描输出时，PTQ 掉 `0.030`，QAP 不掉。
 3. **第 1 个 Mamba 块差别极小**：两者掉点差仅 `0.005`。
-4. **量化微调消除了第 2 块的激活截断**：PTQ 在第 2 块每处中位数有 `4.05%` 激活值越界截断，而 QAP 仅 `0.02%`、C 不到 `0.01%`。
+4. **量化微调消除了第 2 块的激活截断**：PTQ 在第 2 块每处中位数有 `4.05%` 激活值越界截断，而 QAP 仅 `0.02%`、QAT 不到 `0.01%`。
 5. **INT4 结论一致**：第 2 块占 QAP 掉点缩减量的 **72%**，差距最大的仍是反向扫描输出。
 
 <picture>
@@ -74,7 +74,7 @@ AUROC：
 
 在前 512 个验证片段上全开量化器，统计信号与量化噪声功率比（SQNR，越高误差越小）和越界截断比例（组内各处取中位数，再对三个种子求均值）：
 
-| 组 | PTQ SQNR（dB） | C SQNR（dB） | QAP SQNR（dB） | PTQ 截断比例 | C 截断比例 | QAP 截断比例 |
+| 组 | PTQ SQNR（dB） | QAT SQNR（dB） | QAP SQNR（dB） | PTQ 截断比例 | QAT 截断比例 | QAP 截断比例 |
 |---|---:|---:|---:|---:|---:|---:|
 | 前后端 | 14.2 | 30.3 | 34.2 | 5.06% | 0.00% | 0.01% |
 | 第一个 Mamba 块 | 24.7 | 21.7 | 22.8 | 2.18% | 0.01% | 0.01% |
@@ -128,7 +128,7 @@ AUROC：
 
 INT4 量化误差：
 
-| 组 | PTQ SQNR（dB） | C SQNR（dB） | QAP SQNR（dB） | PTQ 截断比例 | C 截断比例 | QAP 截断比例 |
+| 组 | PTQ SQNR（dB） | QAT SQNR（dB） | QAP SQNR（dB） | PTQ 截断比例 | QAT 截断比例 | QAP 截断比例 |
 |---|---:|---:|---:|---:|---:|---:|
 | 前后端 | 14.2 | 30.5 | 34.7 | 5.00% | 0.00% | 0.01% |
 | 第一个 Mamba 块 | 24.6 | 22.1 | 23.7 | 2.25% | 0.01% | 0.02% |
@@ -138,7 +138,7 @@ INT4 量化误差：
 
 - [seed42.json](seed42.json)、[seed43.json](seed43.json)、[seed44.json](seed44.json)：INT8 每处的 AUROC、平衡准确率、SQNR 和截断比例。
 - [w4a8-seed42.json](w4a8-seed42.json)、[w4a8-seed43.json](w4a8-seed43.json)、[w4a8-seed44.json](w4a8-seed44.json)：INT4 的同一组数字。
-- [c-signal.json](c-signal.json)：C 每处的 SQNR 和截断比例，由下面的脚本加 `--signal-only`、把 `--qap` 换成 C 的检查点测得。
+- [c-signal.json](c-signal.json)：QAT 每处的 SQNR 和截断比例（文件名沿用早期代号 `c`），由下面的脚本加 `--signal-only`、把 `--qap` 换成 QAT 的检查点测得。
 - [layer_comparison.py](../../../teammate_ptq/layer_comparison.py)：测量脚本。
 - [plot_layer_drop.py](../../../figures/plot_layer_drop.py)：画图。
 

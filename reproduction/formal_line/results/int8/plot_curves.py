@@ -9,7 +9,7 @@ import matplotlib.pyplot as plt
 
 ROOT = Path(__file__).parent
 COLORS = {'fp32': '#2364a4', 'c_w8a8': '#22846a', 'qap_w8a8': '#c66c20'}
-LABELS = {'fp32': 'FP32', 'c_w8a8': 'C W8A8', 'qap_w8a8': 'QAP W8A8'}
+LABELS = {'fp32': 'FP32', 'c_w8a8': 'QAT W8A8', 'qap_w8a8': 'QAP W8A8'}
 
 
 def main() -> None:
