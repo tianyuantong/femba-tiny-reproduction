@@ -2,7 +2,7 @@
 
 # FEMBA-Tiny 脑电基础模型量化与位宽临界点研究
 
-在脑电基础模型 FEMBA-Tiny（双向 Mamba，867 万参数）上比较三种量化方案：训练后量化（PTQ，post-training quantization）、FP32 预训练 + 量化感知微调（QAT，quantization-aware training）、量化预训练 + 量化微调（QAP，quantization-aware pretraining）。下游任务来自 TUH 脑电数据库：TUAR 伪迹检测、TUAB 异常检测、TUSL 慢波三分类。本页汇总 INT8 和 INT4；三值实验由队友负责，不在本仓库。
+在脑电基础模型 FEMBA-Tiny（双向 Mamba，867 万参数）上比较三种量化方案：训练后量化（PTQ，post-training quantization）、FP32 预训练 + 量化感知微调（QAT，quantization-aware training）、量化预训练 + 量化微调（QAP，quantization-aware pretraining）。下游任务来自 TUH 脑电数据库：TUAR 伪迹检测、TUAB 异常检测、TUSL 慢波三分类。本仓库聚焦 INT8（W8A8）与 INT4（W4A8）的量化诊断、通道迁移与位宽边界验证。
 
 **TUAB 测试 AUROC：PTQ 0.76，QAT 0.84，QAP 0.85 · INT4 存储 4.85 MB（7.1×），精度不降 · QAP 与 QAT 持平**
 
@@ -34,7 +34,7 @@
 | **三种基线** | **BF16 / FP16** 与 FP32 持平；**PTQ** 见 §1–§2；**随机初始化**（无预训练直接量化微调）在 TUAB / TUAR 上与预训练持平，在 TUSL（不计第 0 组）上低 `0.07–0.08`。 | [FP16/BF16](reproduction/formal_line/results/metrics/README.md#fp16-和-bf16) · [随机初始化](reproduction/formal_line/results/metrics/README.md#随机初始化) |
 | **四项成本与校准指标** | BAcc、ECE 见 §1–§2；每参数有效位数 `8.40 / 4.48 / 2.52 bit`，单片段合计 BOPs `86.4 / 64.7 / 53.8 G`（INT8 / INT4 / 三值，理论值）。 | [指标与成本](reproduction/formal_line/results/metrics/README.md) |
 | **与 FEMBA on the Edge 对照** | 趋势一致（论文 TUAB W8A8/W4A8 PTQ `0.77 / 0.71` → QAT `0.88`；本页 PTQ `0.76 / 0.75` → QAT / QAP `0.84–0.85`）。论文用 TUEG 预训练，本页用 TUAB 预训练 2 轮且微调抽 1/5 受试者。 | [上游差异](reproduction/formal_line/results/int8/README.md#与上游协议的差异) |
-| **位宽交叉图** | 含三值的完整交叉图见小组报告；本仓库 INT8、INT4 明细见两张结果页。 | [INT8](reproduction/formal_line/results/int8/README.md) · [INT4](reproduction/formal_line/results/int4/README.md) |
+| **位宽交叉图** | 本仓库 INT8、INT4 完整明细见两张结果页。 | [INT8](reproduction/formal_line/results/int8/README.md) · [INT4](reproduction/formal_line/results/int4/README.md) |
 
 ## 1. 正式线主结果：三任务 INT8（W8A8）对比
 
@@ -167,7 +167,7 @@ FP32_PARENTS=given SEED=42 BITS=4 SCHEME=uniform \
 | **随机初始化基线**（INT8 / INT4 无预训练直接微调） | [评测指标与成本 §随机初始化](reproduction/formal_line/results/metrics/README.md#随机初始化) | [random-init.json](reproduction/formal_line/results/metrics/random-init.json) · [run_random_init.sh](reproduction/formal_line/run_random_init.sh) |
 | **模型成本**（有效位数、存储、BOPs） | [评测指标与成本 §有效位数](reproduction/formal_line/results/metrics/README.md#每参数有效位数和存储) | [model-cost.json](reproduction/formal_line/results/metrics/model-cost.json) · [model_cost.py](reproduction/formal_line/model_cost.py) |
 | **训练耗时与卡型**（预训练与各任务微调） | [评测指标与成本 §预训练成本](reproduction/formal_line/results/metrics/README.md#预训练成本) | [int4/provenance.json](reproduction/formal_line/results/int4/provenance.json) |
-| **逐样本测试分数**（文件布局与字段格式） | [INT8 完整结果 §文件](reproduction/formal_line/results/int8/README.md#文件) | 组内按压缩包分发，格式见该节 |
+| **逐样本测试分数**（文件布局与字段格式） | [INT8 完整结果 §文件](reproduction/formal_line/results/int8/README.md#文件) | 文件布局与字段格式见该节 |
 | **QAP 逐层分析**（按块 + 第 2 块逐处 + SQNR/截断率） | [QAP 逐层分析](reproduction/formal_line/results/layers/README.md) | [layers/*.json](reproduction/formal_line/results/layers/) · [layer_comparison.py](reproduction/teammate_ptq/layer_comparison.py) |
 | **PTQ 掉点诊断与修复**（迁移、旋转、FP16 回退、MSE/KL） | [PTQ 掉点定位](reproduction/formal_line/results/ptq-diagnosis/README.md) | [ptq-diagnosis/summarize.py](reproduction/formal_line/results/ptq-diagnosis/summarize.py) · [channel_migration.py](reproduction/teammate_ptq/channel_migration.py) · [rotation_ptq.py](reproduction/teammate_ptq/rotation_ptq.py) |
 | **激活位宽线**（W8A6 / W8A5 / W8A4 与 95 百分位起步） | [激活位宽线](reproduction/formal_line/results/activation-sweep/README.md) | [summary.json](reproduction/formal_line/results/activation-sweep/summary.json) · [provenance.json](reproduction/formal_line/results/activation-sweep/provenance.json) · [run_c_start.sh](reproduction/formal_line/run_c_start.sh) |
