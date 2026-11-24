@@ -7,8 +7,10 @@ ROOT = Path(__file__).parent
 RESULTS = ROOT.parent / "formal_line" / "results"
 SEEDS = ("42", "43", "44")
 SETTINGS = (("int8", "w8a8", "INT8", "W8A8", "formal-overview"), ("int4", "w4a8", "INT4", "W4A8", "formal-overview-int4"))
-TASKS = (("tuar", "auroc", "TUAR 伪迹检测"), ("tuab", "auroc", "TUAB 异常检测"), ("tusl-v2", "macro_auroc", "TUSL v2 慢波三分类"))
-ARMS = (("fp32", "FP32 基线"), ("ptq", "PTQ（训练后量化）"), ("c", "QAT（FP32 预训练 + 量化微调）"), ("qap", "QAP（量化预训练 + 量化微调）"))
+TASKS_ZH = (("tuar", "auroc", "TUAR 伪迹检测"), ("tuab", "auroc", "TUAB 异常检测"), ("tusl-v2", "macro_auroc", "TUSL v2 慢波三分类"))
+TASKS_EN = (("tuar", "auroc", "TUAR (artifact)"), ("tuab", "auroc", "TUAB (abnormal)"), ("tusl-v2", "macro_auroc", "TUSL v2 (slowing, 3-class)"))
+ARMS_ZH = (("fp32", "FP32 基线"), ("ptq", "PTQ（训练后量化）"), ("c", "QAT（FP32 预训练 + 量化微调）"), ("qap", "QAP（量化预训练 + 量化微调）"))
+ARMS_EN = (("fp32", "FP32 baseline"), ("ptq", "PTQ"), ("c", "QAT (FP32 pretrain + QAT)"), ("qap", "QAP (quantized pretrain + QAT)"))
 THEMES = {
     "light": {"surface": "#fcfcfb", "ink": "#0b0b0b", "muted": "#52514e", "grid": "#e1e0d9",
               "fp32": "#6250d6", "ptq": "#eb6834", "c": "#2a78d6", "qap": "#1baf7a"},
@@ -31,25 +33,35 @@ def text(x, top, body, size, fill, anchor="start", weight=None):
             f"font-family='{FONT}'>{body}</text>")
 
 
-def draw(theme: dict, summary: dict, name: str, config: str) -> str:
+def draw(theme: dict, summary: dict, name: str, config: str, lang: str = "zh") -> str:
+    if lang == "en":
+        title = f"{name} ({config}) Test AUROC Across Three EEG Tasks"
+        subtitle = "FEMBA-Tiny · subject-independent split · mean and range over 3 seeds · y-axis starts at chance (0.5)"
+        tasks, arms = TASKS_EN, ARMS_EN
+        char_factor, pad = 0.56, 20
+    else:
+        title = f"三任务 {name}（{config}）测试 AUROC"
+        subtitle = "FEMBA-Tiny · 受试者独立划分 · 3 个随机种子的均值，细线为范围 · 纵轴从随机水平 0.5 起"
+        tasks, arms = TASKS_ZH, ARMS_ZH
+        char_factor, pad = 0.86, 18
     parts = [f"<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 {WIDTH} {HEIGHT}' width='{WIDTH}' height='{HEIGHT}' role='img'>",
              f"<title>FEMBA-Tiny formal line: {name} test AUROC on three tasks, three seeds</title>",
              f"<rect width='{WIDTH}' height='{HEIGHT}' fill='{theme['surface']}' rx='8'/>",
-             text(LEFT, 28, f"三任务 {name}（{config}）测试 AUROC", 17, theme["ink"], weight=600),
-             text(LEFT, 47, "FEMBA-Tiny · 受试者独立划分 · 3 个随机种子的均值，细线为范围 · 纵轴从随机水平 0.5 起", 11.5, theme["muted"])]
+             text(LEFT, 28, title, 17, theme["ink"], weight=600),
+             text(LEFT, 47, subtitle, 11.5, theme["muted"])]
     x = LEFT
-    for arm, label in ARMS:
+    for arm, label in arms:
         parts.append(f"<rect x='{x}' y='61' width='12' height='12' rx='3' fill='{theme[arm]}'/>")
         parts.append(text(x + 17, 71.5, label, 11.5, theme["ink"]))
-        x += 17 + 11.5 * len(label) * 0.86 + 18
+        x += 17 + 11.5 * len(label) * char_factor + pad
     for tick in (0.5, 0.6, 0.7, 0.8, 0.9):
         parts.append(f"<line x1='{LEFT}' y1='{y(tick):.1f}' x2='{RIGHT}' y2='{y(tick):.1f}' stroke='{theme['grid']}' stroke-width='1'/>")
         parts.append(text(LEFT - 8, round(y(tick) + 4, 1), f"{tick:.2f}", 10.5, theme["muted"], "end"))
-    band = (RIGHT - LEFT) / len(TASKS)
-    group = len(ARMS) * BAR + (len(ARMS) - 1) * GAP
-    for index, (task, metric, label) in enumerate(TASKS):
+    band = (RIGHT - LEFT) / len(tasks)
+    group = len(arms) * BAR + (len(arms) - 1) * GAP
+    for index, (task, metric, label) in enumerate(tasks):
         centre = LEFT + band * (index + 0.5)
-        for position, (arm, _) in enumerate(ARMS):
+        for position, (arm, _) in enumerate(arms):
             values = [summary[task][arm][seed][metric] for seed in SEEDS]
             mean, left = statistics.mean(values), centre - group / 2 + position * (BAR + GAP)
             top, mid = y(mean), left + BAR / 2
@@ -67,7 +79,8 @@ def main() -> None:
     for folder, setting, name, config, stem in SETTINGS:
         summary = json.loads((RESULTS / folder / "summary.json").read_text())[setting]
         for mode, theme in THEMES.items():
-            (ROOT / f"{stem}-{mode}.svg").write_text(draw(theme, summary, name, config))
+            (ROOT / f"{stem}-{mode}.svg").write_text(draw(theme, summary, name, config, lang="zh"))
+            (ROOT / f"{stem}-en-{mode}.svg").write_text(draw(theme, summary, name, config, lang="en"))
 
 
 if __name__ == "__main__":
